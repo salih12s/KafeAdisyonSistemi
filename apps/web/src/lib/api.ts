@@ -4,7 +4,6 @@ import {
   isHealthResponse,
   isOptionSelectionType,
   isPreparationArea,
-  type BusinessSettingsResponse,
   type CafeTableResponse,
   type CategoryResponse,
   type CurrentUser,
@@ -69,17 +68,6 @@ function isStaffMember(value: unknown): value is StaffMember {
     typeof value.isActive === 'boolean' &&
     (value.lastLoginAt === null || typeof value.lastLoginAt === 'string') &&
     typeof value.createdAt === 'string' &&
-    typeof value.updatedAt === 'string'
-  );
-}
-
-function isBusinessSettings(value: unknown): value is BusinessSettingsResponse {
-  return (
-    isRecord(value) &&
-    typeof value.id === 'string' &&
-    typeof value.businessName === 'string' &&
-    (value.phone === null || typeof value.phone === 'string') &&
-    (value.address === null || typeof value.address === 'string') &&
     typeof value.updatedAt === 'string'
   );
 }
@@ -243,20 +231,6 @@ export function resetStaffPassword(id: string, password: string): Promise<unknow
     method: 'POST',
     body: JSON.stringify({ password }),
   });
-}
-
-export async function fetchBusinessSettings(): Promise<BusinessSettingsResponse> {
-  const settings = expectRecord(await requestPayload('/api/business-settings'), 'settings');
-  if (!isBusinessSettings(settings)) throw new ApiError('İşletme bilgileri okunamadı.');
-  return settings;
-}
-
-export function updateBusinessSettings(input: {
-  businessName: string;
-  phone: string;
-  address: string;
-}): Promise<unknown> {
-  return requestPayload('/api/business-settings', { method: 'PATCH', body: JSON.stringify(input) });
 }
 
 export async function fetchAreas(): Promise<DiningAreaResponse[]> {

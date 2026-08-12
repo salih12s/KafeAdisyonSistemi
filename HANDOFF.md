@@ -41,8 +41,30 @@ Backend, contracts, Prisma şeması, migration ve API sözleşmesi değiştirilm
   → `text-kds-info`, `border-t-kds-new/preparing/ready` → `kds-info/warning/
   success`, `shadow-kds` → `shadow-card`. KDS kolon vurgu renkleri bu düzeltmeden
   önce hiç render edilmiyordu. Kullanılmayan `.kds-shell` CSS sınıfı silindi.
-- `npm run verify` PASS: 23 dosyada **187/187** test (API 132, web 55); web JS
-  310,85 kB, gzip 97,40 kB. Lint 0 hata/0 uyarı, strict typecheck temiz.
+- **Yönetim ekranı düzeni (ikinci tur).** Ayarlar ve Menü'de liste ile form
+  ayrıldı: düzenleme artık satıra tıklayınca değil, satırdaki **Düzenle**
+  düğmesiyle açılan dialogda yapılır; ekleme de panel başlığındaki "… ekle"
+  düğmesinin açtığı dialogda. Personel şifre sıfırlama da dialoga taşındı.
+- **Pasife alma.** Personel, salon ve masa için `Pasife al` / `Aktife al`
+  eklendi. API'de DELETE ucu yoktur ve domain kayıtları silinmez (AGENTS §9,
+  ADR-011); işlem mevcut `PATCH … isActive` ucunu kullanır ve onay dialogu
+  kaydın korunduğunu açıkça yazar. Yeni `ConfirmDialog` bileşeni eklendi.
+- **Ayarlar → İşletme bölümü kaldırıldı.** Kullanılmayan `fetchBusinessSettings`
+  / `updateBusinessSettings` istemci fonksiyonları ve `isBusinessSettings` tip
+  koruyucusu `lib/api.ts` içinden silindi. Backend ucu ve contracts tipi durur;
+  işletme adı `npm run setup:owner` ile belirlenir.
+- **Menü seçenekleri.** Ürün seçenekleri sayfa altındaki üç ayrı formdan tek bir
+  açıklamalı dialoga taşındı. Grup = siparişte sorulan soru, seçenek = cevabı
+  biçiminde tanımlanır; grup/seçenek formları ikinci dialog açmaz, aynı
+  pencerede görünüm değiştirir ve **Geri** ile listeye döner.
+- **Kategoriler.** Satırlar alt alta; chevron + hover + `aria-current` ile
+  tıklanabilirlik belli edilir, `Aktif`/`Pasif` rozetinin yanında düzenle düğmesi
+  durur.
+- `Button` `size="small"` yüksekliği 36px'ten `min-h-touch` (44px) değerine
+  çıkarıldı; bu, `check-view` içindeki "Masalara dön" düğmesinin de UI_GUIDE §6
+  dokunma hedefi kuralına uymasını sağladı.
+- `npm run verify` PASS: 23 dosyada **191/191** test (API 132, web 59); web JS
+  310,51 kB, gzip 97,37 kB. Lint 0 hata/0 uyarı, strict typecheck temiz.
 - Gerçek Chrome ile `/login`, `/`, `/masalar`, `/menu`, `/mutfak`, `/cariler`,
   `/raporlar`, `/ayarlar` rotaları 390/768/1024/1440px'te ölçüldü: 32 görünümde
   `scrollWidth == clientWidth`, yatay taşma yok. `/mutfak` üzerinde 6 saniyelik

@@ -198,6 +198,7 @@ içindeki `label` ve `description` alanlarından gelir.
 | `Badge`                                       | Metinle desteklenen durum ve rol göstergesi                            |
 | `SegmentedControl`                            | Kısa, birbirini dışlayan görünüm/filtre seçimi                         |
 | `Dialog`                                      | Mobilde bottom-sheet, geniş ekranda modal; focus trap ve Escape içerir |
+| `ConfirmDialog`                               | Geri alınması zor işlemi onaylatır; sonucunu açıkça yazar              |
 | `ToastProvider`                               | `aria-live` ile kısa işlem geri bildirimi                              |
 | `Skeleton` / `ErrorState`                     | Yükleme ve kurtarılabilir hata yüzeyleri                               |
 
@@ -213,6 +214,26 @@ kabuğunun açık renkli panellerini kullanmaz ve dekoratif animasyon/ses içerm
 
 Yeni bileşen yazmadan önce bu listeye bakılır; aynı işi yapan ikinci bir
 bileşen üretilmez.
+
+### Yönetim ekranlarında düzenleme düzeni
+
+Ayarlar ve Menü gibi yönetim ekranlarında **liste ve form ayrılır**:
+
+- Liste satırı yalnız seçim yapar. Düzenleme, satıra tıklayarak yanda açılan bir
+  forma değil, satırdaki açık bir **Düzenle** düğmesiyle açılan **dialoga** girer.
+- Ekleme de aynı biçimde: panel başlığındaki **"… ekle"** düğmesi dialog açar.
+  Panelin altında sürekli duran gizli/çift amaçlı form bırakılmaz.
+- Aynı anda tek dialog açıktır. Bir dialog içinde alt form gerekiyorsa (örneğin
+  seçenek grubu → seçenek) ikinci dialog açılmaz; aynı pencerenin görünümü
+  değişir ve alt barda **Geri** düğmesi bulunur.
+
+### Silme yerine pasife alma
+
+Adisyon, rapor ve işlem geçmişi bozulmasın diye personel, salon, masa, kategori,
+ürün ve seçenek kayıtları **fiziksel olarak silinmez** (bkz. [AGENTS.md](../AGENTS.md) §9,
+ADR-011). Arayüzde "Sil" yazmaz; **Pasife al** / **Aktife al** kullanılır ve
+onay dialogu kaydın korunduğunu, listede "Pasif" görüneceğini ve geri
+alınabileceğini açıkça yazar.
 
 ---
 

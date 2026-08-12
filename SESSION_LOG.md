@@ -858,3 +858,53 @@ değiştirilmedi, merge yapılmadı.
   KDS aksiyon düğmeleri 44px. Ölçüm sırasında API cevapları tarayıcı seviyesinde
   karşılandı, `CafeAdisyon` veritabanına dokunulmadı. Görseller yalnız yerel
   temp klasöründe tutuldu ve commit edilmedi.
+
+## 2026-08-12 — Claude — Yönetim ekranı düzeni: modal düzenleme ve pasife alma
+
+**Branch:** `feat/final-ui-polish-joker-cafe` (aynı branch, ikinci tur)
+**Sonuç:** Tamamlandı; draft PR #11 güncellendi, merge yapılmadı.
+
+- Kullanıcı isteği: Ayarlar'da salon/personel silme, düzenlemenin satır yerine
+  düğme + modal olması, kategorilerde düzenlenin durum rozetinin yanında olması
+  ve satırın tıklanabilir görünmesi, ürün seçeneklerinin anlaşılır bir modal
+  olması, Ayarlar'daki İşletme bölümünün kaldırılması, şifre sıfırlamanın modal
+  olması.
+- **Silme kararı:** API'de personel/salon/masa için DELETE ucu yoktur; AGENTS §9
+  ve ADR-011 domain kayıtlarının fiziksel silinmesini yasaklar (masa `Check`,
+  personel `AuditLog` tarafından `ON DELETE RESTRICT` ile referanslanır). Bu
+  yüzden istek, mevcut `PATCH … isActive` ucuyla **Pasife al / Aktife al** olarak
+  karşılandı. Backend değişmedi. Onay dialogu kaydın silinmediğini, listede
+  "Pasif" görüneceğini ve geri alınabileceğini yazar.
+- Yeni `components/ui/confirm-dialog.tsx`; `Dialog` ve `Button` üzerine kurulu.
+- Ayarlar: `BusinessSection` kaldırıldı, bölümler `Personel | Salonlar ve
+  Masalar | İşlem Geçmişi` oldu ve varsayılan `staff`. Personel satırında
+  Düzenle / Şifre sıfırla / Pasife al düğmeleri; üçü de dialog açar. Salon
+  satırında ikon düğmeler (düzenle, pasife/aktife al), masa kartında etiketli
+  düğmeler. Ekleme işlemleri panel başlığındaki "… ekle" düğmesiyle dialogda.
+- `lib/api.ts` içinden kullanılmayan `fetchBusinessSettings`,
+  `updateBusinessSettings` ve `isBusinessSettings` silindi (AGENTS §11).
+  Backend ucu, contracts tipi ve audit etiketi korundu.
+- Menü: kategori satırları chevron + hover + `aria-current` ile tıklanabilir
+  görünür; düzenle düğmesi `Aktif`/`Pasif` rozetinin yanındadır. Kategori ve
+  ürün ekleme/düzenleme dialoga taşındı.
+- Ürün seçenekleri tek bir açıklamalı dialogda toplandı. Üstte "grup = soru,
+  seçenek = cevap" açıklaması; gruplar numaralı kart, seçim türü/zorunluluk/durum
+  rozetli. Grup ve seçenek formları ikinci dialog açmaz — aynı pencerede görünüm
+  değişir, alt barda **Geri** vardır. Böylece iç içe dialogda Escape'in iki
+  pencereyi birden kapatması sorunu oluşmaz.
+- `Button` `size="small"` 36px'ten `min-h-touch` (44px) değerine çıkarıldı;
+  UI_GUIDE §6 dokunma hedefi kuralına aykırı olan mevcut `check-view`
+  "Masalara dön" düğmesi de bu sayede düzeldi.
+- `docs/UI_GUIDE.md`: `ConfirmDialog` bileşen sözlüğüne eklendi; "Yönetim
+  ekranlarında düzenleme düzeni" ve "Silme yerine pasife alma" kuralları yazıldı.
+- Testler: `management.test.tsx` 3'ten 7 teste çıktı (ekleme/düzenleme/şifre
+  modalleri, personel ve salon pasife alma PATCH gövdeleri, İşletme bölümünün
+  görünmediği); `menu.test.tsx` 9'dan 10 teste çıktı (modal akışları, seçenek
+  dialogundaki açıklama, Geri ile listeye dönüş).
+- `npm run verify` PASS: lint 0 hata/0 uyarı, strict typecheck temiz, 23 dosyada
+  191/191 test (API 132, web 59), web JS 310,51 kB / gzip 97,37 kB.
+- Gerçek Chrome ile 390 ve 1440px'te 26 ölçüm: Ayarlar/Menü listeleri ve sekiz
+  dialog açılıp kapatıldı. Hiçbirinde belge yatay taşması yok, dialog ekran
+  dışına taşmıyor ve dialog içindeki hiçbir düğme 44px'in altında değil.
+  390px'te konsol tamamen temiz. Ölçümde API cevapları tarayıcı seviyesinde
+  karşılandı; `CafeAdisyon` veritabanına dokunulmadı.

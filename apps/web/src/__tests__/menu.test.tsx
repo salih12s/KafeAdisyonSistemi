@@ -75,8 +75,11 @@ describe('Menü ekranı', () => {
 
     renderWithProviders(<App />, '/menu');
 
-    expect(await screen.findByRole('button', { name: /Kahveler/ })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Tatlılar/ })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('button', { name: 'Kahveler kategorisini seç' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Tatlılar kategorisini seç' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Kahveler kategorisini düzenle' })).toBeInTheDocument();
 
     const row = screen.getByText('Latte').closest('li');
     expect(row).not.toBeNull();
@@ -104,8 +107,10 @@ describe('Menü ekranı', () => {
     renderWithProviders(<App />, '/menu');
     await screen.findByText('Latte');
 
-    await user.type(screen.getByLabelText(/Kategori adı/), 'Yiyecekler');
     await user.click(screen.getByRole('button', { name: 'Kategori ekle' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Kategori ekle' });
+    await user.type(within(dialog).getByLabelText(/Kategori adı/), 'Yiyecekler');
+    await user.click(within(dialog).getByRole('button', { name: 'Kategoriyi kaydet' }));
 
     await waitFor(() => {
       expect(writeRequests().some((entry) => entry.path === '/api/menu/categories')).toBe(true);
@@ -123,9 +128,11 @@ describe('Menü ekranı', () => {
     renderWithProviders(<App />, '/menu');
     await screen.findByText('Latte');
 
-    await user.type(screen.getByLabelText(/Ürün adı/), 'Filtre Kahve');
-    await user.type(screen.getByLabelText(/Fiyat \(₺\)/), '72.50');
     await user.click(screen.getByRole('button', { name: 'Ürün ekle' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Ürün ekle' });
+    await user.type(within(dialog).getByLabelText(/Ürün adı/), 'Filtre Kahve');
+    await user.type(within(dialog).getByLabelText(/Fiyat \(₺\)/), '72.50');
+    await user.click(within(dialog).getByRole('button', { name: 'Ürünü kaydet' }));
 
     await waitFor(() => {
       expect(writeRequests().some((entry) => entry.path === '/api/menu/products')).toBe(true);
@@ -147,13 +154,15 @@ describe('Menü ekranı', () => {
     renderWithProviders(<App />, '/menu');
     await screen.findByText('Latte');
 
-    await user.click(screen.getByRole('button', { name: 'Seçenekler' }));
+    await user.click(screen.getByRole('button', { name: /Seçenekler/ }));
 
-    const group = await screen.findByRole('region', { name: 'Boyut seçenek grubu' });
+    const dialog = await screen.findByRole('dialog', { name: /Seçenekler — Latte/ });
+    expect(within(dialog).getByText(/siparişte sorulan soru/)).toBeInTheDocument();
 
-    expect(within(group).getByRole('heading', { name: 'Boyut' })).toBeInTheDocument();
+    const group = within(dialog).getByRole('listitem', { name: 'Boyut seçenek grubu' });
+    expect(within(group).getByRole('heading', { name: '1. Boyut' })).toBeInTheDocument();
     expect(within(group).getByText(/Tek seçim/)).toBeInTheDocument();
-    expect(within(group).getByText(/Zorunlu/)).toBeInTheDocument();
+    expect(within(group).getByText('Zorunlu')).toBeInTheDocument();
     expect(within(group).getByText('Küçük')).toBeInTheDocument();
     expect(within(group).getByText('Büyük')).toBeInTheDocument();
     expect(within(group).getByText(/\+.*7,50/)).toBeInTheDocument();
@@ -166,14 +175,15 @@ describe('Menü ekranı', () => {
 
     renderWithProviders(<App />, '/menu');
     await screen.findByText('Latte');
-    await user.click(screen.getByRole('button', { name: 'Seçenekler' }));
-    await screen.findByRole('heading', { name: 'Boyut' });
+    await user.click(screen.getByRole('button', { name: /Seçenekler/ }));
+    await screen.findByRole('heading', { name: '1. Boyut' });
 
-    await user.click(screen.getByRole('button', { name: 'Seçenek ekle' }));
+    await user.click(screen.getByRole('button', { name: 'Boyut grubuna Seçenek ekle' }));
 
-    const form = screen.getByRole('form', { name: 'Seçenek formu' });
+    const form = await screen.findByRole('form', { name: 'Seçenek ekle' });
+    expect(screen.getByText(/“Boyut” grubunun cevaplarından biri/)).toBeInTheDocument();
     await user.type(within(form).getByLabelText(/Seçenek adı/), 'Orta');
-    await user.click(within(form).getByRole('button', { name: 'Seçeneği ekle' }));
+    await user.click(screen.getByRole('button', { name: 'Seçeneği oluştur' }));
 
     await waitFor(() => {
       expect(writeRequests().some((entry) => entry.path.endsWith(`/${SIZE_GROUP.id}/values`))).toBe(
@@ -182,17 +192,33 @@ describe('Menü ekranı', () => {
     });
   });
 
+  it('seçenek penceresinden geri dönünce grup listesi yeniden görünür', async () => {
+    stubMenu();
+    const user = userEvent.setup();
+
+    renderWithProviders(<App />, '/menu');
+    await screen.findByText('Latte');
+    await user.click(screen.getByRole('button', { name: /Seçenekler/ }));
+    await screen.findByRole('heading', { name: '1. Boyut' });
+
+    await user.click(screen.getByRole('button', { name: 'Grubu düzenle' }));
+    await screen.findByRole('form', { name: 'Seçenek grubunu düzenle' });
+
+    await user.click(screen.getByRole('button', { name: 'Geri' }));
+    expect(await screen.findByRole('heading', { name: '1. Boyut' })).toBeInTheDocument();
+  });
+
   it('garson menüyü görür ama yönetim formlarını görmez', async () => {
     stubMenu({ user: userForRole('WAITER') });
 
     renderWithProviders(<App />, '/menu');
 
     await screen.findByText('Latte');
-    expect(screen.getByRole('button', { name: /Kahveler/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Kahveler kategorisini seç' })).toBeInTheDocument();
 
     expect(screen.queryByRole('button', { name: 'Kategori ekle' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Ürün ekle' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Düzenle' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Düzenle/ })).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/Kategori adı/)).not.toBeInTheDocument();
   });
 
