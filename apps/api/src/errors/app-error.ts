@@ -33,3 +33,24 @@ export class ValidationError extends AppError {
     this.name = 'ValidationError';
   }
 }
+
+export class UnauthorizedError extends AppError {
+  constructor(message = 'Oturum açmanız gerekiyor.') {
+    super(message, 401, API_ERROR_CODES.UNAUTHORIZED);
+    this.name = 'UnauthorizedError';
+  }
+}
+
+export class ForbiddenError extends AppError {
+  constructor(message = 'Bu işlem için yetkiniz bulunmuyor.') {
+    super(message, 403, API_ERROR_CODES.FORBIDDEN);
+    this.name = 'ForbiddenError';
+  }
+}
+
+export class ConflictError extends AppError {
+  constructor(message: string) {
+    super(message, 409, API_ERROR_CODES.CONFLICT);
+    this.name = 'ConflictError';
+  }
+}

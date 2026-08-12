@@ -6,16 +6,16 @@ Her Phase kendi branch'inde çalışır ve draft PR ile kapanır.
 
 Branch adı kalıbı: `feat/phase-<n>-<konu>`
 
-| Phase | Konu | Durum |
-| --- | --- | --- |
-| 0 | Proje temeli ve arayüz altyapısı | **Tamamlandı — Codex review bekliyor** |
-| 1 | Veri modeli, personel ve yetkilendirme | Başlanmadı |
-| 2 | Salon, masa ve menü yönetimi | Başlanmadı |
-| 3 | Masa açma, adisyon ve sipariş | Başlanmadı |
-| 4 | Gerçek zamanlı mutfak/bar ekranı | Başlanmadı |
-| 5 | Hesap kapatma, ödeme ve hesap bölme | Başlanmadı |
-| 6 | Cari hesap, indirim ve masa işlemleri | Başlanmadı |
-| 7 | Raporlar, işlem geçmişi ve Railway deployment | Başlanmadı |
+| Phase | Konu                                                   | Durum            |
+| ----- | ------------------------------------------------------ | ---------------- |
+| 0     | Proje temeli                                           | Tamamlandı       |
+| 1     | Authentication, personel, işletme, salon ve masa       | **Devam ediyor** |
+| 2     | Kategoriler, ürünler, seçenekler ve ekstralar          | Başlanmadı       |
+| 3     | Masa açma, adisyon ve sipariş                          | Başlanmadı       |
+| 4     | Mutfak/bar ve gerçek zamanlı güncelleme                | Başlanmadı       |
+| 5     | Ödeme, hesap bölme ve hesap kapatma                    | Başlanmadı       |
+| 6     | Cari hesap, indirim, ikram, masa taşıma ve birleştirme | Başlanmadı       |
+| 7     | Raporlar, audit ekranı ve Railway deployment           | Başlanmadı       |
 
 ---
 
@@ -24,6 +24,7 @@ Branch adı kalıbı: `feat/phase-<n>-<konu>`
 **Branch:** `feat/phase-0-foundation`
 
 **Kapsam**
+
 - Git bootstrap: `main` başlangıç commit'i ve Phase branch'i
 - npm workspaces: `apps/web`, `apps/api`, `packages/contracts`
 - Ortak ajan belgeleri ve `docs/`
@@ -44,32 +45,31 @@ secret commit edilmemiş, belgeler hazır, draft PR açılmış.
 
 ---
 
-## Phase 1 — Veri modeli, personel ve yetkilendirme
+## Phase 1 — Authentication, personel, işletme, salon ve masa
 
-**Branch:** `feat/phase-1-data-model`
+**Branch:** `feat/phase-1-identity-tables`
 
-- Prisma şeması: personel, rol, salon, masa, kategori, ürün, adisyon,
-  adisyon kalemi, ödeme, cari, işlem geçmişi
-- İlk migration (kullanıcı onayıyla, mevcut veri korunarak)
-- Para alanları `Int` (kuruş)
-- Personel giriş akışı (PIN) ve oturum yönetimi
-- Rol bazlı yetki kontrolü — **sunucu tarafında**
-- Personel yönetim ekranı (`/ayarlar`)
-- Şema ve yetki testleri
+- İlk işletme sahibini terminalden güvenli oluşturma
+- Kullanıcı adı/şifre ile giriş, güvenli session cookie ve çıkış
+- Sabit personel rolleri ve sunucu tarafı yetki kontrolü
+- Personel ve işletme bilgileri yönetimi
+- Salon ve masa yönetimi; `/masalar` ekranının gerçek verilerle çalışması
+- Yönetim işlemleri için audit kayıt altyapısı
+- İlk additive Prisma migration
+- Backend ve frontend testleri
 
-**Kapsam dışı:** sipariş akışı, ödeme, rapor
+**Kapsam dışı:** kategori, ürün, adisyon, sipariş, ödeme, cari ve audit ekranı
 
 ---
 
-## Phase 2 — Salon, masa ve menü yönetimi
+## Phase 2 — Kategoriler, ürünler, seçenekler ve ekstralar
 
 **Branch:** `feat/phase-2-catalog`
 
-- Salon ve masa CRUD; masa sıralaması
 - Kategori ve ürün CRUD; fiyat güncelleme
 - Ürün seçenek grupları ve ekstralar
 - Ürünü satışa kapatma
-- `/masalar` ve `/menu` ekranlarının gerçek verilerle çalışması
+- `/menu` ekranının gerçek verilerle çalışması
 
 **Kapsam dışı:** adisyon açma, sipariş
 

@@ -6,12 +6,12 @@ import { NAV_ITEMS } from '../config/navigation';
 import { healthyResponse, renderWithProviders, stubHealthFetch } from '../test/render';
 
 describe('Mobil gezinme', () => {
-  it('alt çubukta sık kullanılan modülleri gösterir', () => {
+  it('alt çubukta sık kullanılan modülleri gösterir', async () => {
     stubHealthFetch(healthyResponse);
 
     renderWithProviders(<App />);
 
-    const bottomNav = screen.getByRole('navigation', { name: 'Alt gezinme' });
+    const bottomNav = await screen.findByRole('navigation', { name: 'Alt gezinme' });
 
     expect(within(bottomNav).getByRole('link', { name: 'Masalar' })).toBeInTheDocument();
     expect(within(bottomNav).getByRole('link', { name: 'Mutfak' })).toBeInTheDocument();
@@ -24,7 +24,7 @@ describe('Mobil gezinme', () => {
 
     renderWithProviders(<App />);
 
-    const bottomNav = screen.getByRole('navigation', { name: 'Alt gezinme' });
+    const bottomNav = await screen.findByRole('navigation', { name: 'Alt gezinme' });
     await user.click(within(bottomNav).getByRole('button', { name: 'Tümü' }));
 
     const drawer = screen.getByRole('dialog', { name: 'Tüm modüller' });
@@ -42,7 +42,7 @@ describe('Mobil gezinme', () => {
 
     renderWithProviders(<App />);
 
-    const bottomNav = screen.getByRole('navigation', { name: 'Alt gezinme' });
+    const bottomNav = await screen.findByRole('navigation', { name: 'Alt gezinme' });
     await user.click(within(bottomNav).getByRole('button', { name: 'Tümü' }));
 
     const drawer = screen.getByRole('dialog', { name: 'Tüm modüller' });
@@ -58,7 +58,7 @@ describe('Mobil gezinme', () => {
 
     renderWithProviders(<App />);
 
-    const bottomNav = screen.getByRole('navigation', { name: 'Alt gezinme' });
+    const bottomNav = await screen.findByRole('navigation', { name: 'Alt gezinme' });
     await user.click(within(bottomNav).getByRole('button', { name: 'Tümü' }));
 
     await user.click(screen.getByRole('button', { name: 'Kapat' }));

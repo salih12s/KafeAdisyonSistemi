@@ -3,6 +3,7 @@ import { createApp } from '../../src/app';
 import type { Env } from '../../src/config/env';
 import type { DatabaseProbe } from '../../src/lib/database';
 import { createSilentLogger } from '../../src/lib/logger';
+import type { AppStore } from '../../src/features/store';
 
 export const testEnv: Env = {
   NODE_ENV: 'test',
@@ -20,10 +21,15 @@ export function createStubProbe(connected: boolean): DatabaseProbe {
   };
 }
 
-export function createTestApp(options: { databaseConnected: boolean }): Express {
+export function createTestApp(options: {
+  databaseConnected: boolean;
+  store?: AppStore;
+  env?: Env;
+}): Express {
   return createApp({
-    env: testEnv,
+    env: options.env ?? testEnv,
     logger: createSilentLogger(),
     database: createStubProbe(options.databaseConnected),
+    ...(options.store === undefined ? {} : { store: options.store }),
   });
 }

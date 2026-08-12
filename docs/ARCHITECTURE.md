@@ -63,13 +63,15 @@ Tek servis, tek origin. Express hem API uçlarını hem statik dosyaları sunar.
 │   │   │   ├── config/
 │   │   │   │   ├── env.ts           zod ile environment doğrulaması
 │   │   │   │   └── paths.ts         .env ve web/dist yolları
-│   │   │   ├── errors/app-error.ts  AppError, NotFoundError, ValidationError
+│   │   │   ├── errors/app-error.ts  Uygulama hata türleri ve HTTP eşlemesi
+│   │   │   ├── features/            Kimlik, yetki ve Prisma store sınırı
 │   │   │   ├── lib/
 │   │   │   │   ├── database.ts      Prisma client yönetimi + DatabaseProbe
 │   │   │   │   └── logger.ts        seviye tabanlı kayıt tutucu
 │   │   │   ├── middleware/          error-handler, not-found, request-logger
 │   │   │   ├── routes/              health ve /api toplayıcısı
-│   │   │   └── scripts/check-database.ts
+│   │   │   └── scripts/             DB kontrolü ve interaktif owner kurulumu
+│   │   ├── prisma/migrations/        İncelenmiş additive migration'lar
 │   │   ├── tests/                   vitest + supertest
 │   │   ├── .env.example
 │   │   └── .env.test.example
@@ -81,8 +83,8 @@ Tek servis, tek origin. Express hem API uçlarını hem statik dosyaları sunar.
 │           ├── main.tsx             React kökü, sağlayıcılar
 │           ├── App.tsx              rota tanımları
 │           ├── components/          layout, ui, health-indicator
-│           ├── config/              navigation, app-info, router
-│           ├── hooks/use-health.ts
+│           ├── config/              navigation ve app-info
+│           ├── hooks/               auth ve health sorguları
 │           ├── lib/                 api, query-client, datetime, cn
 │           ├── pages/
 │           ├── styles/index.css     Tailwind + tasarım belirteçleri
@@ -107,12 +109,13 @@ Tek servis, tek origin. Express hem API uçlarını hem statik dosyaları sunar.
 `listen` eder. Bu ayrım sayesinde testler gerçek port açmadan HTTP isteği sürer.
 
 ```ts
-createApp({ env, logger, database, webDistPath? })
+createApp({ env, logger, database, store?, webDistPath? })
 ```
 
-`database` bir `DatabaseProbe`'dur (`ping(): Promise<boolean>`). Testlerde
-gerçek PostgreSQL yerine sahte bir sonda verilir; test paketi veritabanına
-ihtiyaç duymaz.
+`database` bir `DatabaseProbe`'dur (`ping(): Promise<boolean>`). `store`, Phase 1
+iş kurallarına özgü veri erişim sınırıdır ve production'da Prisma ile uygulanır.
+Testlerde her ikisi de bellek içi karşılıklarıyla değiştirilir; varsayılan test
+paketi gerçek PostgreSQL'i değiştirmez.
 
 ### 4.2 Middleware sırası
 
@@ -173,12 +176,15 @@ tamamlanmazsa süreç zorla sonlandırılır; asılı kalmaz.
 
 - **Yönlendirme:** React Router. Rotalar `App.tsx`, gezinme öğeleri
   `src/config/navigation.ts` içinde tek kaynaktan tanımlıdır.
+- **Kimlik:** HttpOnly `kafe_session` cookie tarayıcı tarafından gönderilir;
+  arayüz oturum bilgisini `GET /api/auth/me` ile alır. `/ayarlar` hem route hem
+  API katmanında yalnız işletme sahibine açıktır.
 - **Sunucu durumu:** TanStack Query; sağlık durumu 30 saniyede bir tazelenir.
 - **Stil:** Tailwind CSS v4. Tasarım belirteçleri `src/styles/index.css` içinde
   `@theme` bloğundadır; ayrı `tailwind.config` dosyası yoktur.
 - **İkonlar:** lucide-react.
 - **Ağ katmanı:** `src/lib/api.ts`. Yalnızca göreli `/api` yolları kullanılır.
-  Gelen gövde `as` ile zorlanmaz; `isHealthResponse` tip koruyucusuyla doğrulanır.
+  Gelen gövdeler çalışma zamanında tip koruyucularıyla doğrulanır.
 
 Yerleşim: masaüstünde sabit sol menü + kompakt üst bar + içerik;
 mobilde alt navigasyon ve tüm modülleri listeleyen çekmece.
@@ -191,16 +197,15 @@ Ayrıntı: [UI_GUIDE.md](UI_GUIDE.md).
 Web ve API'nin paylaştığı tipler, sabitler ve saf yardımcılar. İçinde ağ
 çağrısı, React veya Express bağımlılığı **bulunmaz**.
 
-İçerik: `API_PREFIX`, `HEALTH_ENDPOINT`, `HealthResponse`, `isHealthResponse`,
-`API_ERROR_CODES`, `ApiErrorResponse`, `LOCALE`, `CURRENCY`, `TIME_ZONE`,
-`Kurus`, `formatKurus`, `liraToKurus`.
+İçerik: API/health sözleşmeleri, hata kodları, locale/para/zaman sabitleri,
+Phase 1 kullanıcı rolleri, merkezi permission adları ve güvenli response tipleri.
 
 ### Çift biçimli derleme (ADR-012)
 
-| Çıktı | Kim kullanır | Neden |
-| --- | --- | --- |
-| `dist/cjs` | Node.js / Express (`require`) | API CommonJS'tir |
-| `dist/esm` | Vite / Rollup (`import`) | Paketleyici `export *` zincirini CJS üzerinden çözemez |
+| Çıktı      | Kim kullanır                  | Neden                                                  |
+| ---------- | ----------------------------- | ------------------------------------------------------ |
+| `dist/cjs` | Node.js / Express (`require`) | API CommonJS'tir                                       |
+| `dist/esm` | Vite / Rollup (`import`)      | Paketleyici `export *` zincirini CJS üzerinden çözemez |
 
 > **Kural:** `packages/contracts/src` içindeki **göreli içe aktarımlar `.js`
 > uzantısı taşımak zorundadır** (`from './common.js'`). Uzantı unutulursa ESM
@@ -208,18 +213,40 @@ Web ve API'nin paylaştığı tipler, sabitler ve saf yardımcılar. İçinde a�
 
 ---
 
-## 7. Environment değişkenleri
+## 7. Phase 1 kimlik ve veri modeli
+
+- `User`: normalize edilmiş unique kullanıcı adı, bcrypt hash, sabit rol ve
+  aktif/pasif yaşam döngüsü.
+- `Session`: tarayıcıdaki ham token'ın yalnız SHA-256 hash'i, 12 saatlik bitiş
+  zamanı ve son görülme zamanı. Şifre değişimi veya pasife alma gerekli
+  session'ları iptal eder.
+- `BusinessSettings`: sabit `business` kimlikli tek işletme kaydı.
+- `DiningArea` / `CafeTable`: fiziksel silme olmadan aktiflik ve sıra değeri;
+  normalize edilmiş ad anahtarları duplicate kaydı engeller.
+- `AuditLog`: yönetim işlemlerinin aktör ve hedef kaydı; parola veya session
+  verisi metadata içine alınmaz.
+
+Roller (`OWNER`, `CASHIER`, `WAITER`, `KITCHEN`) ve permission matrisi kodda
+sabittir. Yönetim permission'ları yalnız `OWNER` rolündedir; tüm roller aktif
+session ile floor plan'ı görebilir. Koruma Express middleware'inde uygulanır.
+
+İlk owner web endpoint'iyle değil, `npm run setup:owner` interaktif terminal
+komutuyla oluşturulur. Owner ve işletme kaydı tek transaction içindedir.
+
+---
+
+## 8. Environment değişkenleri
 
 `apps/api/.env` (commit edilmez):
 
-| Değişken | Zorunlu | Varsayılan | Açıklama |
-| --- | --- | --- | --- |
-| `DATABASE_URL` | **Evet** | — | `postgresql://...` |
-| `NODE_ENV` | Hayır | `development` | `development` \| `test` \| `production` |
-| `PORT` | Hayır | `3000` | API portu; production'da arayüz de buradan sunulur |
-| `HOST` | Hayır | dev `127.0.0.1`, prod `0.0.0.0` | Dinlenecek arayüz |
-| `LOG_LEVEL` | Hayır | `info` | `debug` \| `info` \| `warn` \| `error` |
-| `JSON_BODY_LIMIT` | Hayır | `1mb` | JSON gövde üst sınırı |
+| Değişken          | Zorunlu  | Varsayılan                      | Açıklama                                           |
+| ----------------- | -------- | ------------------------------- | -------------------------------------------------- |
+| `DATABASE_URL`    | **Evet** | —                               | `postgresql://...`                                 |
+| `NODE_ENV`        | Hayır    | `development`                   | `development` \| `test` \| `production`            |
+| `PORT`            | Hayır    | `3000`                          | API portu; production'da arayüz de buradan sunulur |
+| `HOST`            | Hayır    | dev `127.0.0.1`, prod `0.0.0.0` | Dinlenecek arayüz                                  |
+| `LOG_LEVEL`       | Hayır    | `info`                          | `debug` \| `info` \| `warn` \| `error`             |
+| `JSON_BODY_LIMIT` | Hayır    | `1mb`                           | JSON gövde üst sınırı                              |
 
 Doğrulama `zod` ile uygulama açılmadan yapılır. Değer eksik veya hatalıysa
 sunucu stack trace yerine hangi değişkenin neden geçersiz olduğunu yazar ve
@@ -230,7 +257,7 @@ Oluşturmak için: `npm run setup:env`.
 
 ---
 
-## 8. API sınırları
+## 9. API sınırları
 
 - Tüm REST uçları `/api` altındadır; başka ön ek kullanılmaz.
 - İstemci hiçbir zaman veritabanına doğrudan erişmez.
@@ -241,7 +268,7 @@ Oluşturmak için: `npm run setup:env`.
 
 ---
 
-## 9. Güvenlik ve veri bütünlüğü ilkeleri
+## 10. Güvenlik ve veri bütünlüğü ilkeleri
 
 - **Gizli bilgi:** `.env` commit edilmez; şablonlarda yalnızca `CHANGE_ME`
   bulunur (bkz. [../AGENTS.md](../AGENTS.md) §8).

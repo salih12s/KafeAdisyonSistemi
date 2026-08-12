@@ -2,7 +2,7 @@
   "name": "kafe-adisyon-sistemi",
   "version": "0.1.0",
   "private": true,
-  "description": "Tek şubeli kafe için yerel ağda çalışan adisyon ve satış noktası uygulaması",
+  "description": "React, Express ve PostgreSQL ile geliştirilen web tabanlı kafe adisyon sistemi",
   "license": "UNLICENSED",
   "workspaces": [
     "packages/*",
@@ -23,6 +23,9 @@
     "format:check": "prettier --check .",
     "db:generate": "npm run db:generate -w @kafe/api",
     "db:check": "npm run db:check -w @kafe/api",
+    "db:migrate:status": "npm run db:migrate:status -w @kafe/api",
+    "db:migrate:deploy": "npm run db:migrate:deploy -w @kafe/api",
+    "setup:owner": "npm run setup:owner -w @kafe/api",
     "postinstall": "npm run db:generate --silent",
     "setup:env": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/set-local-env.ps1"
   },

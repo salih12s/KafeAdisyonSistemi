@@ -13,19 +13,26 @@
     "test:watch": "vitest",
     "db:generate": "prisma generate",
     "db:check": "tsx src/scripts/check-database.ts",
+    "db:migrate:status": "prisma migrate status --schema prisma/schema.prisma",
+    "db:migrate:deploy": "prisma migrate deploy --schema prisma/schema.prisma",
+    "setup:owner": "tsx src/scripts/setup-owner.ts",
     "prisma": "prisma"
   },
   "dependencies": {
     "@kafe/contracts": "*",
     "@prisma/client": "^6.2.1",
+    "bcryptjs": "^3.0.3",
     "dotenv": "^16.4.7",
     "express": "^5.0.1",
+    "express-rate-limit": "^8.6.2",
     "helmet": "^8.0.0",
+    "prompts": "^2.4.2",
     "zod": "^3.24.1"
   },
   "devDependencies": {
     "@types/express": "^5.0.0",
     "@types/node": "^22.10.2",
+    "@types/prompts": "^2.4.9",
     "@types/supertest": "^6.0.2",
     "prisma": "^6.2.1",
     "supertest": "^7.0.0",

@@ -1,24 +1,6 @@
-import { BarChart3, ChefHat, NotebookText, Settings, UsersRound, UtensilsCrossed } from 'lucide-react';
+import { BarChart3, ChefHat, NotebookText, UsersRound } from 'lucide-react';
 import { EmptyState } from '../components/ui/empty-state';
 import { Panel } from '../components/ui/panel';
-
-export function TablesPage(): JSX.Element {
-  return (
-    <Panel>
-      <EmptyState
-        icon={UtensilsCrossed}
-        title="Henüz salon veya masa tanımlanmadı"
-        description="Masa yönetimi Phase 2'de etkinleştirilecek. Salonlar ve masalar tanımlandığında bu ekranda masa planı, doluluk durumu ve açık adisyon tutarları görünecek."
-        upcoming={[
-          'Salon bazlı masa planı ve doluluk renkleri',
-          'Masa açma ve açık adisyonu görüntüleme',
-          'Masa taşıma ve masa birleştirme',
-          'Hesap bölme ve hesap kapatma',
-        ]}
-      />
-    </Panel>
-  );
-}
 
 export function MenuPage(): JSX.Element {
   return (
@@ -86,24 +68,6 @@ export function ReportsPage(): JSX.Element {
           'Ödeme türüne göre dağılım',
           'Ürün ve kategori bazlı satış',
           'İndirim ve ikram dökümü',
-        ]}
-      />
-    </Panel>
-  );
-}
-
-export function SettingsPage(): JSX.Element {
-  return (
-    <Panel>
-      <EmptyState
-        icon={Settings}
-        title="Ayarlar henüz açılmadı"
-        description="Personel ve rol yönetimi Phase 1'de etkinleştirilecek. Veritabanı bağlantısı apps/api/.env dosyasından yapılandırılır."
-        upcoming={[
-          'Personel ve rol yönetimi',
-          'Salon ve masa tanımları',
-          'İşletme bilgileri',
-          'İşlem geçmişi',
         ]}
       />
     </Panel>

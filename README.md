@@ -6,8 +6,9 @@ Cafe için adisyon ve satış noktası (POS) uygulaması.
 uygulama bir custom domain üzerinden Railway'de çalışacak; Express hem API'yi
 hem React production build'ini aynı origin üzerinden sunacaktır.
 
-> **Phase durumu:** Phase 0 (proje temeli) tamamlandı, Codex review'u bekliyor.
-> Masa açma, sipariş, ödeme ve raporlama işlevleri henüz yoktur.
+> **Phase durumu:** Phase 1 (kimlik, personel, işletme, salon ve masa yönetimi)
+> geliştirmesi tamamlandı, Claude review'u bekliyor. Masa açma, sipariş, ödeme
+> ve raporlama işlevleri henüz yoktur.
 > Plan: [docs/PHASES.md](docs/PHASES.md)
 
 ---
@@ -131,7 +132,16 @@ DATABASE_URL=postgresql://postgres:PAROLANIZ@localhost:5432/CafeAdisyon?schema=p
 > Parolanızda `@ : / ? # [ ] %` gibi karakterler varsa URL kodlaması gerekir.
 > `npm run setup:env` bunu kendisi yapar.
 
-### 4.4 Bağlantıyı doğrulayın
+### 4.4 Migration'ı uygulayın ve bağlantıyı doğrulayın
+
+Mevcut veritabanını sıfırlamadan, repodaki additive migration'ları uygulayın:
+
+```powershell
+npm run db:migrate:deploy
+npm run db:migrate:status
+```
+
+Ardından bağlantıyı doğrulayın:
 
 ```powershell
 npm run db:check
@@ -143,7 +153,19 @@ Beklenen çıktı:
 PostgreSQL bağlantısı başarılı (SELECT 1).
 ```
 
-Bu komut yalnızca okuma yapar; hiçbir tablo oluşturmaz veya değiştirmez.
+`db:check` yalnızca okuma yapar; hiçbir tablo oluşturmaz veya değiştirmez.
+
+### 4.5 İlk işletme sahibini oluşturun
+
+İlk kurulumda bir kez çalıştırın:
+
+```powershell
+npm run setup:owner
+```
+
+Komut işletme adı, ad soyad, kullanıcı adı ve maskeli şifreyi terminalde sorar.
+Aktif bir işletme sahibi zaten varsa yeni kayıt oluşturmayı reddeder. Varsayılan
+veya demo hesap üretilmez.
 
 ---
 
@@ -172,6 +194,9 @@ Vite, `/api` çağrılarını Express'e iletir; ek yapılandırma gerekmez.
 | `npm run build` | Production derlemesi |
 | `npm run verify` | lint → typecheck → test → build |
 | `npm run db:check` | Veritabanı bağlantısı (`SELECT 1`) |
+| `npm run db:migrate:status` | Uygulanmış/bekleyen Prisma migration durumu |
+| `npm run db:migrate:deploy` | Repodaki bekleyen additive migration'ları uygular |
+| `npm run setup:owner` | İlk işletme sahibi ve işletme kaydını interaktif oluşturur |
 | `npm run format` | Prettier ile biçimlendirme |
 
 Testler veritabanına bağlanmaz; PostgreSQL kapalıyken de çalışırlar.
@@ -249,8 +274,10 @@ oluşturulmaz. Bağlantı doğrulaması yalnızca `SELECT 1` ile yapılır. Doma
 kayıtları ileride de fiziksel olarak silinmez; iptal ve pasife alma alanları
 kullanılır (bkz. [DECISIONS.md](DECISIONS.md) ADR-011).
 
-Migration gerektiren bir değişiklik yapılacaksa önce ne yapılacağı anlatılır
-ve onay alınır.
+Yeni migration gerektiren bir değişiklikte SQL önce create-only üretilir ve
+baştan sona incelenir. Phase 1'in `phase_1_identity_tables` migration'ı yalnızca
+kimlik, işletme, salon, masa ve audit tablolarını oluşturur; destructive SQL
+içermez.
 
 ---
 
