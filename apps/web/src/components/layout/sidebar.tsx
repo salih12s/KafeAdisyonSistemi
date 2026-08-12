@@ -1,0 +1,52 @@
+import { NavLink } from 'react-router-dom';
+import { APP_NAME, APP_PHASE_LABEL, APP_SUBTITLE } from '../../config/app-info';
+import { NAV_ITEMS } from '../../config/navigation';
+import { cn } from '../../lib/cn';
+
+/** Masaüstünde sabit duran sol gezinme sütunu. Telefonda gizlidir. */
+export function Sidebar(): JSX.Element {
+  return (
+    <aside className="sticky top-0 hidden h-dvh w-56 shrink-0 flex-col bg-espresso lg:flex">
+      <div className="flex h-16 items-center gap-2.5 border-b border-espresso-line px-4">
+        <span
+          aria-hidden="true"
+          className="flex h-8 w-8 items-center justify-center rounded-panel bg-accent text-[13px] font-bold text-white"
+        >
+          KA
+        </span>
+        <span className="min-w-0">
+          <span className="block truncate text-sm font-semibold text-white">{APP_NAME}</span>
+          <span className="block truncate text-[11px] text-espresso-text">{APP_SUBTITLE}</span>
+        </span>
+      </div>
+
+      <nav aria-label="Ana menü" className="flex-1 overflow-y-auto px-2 py-3">
+        <ul className="flex flex-col gap-0.5">
+          {NAV_ITEMS.map((item) => (
+            <li key={item.to}>
+              <NavLink
+                to={item.to}
+                end={item.to === '/'}
+                className={({ isActive }) =>
+                  cn(
+                    'flex h-11 items-center gap-3 rounded-panel border-l-2 px-3 text-sm transition-colors',
+                    isActive
+                      ? 'border-accent bg-espresso-soft font-semibold text-white'
+                      : 'border-transparent text-espresso-text hover:bg-espresso-soft hover:text-white',
+                  )
+                }
+              >
+                <item.icon aria-hidden="true" className="h-[18px] w-[18px] shrink-0" />
+                {item.label}
+              </NavLink>
+            </li>
+          ))}
+        </ul>
+      </nav>
+
+      <p className="border-t border-espresso-line px-4 py-3 text-[11px] leading-snug text-espresso-text">
+        {APP_PHASE_LABEL}
+      </p>
+    </aside>
+  );
+}

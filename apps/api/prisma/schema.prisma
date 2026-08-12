@@ -1,0 +1,19 @@
+// Kafe Adisyon Sistemi — Prisma şeması
+//
+// Phase 0 kapsamında bilinçli olarak hiçbir domain modeli tanımlanmamıştır.
+// Bu Phase yalnızca bağlantı altyapısını kurar; masalar, ürünler, adisyonlar ve
+// ödemeler Phase 1 ve sonrasında eklenecektir.
+//
+// Kurallar:
+// - Para alanları her zaman tam sayı kuruş (Int) olarak tutulur, Float kullanılmaz.
+// - Zaman alanları UTC saklanır, arayüzde Europe/Istanbul'a çevrilir.
+// - Domain kayıtları fiziksel olarak silinmez; ileride iptal/pasif alanları kullanılır.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}

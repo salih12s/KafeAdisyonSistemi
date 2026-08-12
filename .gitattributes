@@ -1,0 +1,18 @@
+# Depoda satır sonları her zaman LF'tir (.editorconfig ile tutarlı).
+# Windows'ta çalışırken git'in CRLF uyarısı vermesini de engeller.
+* text=auto eol=lf
+
+# Windows'a özel betikler CRLF ile kalmalıdır; aksi hâlde cmd.exe hata verir.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# İkili dosyalar dönüştürülmez.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.pdf binary

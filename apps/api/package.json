@@ -1,0 +1,36 @@
+{
+  "name": "@kafe/api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Kafe Adisyon Sistemi Express API sunucusu",
+  "main": "dist/server.js",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/server.js",
+    "typecheck": "tsc -p tsconfig.typecheck.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "db:generate": "prisma generate",
+    "db:check": "tsx src/scripts/check-database.ts",
+    "prisma": "prisma"
+  },
+  "dependencies": {
+    "@kafe/contracts": "*",
+    "@prisma/client": "^6.2.1",
+    "dotenv": "^16.4.7",
+    "express": "^5.0.1",
+    "helmet": "^8.0.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.10.2",
+    "@types/supertest": "^6.0.2",
+    "prisma": "^6.2.1",
+    "supertest": "^7.0.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^3.2.4"
+  }
+}
