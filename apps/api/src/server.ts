@@ -50,7 +50,7 @@ function start(): void {
   });
 
   const server = createServer(app);
-  const realtime = createRealtimeServer(server, store, orderEvents, logger);
+  const realtime = createRealtimeServer(server, store, orderEvents, logger, env.CORS_ORIGIN);
 
   server.listen(env.PORT, env.HOST, () => {
     logger.info('API sunucusu dinlemede.', {

@@ -7,6 +7,7 @@ import type { Env } from './config/env';
 import type { DatabaseProbe } from './lib/database';
 import type { Logger } from './lib/logger';
 import { createApiRouter } from './routes';
+import { createCorsHandler } from './middleware/cors';
 import { createErrorHandler } from './middleware/error-handler';
 import { createNotFoundHandler } from './middleware/not-found';
 import { createRequestLogger } from './middleware/request-logger';
@@ -47,6 +48,12 @@ export function createApp({
       crossOriginEmbedderPolicy: false,
     }),
   );
+
+  // Arayüz ayrı barındırılıyorsa (CORS_ORIGIN dolu) izinli origin'lere CORS açılır.
+  // Aynı origin kurulumunda bu katman hiç eklenmez.
+  if (env.CORS_ORIGIN.length > 0) {
+    app.use(createCorsHandler(env.CORS_ORIGIN));
+  }
 
   app.use(express.json({ limit: env.JSON_BODY_LIMIT }));
   app.use(express.urlencoded({ extended: false, limit: env.JSON_BODY_LIMIT }));

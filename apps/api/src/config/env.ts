@@ -27,6 +27,24 @@ export const envSchema = z.object({
     ),
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
   JSON_BODY_LIMIT: z.string().min(1).default('1mb'),
+  /**
+   * Arayüz API'den ayrı barındırıldığında izin verilen origin listesi.
+   * Virgülle ayrılır: "https://ornek.com,https://www.ornek.com".
+   * Boş bırakılırsa aynı origin varsayılır ve CORS tamamen kapalı kalır.
+   */
+  CORS_ORIGIN: z
+    .string()
+    .optional()
+    .transform((value) =>
+      (value ?? '')
+        .split(',')
+        .map((origin) => origin.trim().replace(/\/+$/, ''))
+        .filter((origin) => origin.length > 0),
+    )
+    .refine(
+      (origins) => origins.every((origin) => /^https?:\/\/[^/\s]+$/.test(origin)),
+      'CORS_ORIGIN girdileri "https://alanadi.com" biçiminde olmalıdır (sonda / olmadan).',
+    ),
 });
 
 type RawEnv = z.infer<typeof envSchema>;

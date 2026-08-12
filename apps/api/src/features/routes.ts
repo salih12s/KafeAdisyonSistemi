@@ -58,14 +58,26 @@ function optionalText(maxLength: number) {
     .transform((value) => (value === undefined || value.length === 0 ? null : value));
 }
 
-function authCookieOptions(env: Env) {
+/**
+ * Oturum çerezi her zaman HttpOnly'dir.
+ *
+ * Aynı origin kurulumunda `SameSite=Strict` kullanılır — en dar seçenek.
+ * Arayüz ayrı bir origin'de barındırılıyorsa (`CORS_ORIGIN` dolu) tarayıcı
+ * çerezi ancak `SameSite=None; Secure` ile gönderir; bu durumda `Secure`
+ * zorunludur ve HTTPS gerektirir.
+ */
+function baseCookieOptions(env: Env) {
+  const crossSite = env.CORS_ORIGIN.length > 0;
   return {
     httpOnly: true,
-    sameSite: 'strict' as const,
-    secure: env.NODE_ENV === 'production',
+    sameSite: crossSite ? ('none' as const) : ('strict' as const),
+    secure: crossSite || env.NODE_ENV === 'production',
     path: '/',
-    maxAge: SESSION_DURATION_MS,
   };
+}
+
+function authCookieOptions(env: Env) {
+  return { ...baseCookieOptions(env), maxAge: SESSION_DURATION_MS };
 }
 
 export function createPhaseOneRouter(
@@ -107,12 +119,7 @@ export function createPhaseOneRouter(
 
   router.post('/auth/logout', async (req, res) => {
     await identity.logout(readCookie(req.headers.cookie, SESSION_COOKIE_NAME));
-    res.clearCookie(SESSION_COOKIE_NAME, {
-      httpOnly: true,
-      sameSite: 'strict',
-      secure: env.NODE_ENV === 'production',
-      path: '/',
-    });
+    res.clearCookie(SESSION_COOKIE_NAME, baseCookieOptions(env));
     res.status(204).end();
   });
 

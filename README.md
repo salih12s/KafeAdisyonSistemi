@@ -267,6 +267,30 @@ ve servisi `npm start` ile açar. Health check yolu `/api/health`'tir.
 | `HOST`            | İsteğe bağlı; verilmezse production varsayılanı `0.0.0.0` |
 | `LOG_LEVEL`       | `info` veya ihtiyaca göre `warn`                          |
 | `JSON_BODY_LIMIT` | `1mb`                                                     |
+| `CORS_ORIGIN`     | Boş; yalnız arayüz ayrı barındırılıyorsa doldurulur       |
+
+### 8.1.1 Arayüzü ayrı barındırma (isteğe bağlı)
+
+Varsayılan kurulumda Express hem API'yi hem arayüzü sunar ve ek yapılandırma
+gerekmez. Arayüzü statik bir barındırmada (örneğin paylaşımlı hosting)
+yayımlamak isterseniz iki tarafı da bildirmeniz gerekir (bkz. ADR-020):
+
+```powershell
+# 1) Arayüzü API'nin mutlak adresiyle derleyin
+$env:VITE_API_URL = "https://<railway-adresiniz>"
+npm run build -w @kafe/web
+# apps/web/dist icerigini statik sunucunun kok klasorune yukleyin
+```
+
+```
+# 2) API tarafında izin verilen origin'i tanımlayın
+CORS_ORIGIN=https://<arayuzun-adresi>
+```
+
+Bu kurulumda oturum çerezi `SameSite=None; Secure` olur; **her iki taraf da
+HTTPS olmalıdır.** Statik sunucuda SPA fallback kuralı gerekir (Apache için
+`.htaccess` içinde bilinmeyen yolları `index.html`'e yönlendirin), aksi hâlde
+`/masalar` gibi adresler doğrudan açıldığında 404 döner.
 
 Railway pre-deploy adımı her release'te `npm run db:migrate:deploy` çalıştırır.
 Bu komut yalnız repodaki bekleyen migration'ları uygular; `migrate reset`, `DROP`

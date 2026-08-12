@@ -2,13 +2,17 @@ import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { ORDER_REALTIME_EVENT, type OrderRealtimeEvent } from '@kafe/contracts';
 import { io } from 'socket.io-client';
+import { API_BASE_URL, IS_CROSS_ORIGIN } from '../config/api-base';
 
 /** Socket yalnız değişiklik sinyali taşır; gerçek domain verisi her zaman REST'ten yenilenir. */
 export function useOrderRealtime(): void {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    const socket = io({ withCredentials: true });
+    // Aynı origin'de adres verilmez; ayrı barındırmada API'nin mutlak adresine bağlanılır.
+    const socket = IS_CROSS_ORIGIN
+      ? io(API_BASE_URL, { withCredentials: true })
+      : io({ withCredentials: true });
     const refetchOperationalData = (): void => {
       void queryClient.invalidateQueries({ queryKey: ['kitchen-orders'] });
       void queryClient.invalidateQueries({ queryKey: ['operational-floor-plan'] });

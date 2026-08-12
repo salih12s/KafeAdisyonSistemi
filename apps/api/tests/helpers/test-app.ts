@@ -13,7 +13,13 @@ export const testEnv: Env = {
   DATABASE_URL: 'postgresql://postgres:test@localhost:5432/CafeAdisyon?schema=public',
   LOG_LEVEL: 'error',
   JSON_BODY_LIMIT: '1mb',
+  CORS_ORIGIN: [],
 };
+
+/** Arayüzün ayrı barındırıldığı kurulum: izinli origin listesiyle CORS açıktır. */
+export function crossOriginEnv(origins: readonly string[]): Env {
+  return { ...testEnv, CORS_ORIGIN: [...origins] };
+}
 
 /** Gerçek veritabanına dokunmadan, bağlantı durumu kontrol edilebilen sahte sonda. */
 export function createStubProbe(connected: boolean): DatabaseProbe {

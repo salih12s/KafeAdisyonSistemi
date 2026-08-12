@@ -385,3 +385,42 @@ tutarlılığı korurken rol, REST, session ve Socket.IO sözleşmelerinden bağ
 **Sonuç.** Frontend yeniden tasarımı yalnız `apps/web` ve arayüz belgelerini
 değiştirir; backend, contracts, Prisma şeması/migration ve iş kuralları değişmez.
 Animasyonlar kısa ve işlevseldir; `prefers-reduced-motion` bütün geçişleri kapatır.
+
+---
+
+## ADR-020 — Arayüz ayrı barındırılabilir; bu durumda CORS ve SameSite=None açılır
+
+- **Tarih:** 2026-08-12
+- **Durum:** Kabul edildi
+- **İlgili:** ADR-004 (aynı origin) ve ADR-013 (oturum çerezi) **hâlâ geçerlidir**;
+  bu karar onlara isteğe bağlı bir ikinci kurulum ekler, yerlerini almaz.
+
+**Karar.** Uygulama iki kurulumu da destekler:
+
+1. **Aynı origin (varsayılan ve önerilen).** Express hem `/api` hem React
+   derlemesini sunar. `VITE_API_URL` ve `CORS_ORIGIN` boştur. İstemci göreli
+   `/api` yollarını kullanır, oturum çerezi `SameSite=Strict` kalır ve CORS
+   katmanı uygulamaya hiç eklenmez.
+2. **Ayrı barındırma.** Arayüz statik bir sunucuda, API başka bir origin'de
+   durur. Derlemede `VITE_API_URL` verilir; sunucuda `CORS_ORIGIN` izin verilen
+   origin'leri virgülle ayrılmış olarak taşır.
+
+Ayrı barındırmada:
+
+- CORS yalnız birebir yazılı origin'lere açılır; `*` kullanılmaz. Kimlik bilgisi
+  taşıyan isteklerde joker origin zaten tarayıcı tarafından reddedilir.
+- Oturum çerezi `SameSite=None; Secure` olur. Tarayıcı `None` çerezini yalnız
+  `Secure` ile kabul ettiği için bu kurulum **HTTPS zorunludur**.
+- Socket.IO sunucusu aynı origin listesiyle ve `credentials: true` ile açılır.
+
+**Gerekçe.** Aynı origin kurulumu en güvenlisidir: CORS yoktur, çerez `Strict`
+kalır ve CSRF yüzeyi en dardır. Ancak arayüzü mevcut bir statik barındırma
+hesabında yayımlama ihtiyacı gerçek bir kısıttır. Bu ihtiyacı, varsayılan
+kurulumun güvenlik seviyesini düşürmeden, yalnız açıkça yapılandırıldığında
+devreye giren bir yol olarak karşılamak doğru dengedir.
+
+**Sonuç.** `CORS_ORIGIN` boşken davranış eskisiyle birebir aynıdır; testler her
+iki kurulumu da kapsar. Ayrı barındırma seçildiğinde `SameSite=None` nedeniyle
+CSRF koruması yalnız origin allowlist'ine dayanır; bu yüzden listeye yalnız
+gerçekten sahip olunan alan adları yazılır. Statik sunucuda SPA fallback
+kuralı (`.htaccess` veya eşdeğeri) gereklidir.

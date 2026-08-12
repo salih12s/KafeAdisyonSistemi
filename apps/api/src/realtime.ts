@@ -26,6 +26,8 @@ export function createRealtimeServer(
   store: AppStore,
   events: OrderEventHub,
   logger: Logger,
+  /** Arayüz ayrı barındırılıyorsa izin verilen origin listesi. */
+  allowedOrigins: readonly string[] = [],
 ): RealtimeServer {
   const identity = new IdentityService(store);
   const io = new Server<
@@ -33,7 +35,14 @@ export function createRealtimeServer(
     ServerToClientEvents,
     Record<string, never>,
     SocketData
-  >(httpServer, { serveClient: false });
+  >(httpServer, {
+    serveClient: false,
+    // Aynı origin kurulumunda CORS gerekmez; ayrı barındırmada çerez taşınabilmesi
+    // için credentials ve birebir origin listesi zorunludur.
+    ...(allowedOrigins.length === 0
+      ? {}
+      : { cors: { origin: [...allowedOrigins], credentials: true } }),
+  });
 
   io.use(async (socket, next) => {
     try {

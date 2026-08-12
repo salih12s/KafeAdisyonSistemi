@@ -1,3 +1,4 @@
+import { CREDENTIALS_MODE, apiUrl } from '../config/api-base';
 import {
   HEALTH_ENDPOINT,
   USER_ROLES,
@@ -122,7 +123,8 @@ function readErrorMessage(payload: unknown): string | undefined {
 async function requestPayload(path: string, init?: RequestInit): Promise<unknown> {
   let response: Response;
   try {
-    response = await fetch(path, {
+    response = await fetch(apiUrl(path), {
+      credentials: CREDENTIALS_MODE,
       ...init,
       headers: {
         Accept: 'application/json',
@@ -154,7 +156,8 @@ function expectRecord(payload: unknown, key: string): unknown {
 export async function fetchHealth(signal?: AbortSignal): Promise<HealthResponse> {
   let response: Response;
   try {
-    response = await fetch(HEALTH_ENDPOINT, {
+    response = await fetch(apiUrl(HEALTH_ENDPOINT), {
+      credentials: CREDENTIALS_MODE,
       headers: { Accept: 'application/json' },
       ...(signal === undefined ? {} : { signal }),
     });
