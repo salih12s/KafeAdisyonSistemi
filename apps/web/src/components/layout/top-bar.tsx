@@ -9,6 +9,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { AUTH_QUERY_KEY, useCurrentUser } from '../../hooks/use-auth';
 import { logout } from '../../lib/api';
+import { LogOut } from 'lucide-react';
+import { Button } from '../ui/button';
 
 /** Sayfa başlığını, tarihi ve sistem durumunu gösteren üst çubuk. */
 export function TopBar(): JSX.Element {
@@ -38,9 +40,9 @@ export function TopBar(): JSX.Element {
   });
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-line bg-surface px-3 lg:h-16 lg:px-6">
+    <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-line bg-surface/95 px-3 shadow-card backdrop-blur-sm lg:h-16 lg:px-6 xl:px-8">
       <div className="min-w-0 flex-1">
-        <h1 className="truncate text-base font-semibold leading-tight lg:text-lg">
+        <h1 className="truncate text-lg font-bold leading-tight lg:text-xl">
           {current?.label ?? APP_NAME}
         </h1>
         <p className="hidden truncate text-[13px] text-ink-muted sm:block">
@@ -62,13 +64,16 @@ export function TopBar(): JSX.Element {
         </div>
       ) : null}
 
-      <button
+      <Button
         type="button"
         onClick={() => logoutMutation.mutate()}
-        className="min-h-touch shrink-0 rounded-panel border border-line px-3 text-[13px] font-medium hover:bg-canvas"
+        variant="ghost"
+        size="small"
+        icon={<LogOut aria-hidden="true" className="h-4 w-4" />}
+        loading={logoutMutation.isPending}
       >
         Çıkış
-      </button>
+      </Button>
     </header>
   );
 }

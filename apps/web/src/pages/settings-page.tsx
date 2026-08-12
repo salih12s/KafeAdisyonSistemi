@@ -26,6 +26,7 @@ import {
   updateTable,
 } from '../lib/api';
 import { AuditHistory } from '../components/audit-history';
+import { SegmentedControl } from '../components/ui/segmented-control';
 
 type Section = 'business' | 'staff' | 'areas' | 'audit';
 
@@ -52,28 +53,25 @@ function readUserRole(value: FormDataEntryValue | null): UserRole {
 export function SettingsPage(): JSX.Element {
   const [section, setSection] = useState<Section>('business');
   return (
-    <div className="space-y-4">
-      <Panel title="Ayarlar">
-        <nav aria-label="Ayar bölümleri" className="flex gap-1 overflow-x-auto p-2">
-          {(
-            [
-              ['business', 'İşletme'],
-              ['staff', 'Personel'],
-              ['areas', 'Salonlar ve Masalar'],
-              ['audit', 'İşlem Geçmişi'],
-            ] as const
-          ).map(([id, label]) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => setSection(id)}
-              className={`${section === id ? 'border-accent bg-accent-soft' : 'border-line bg-surface'} min-h-touch shrink-0 rounded-panel border px-4 text-sm font-medium`}
-            >
-              {label}
-            </button>
-          ))}
-        </nav>
-      </Panel>
+    <div className="space-y-5">
+      <header>
+        <p className="text-sm font-bold uppercase tracking-[0.14em] text-primary">Yönetim</p>
+        <h2 className="mt-1 text-2xl font-extrabold tracking-tight">Ayarlar</h2>
+        <p className="mt-1 text-sm text-ink-secondary">
+          İşletme yapısını, personeli ve işlem geçmişini yönetin.
+        </p>
+      </header>
+      <SegmentedControl
+        label="Ayar bölümleri"
+        value={section}
+        options={[
+          { value: 'business', label: 'İşletme' },
+          { value: 'staff', label: 'Personel' },
+          { value: 'areas', label: 'Salonlar ve Masalar' },
+          { value: 'audit', label: 'İşlem Geçmişi' },
+        ]}
+        onChange={setSection}
+      />
       {section === 'business' ? <BusinessSection /> : null}
       {section === 'staff' ? <StaffSection /> : null}
       {section === 'areas' ? <AreasSection /> : null}

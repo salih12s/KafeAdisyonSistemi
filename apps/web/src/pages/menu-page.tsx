@@ -58,7 +58,9 @@ function StatusText({ isActive }: { isActive: boolean }): JSX.Element {
 
 /** Formdaki lira girdisini tam sayı kuruşa çevirir; geçersizse hata verir. */
 function readPriceKurus(value: FormDataEntryValue | null, field: string): number {
-  const text = String(value ?? '').trim().replace(',', '.');
+  const text = String(value ?? '')
+    .trim()
+    .replace(',', '.');
   const lira = Number(text);
   if (text.length === 0 || !Number.isFinite(lira)) {
     throw new ApiError(`${field} geçerli bir tutar olmalıdır.`);
@@ -127,7 +129,14 @@ export function MenuPage(): JSX.Element {
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-5">
+      <header>
+        <p className="text-sm font-bold uppercase tracking-[0.14em] text-primary">Ürün kataloğu</p>
+        <h2 className="mt-1 text-2xl font-extrabold tracking-tight">Menü yönetimi</h2>
+        <p className="mt-1 text-sm text-ink-secondary">
+          Kategorileri, ürünleri ve satış seçeneklerini tek yerden düzenleyin.
+        </p>
+      </header>
       <div className="grid gap-4 lg:grid-cols-[16rem_minmax(0,1fr)]">
         <CategoryPanel
           categories={categories.data}
@@ -187,7 +196,7 @@ function CategoryPanel({
   });
 
   return (
-    <Panel title="Kategoriler" meta={`${categories.length} kayıt`}>
+    <Panel title="Kategoriler" meta={`${categories.length} kayıt`} variant="elevated">
       {categories.length === 0 ? (
         <p className="px-3 py-4 text-sm text-ink-muted">
           Henüz kategori yok. Aşağıdan ilk kategoriyi ekleyin.
@@ -312,15 +321,13 @@ function ProductPanel({
   if (categoryId.length === 0) {
     return (
       <Panel title="Ürünler">
-        <p className="p-4 text-sm text-ink-muted">
-          Ürün eklemek için önce bir kategori oluşturun.
-        </p>
+        <p className="p-4 text-sm text-ink-muted">Ürün eklemek için önce bir kategori oluşturun.</p>
       </Panel>
     );
   }
 
   return (
-    <Panel title="Ürünler" meta={`${products.length} kayıt`}>
+    <Panel title="Ürünler" meta={`${products.length} kayıt`} variant="elevated">
       {products.length === 0 ? (
         <p className="px-4 py-4 text-sm text-ink-muted">Bu kategoride henüz ürün yok.</p>
       ) : (
@@ -469,9 +476,7 @@ function OptionPanel({
         sortOrder: readSortOrder(form.get('sortOrder')),
         isActive: id.length === 0 ? true : form.get('isActive') === 'on',
       } as const;
-      return id.length === 0
-        ? createOptionGroup(product.id, input)
-        : updateOptionGroup(id, input);
+      return id.length === 0 ? createOptionGroup(product.id, input) : updateOptionGroup(id, input);
     },
     onSuccess: () => {
       setEditingGroup(null);
@@ -499,8 +504,10 @@ function OptionPanel({
   });
 
   return (
-    <Panel title={`Seçenekler ve ekstralar — ${product.name}`}>
-      {groups.isPending ? <p className="p-4 text-sm text-ink-muted">Seçenekler yükleniyor…</p> : null}
+    <Panel title={`Seçenekler ve ekstralar — ${product.name}`} variant="elevated">
+      {groups.isPending ? (
+        <p className="p-4 text-sm text-ink-muted">Seçenekler yükleniyor…</p>
+      ) : null}
       {groups.isError ? <p className="p-4 text-sm text-danger">Seçenekler yüklenemedi.</p> : null}
 
       {groups.isSuccess ? (

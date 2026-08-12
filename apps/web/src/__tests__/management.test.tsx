@@ -87,7 +87,7 @@ describe('Phase 1 yönetim ve floor plan', () => {
   it('boş floor plan için owner yönlendirmesini gösterir', async () => {
     stubAppFetch({ floorPlan: { areas: [] } });
     renderWithProviders(<App />, '/masalar');
-    expect(await screen.findByText('Henüz salon veya masa tanımlanmadı.')).toBeInTheDocument();
+    expect(await screen.findByText('Henüz salon veya masa tanımlanmadı')).toBeInTheDocument();
     expect(screen.getAllByRole('link', { name: 'Ayarlar' })).not.toHaveLength(0);
   });
 });

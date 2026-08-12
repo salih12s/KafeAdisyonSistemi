@@ -20,6 +20,13 @@ import {
   updateOrderItem,
 } from '../lib/api';
 import { formatTimestamp } from '../lib/datetime';
+import { ArrowLeft, Search, ShoppingBag } from 'lucide-react';
+import { Button } from '../components/ui/button';
+import { Dialog } from '../components/ui/dialog';
+import { SegmentedControl } from '../components/ui/segmented-control';
+import { TextField } from '../components/ui/field';
+import { Badge } from '../components/ui/badge';
+import { cn } from '../lib/cn';
 
 type SalesProduct = MenuResponse['categories'][number]['products'][number];
 
@@ -52,6 +59,7 @@ export function CheckView({
   const menu = useQuery({ queryKey: ['sales-menu'], queryFn: fetchSalesMenu });
   const [selectedCategoryId, setSelectedCategoryId] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<SalesProduct | null>(null);
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
     if (
@@ -87,55 +95,86 @@ export function CheckView({
   const canManage = canManageRole && check.data.status === 'OPEN';
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <button type="button" className={secondaryButton} onClick={onBack}>
-            ← Masalara dön
-          </button>
-          <h2 className="mt-2 text-lg font-semibold">{check.data.tableName} adisyonu</h2>
-          <p className="text-[13px] text-ink-muted">
+          <Button
+            type="button"
+            variant="ghost"
+            size="small"
+            icon={<ArrowLeft className="h-4 w-4" />}
+            onClick={onBack}
+          >
+            Masalara dön
+          </Button>
+          <div className="mt-2 flex items-center gap-2">
+            <h2 className="text-2xl font-extrabold tracking-tight">
+              {check.data.tableName} adisyonu
+            </h2>
+            <Badge tone="warning">Açık</Badge>
+          </div>
+          <p className="text-[13px] text-ink-secondary">
             {check.data.guestCount} kişi · {check.data.openedByName} ·{' '}
             {formatTimestamp(check.data.openedAt)}
           </p>
         </div>
-        <p className="tabular text-xl font-semibold">{formatKurus(check.data.totalKurus)}</p>
+        <div className="rounded-card bg-primary px-5 py-3 text-right text-white">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-white/70">
+            Adisyon toplamı
+          </p>
+          <p className="tabular text-2xl font-extrabold">{formatKurus(check.data.totalKurus)}</p>
+        </div>
       </div>
 
-      <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(22rem,0.85fr)]">
-        <Panel title="Menü" meta={`${category?.products.length ?? 0} ürün`}>
+      <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(24rem,0.65fr)]">
+        <Panel title="Menü" meta={`${category?.products.length ?? 0} ürün`} variant="elevated">
           {menu.data.categories.length === 0 ? (
             <p className="p-4 text-sm text-ink-muted">Satışa açık ürün bulunmuyor.</p>
           ) : (
             <>
-              <div className="flex gap-2 overflow-x-auto border-b border-line p-2">
-                {menu.data.categories.map((entry) => (
-                  <button
-                    key={entry.id}
-                    type="button"
-                    onClick={() => setSelectedCategoryId(entry.id)}
-                    className={`${entry.id === selectedCategoryId ? 'border-accent bg-accent-soft text-ink' : 'border-line bg-white text-ink-muted'} min-h-touch shrink-0 rounded-panel border px-4 text-sm font-medium`}
-                  >
-                    {entry.name}
-                  </button>
-                ))}
+              <div className="grid gap-3 border-b border-line p-3 sm:grid-cols-[minmax(0,1fr)_15rem]">
+                <SegmentedControl
+                  label="Menü kategorileri"
+                  value={selectedCategoryId}
+                  options={menu.data.categories.map((entry) => ({
+                    value: entry.id,
+                    label: entry.name,
+                    count: entry.products.length,
+                  }))}
+                  onChange={setSelectedCategoryId}
+                />
+                <label className="relative">
+                  <span className="sr-only">Ürün ara</span>
+                  <Search className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-ink-subtle" />
+                  <input
+                    aria-label="Ürün ara"
+                    value={search}
+                    onChange={(event) => setSearch(event.target.value)}
+                    placeholder="Ürün ara"
+                    className={`${fieldClass} pl-9`}
+                  />
+                </label>
               </div>
-              <ul className="grid grid-cols-2 gap-2 p-2 sm:grid-cols-3 lg:grid-cols-4">
-                {category?.products.map((product) => (
-                  <li key={product.id}>
-                    <button
-                      type="button"
-                      disabled={!canManage}
-                      onClick={() => setSelectedProduct(product)}
-                      className="min-h-24 w-full rounded-panel border border-line bg-white p-3 text-left hover:border-accent disabled:cursor-default"
-                    >
-                      <span className="block font-semibold">{product.name}</span>
-                      <span className="tabular mt-2 block text-[13px] text-ink-muted">
-                        {formatKurus(product.priceKurus)}
-                      </span>
-                    </button>
-                  </li>
-                ))}
+              <ul className="grid grid-cols-2 gap-3 p-3 sm:grid-cols-3 lg:grid-cols-4">
+                {category?.products
+                  .filter((product) =>
+                    product.name.toLocaleLowerCase('tr').includes(search.toLocaleLowerCase('tr')),
+                  )
+                  .map((product) => (
+                    <li key={product.id}>
+                      <button
+                        type="button"
+                        disabled={!canManage}
+                        onClick={() => setSelectedProduct(product)}
+                        className="interactive-card min-h-28 w-full p-3 text-left hover:border-primary disabled:cursor-default"
+                      >
+                        <span className="block font-semibold">{product.name}</span>
+                        <span className="tabular mt-3 block text-sm font-bold text-primary">
+                          {formatKurus(product.priceKurus)}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
               </ul>
               {!canManage ? (
                 <p className="border-t border-line p-3 text-sm text-ink-muted">
@@ -146,7 +185,11 @@ export function CheckView({
           )}
         </Panel>
 
-        <Panel title="Sipariş kalemleri" meta={`${check.data.items.length} kalem`}>
+        <Panel
+          title="Sipariş kalemleri"
+          meta={`${check.data.items.length} kalem`}
+          variant="elevated"
+        >
           {check.data.items.length === 0 ? (
             <p className="p-4 text-sm text-ink-muted">Henüz sipariş kalemi eklenmedi.</p>
           ) : (
@@ -172,13 +215,24 @@ export function CheckView({
         onChanged={(updated) => check.refetch().then(() => updated.status === 'MERGED' && onBack())}
       />
 
-      {selectedProduct === null ? null : (
-        <ProductSelection
-          product={selectedProduct}
-          checkId={checkId}
-          onClose={() => setSelectedProduct(null)}
-        />
-      )}
+      <Dialog
+        open={selectedProduct !== null}
+        title={selectedProduct === null ? 'Ürün ekle' : selectedProduct.name}
+        description={
+          selectedProduct === null
+            ? undefined
+            : `${formatKurus(selectedProduct.priceKurus)} başlangıç fiyatı`
+        }
+        onClose={() => setSelectedProduct(null)}
+      >
+        {selectedProduct === null ? null : (
+          <ProductSelection
+            product={selectedProduct}
+            checkId={checkId}
+            onClose={() => setSelectedProduct(null)}
+          />
+        )}
+      </Dialog>
     </div>
   );
 }
@@ -194,6 +248,7 @@ function ProductSelection({
 }): JSX.Element {
   const queryClient = useQueryClient();
   const [selected, setSelected] = useState<Record<string, string[]>>({});
+  const [quantity, setQuantity] = useState(1);
   const mutation = useMutation({
     mutationFn: (form: FormData) =>
       addOrderItem(checkId, {
@@ -209,99 +264,134 @@ function ProductSelection({
     },
   });
 
+  const chosenIds = Object.values(selected).flat();
+  const missingRequired = product.optionGroups.some(
+    (group) => group.isRequired && (selected[group.id]?.length ?? 0) === 0,
+  );
+  const deltaKurus = product.optionGroups
+    .flatMap((group) => group.values)
+    .filter((value) => chosenIds.includes(value.id))
+    .reduce((total, value) => total + value.priceDeltaKurus, 0);
+
   return (
-    <Panel title={`Ürün ekle — ${product.name}`} meta={formatKurus(product.priceKurus)}>
-      <form
-        aria-label="Ürün ekleme formu"
-        className="space-y-4 p-4"
-        onSubmit={(event: FormEvent<HTMLFormElement>) => {
-          event.preventDefault();
-          mutation.mutate(new FormData(event.currentTarget));
-        }}
-      >
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {product.optionGroups.map((group) => (
-            <fieldset key={group.id} className="rounded-panel border border-line p-3">
-              <legend className="px-1 text-sm font-semibold">
-                {group.name}{' '}
-                {group.isRequired ? <span className="text-danger">(zorunlu)</span> : null}
-              </legend>
-              <div className="mt-1 space-y-1">
-                {group.values.map((value) => {
-                  const checked = selected[group.id]?.includes(value.id) ?? false;
-                  return (
-                    <label
-                      key={value.id}
-                      className="flex min-h-touch items-center justify-between gap-3 text-sm"
-                    >
-                      <span className="flex items-center gap-2">
-                        <input
-                          type={group.selectionType === 'SINGLE' ? 'radio' : 'checkbox'}
-                          name={`option-${group.id}`}
-                          checked={checked}
-                          onChange={() => {
-                            setSelected((current) => {
-                              if (group.selectionType === 'SINGLE') {
-                                return { ...current, [group.id]: [value.id] };
-                              }
-                              const values = current[group.id] ?? [];
-                              return {
-                                ...current,
-                                [group.id]: checked
-                                  ? values.filter((id) => id !== value.id)
-                                  : [...values, value.id],
-                              };
-                            });
-                          }}
-                        />
-                        {value.name}
-                      </span>
-                      <span className="tabular text-ink-muted">
-                        {value.priceDeltaKurus === 0
-                          ? '—'
-                          : `${value.priceDeltaKurus > 0 ? '+' : ''}${formatKurus(value.priceDeltaKurus)}`}
-                      </span>
-                    </label>
-                  );
-                })}
-              </div>
-            </fieldset>
-          ))}
-        </div>
-        <div className="grid gap-3 sm:grid-cols-[8rem_minmax(0,1fr)]">
-          <label className="text-sm font-medium">
-            Adet
-            <input
-              className={`${fieldClass} mt-1`}
-              name="quantity"
-              type="number"
-              min="1"
-              max="100"
-              defaultValue="1"
-              required
-            />
-          </label>
-          <label className="text-sm font-medium">
-            Sipariş notu
-            <input
-              className={`${fieldClass} mt-1`}
-              name="note"
-              maxLength={500}
-              placeholder="İsteğe bağlı"
-            />
-          </label>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <button type="submit" className={primaryButton} disabled={mutation.isPending}>
+    <form
+      aria-label="Ürün ekleme formu"
+      className="space-y-5 p-4 sm:p-5"
+      onSubmit={(event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        mutation.mutate(new FormData(event.currentTarget));
+      }}
+    >
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        {product.optionGroups.map((group) => (
+          <fieldset
+            key={group.id}
+            className="rounded-card border border-line bg-surface-elevated p-3"
+          >
+            <legend className="px-1 text-sm font-semibold">
+              {group.name}{' '}
+              {group.isRequired ? (
+                <Badge tone="warning">Zorunlu</Badge>
+              ) : (
+                <Badge>İsteğe bağlı</Badge>
+              )}
+            </legend>
+            <div className="mt-1 space-y-1">
+              {group.values.map((value) => {
+                const checked = selected[group.id]?.includes(value.id) ?? false;
+                return (
+                  <label
+                    key={value.id}
+                    className={cn(
+                      'flex min-h-touch cursor-pointer items-center justify-between gap-3 rounded-control border px-3 text-sm transition',
+                      checked
+                        ? 'border-primary bg-primary-soft'
+                        : 'border-transparent hover:bg-surface-muted',
+                    )}
+                  >
+                    <span className="flex items-center gap-2">
+                      <input
+                        type={group.selectionType === 'SINGLE' ? 'radio' : 'checkbox'}
+                        name={`option-${group.id}`}
+                        checked={checked}
+                        onChange={() => {
+                          setSelected((current) => {
+                            if (group.selectionType === 'SINGLE') {
+                              return { ...current, [group.id]: [value.id] };
+                            }
+                            const values = current[group.id] ?? [];
+                            return {
+                              ...current,
+                              [group.id]: checked
+                                ? values.filter((id) => id !== value.id)
+                                : [...values, value.id],
+                            };
+                          });
+                        }}
+                      />
+                      {value.name}
+                    </span>
+                    <span className="tabular text-ink-muted">
+                      {value.priceDeltaKurus === 0
+                        ? '—'
+                        : `${value.priceDeltaKurus > 0 ? '+' : ''}${formatKurus(value.priceDeltaKurus)}`}
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+          </fieldset>
+        ))}
+      </div>
+      <div className="grid gap-3 sm:grid-cols-[8rem_minmax(0,1fr)]">
+        <TextField
+          id="product-quantity"
+          label="Adet"
+          name="quantity"
+          type="number"
+          min="1"
+          max="100"
+          value={quantity}
+          onChange={(event) => setQuantity(Number(event.target.value))}
+          required
+        />
+        <TextField
+          id="product-note"
+          label="Sipariş notu"
+          name="note"
+          maxLength={500}
+          placeholder="Örn. az sıcak, sos ayrı"
+          helper="İsteğe bağlı"
+        />
+      </div>
+      {missingRequired ? (
+        <p className="text-sm font-semibold text-warning">
+          Devam etmek için zorunlu seçenekleri tamamlayın.
+        </p>
+      ) : null}
+      <div className="flex flex-col-reverse gap-3 border-t border-line pt-4 sm:flex-row sm:items-center sm:justify-between">
+        <Button type="button" variant="secondary" onClick={onClose}>
+          Vazgeç
+        </Button>
+        <div className="flex items-center justify-between gap-4">
+          <div className="text-right">
+            <p className="text-xs text-ink-secondary">Kalem toplamı</p>
+            <p className="tabular font-extrabold">
+              {formatKurus((product.priceKurus + deltaKurus) * Math.max(quantity, 1))}
+            </p>
+          </div>
+          <Button
+            type="submit"
+            icon={<ShoppingBag className="h-4 w-4" />}
+            loading={mutation.isPending}
+            disabled={missingRequired}
+          >
             Siparişe ekle
-          </button>
-          <button type="button" className={secondaryButton} onClick={onClose}>
-            Vazgeç
-          </button>
+          </Button>
         </div>
-        <ErrorMessage error={mutation.error} />
-      </form>
-    </Panel>
+      </div>
+      <ErrorMessage error={mutation.error} />
+    </form>
   );
 }
 

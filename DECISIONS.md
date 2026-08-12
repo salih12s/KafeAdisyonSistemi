@@ -364,3 +364,24 @@ reset/destructive komut riskini ortadan kaldırır.
 **Sonuç.** Rapor değerleri backend'de tam sayı kuruşla hesaplanır. Gün sonu özeti
 fiskal Z raporu değildir. Deploy için gerçek secret repository'ye yazılmaz; database
 reset, `DROP` veya `TRUNCATE` production akışının parçası değildir.
+
+---
+
+## ADR-019 — Frontend Warm Modern Hospitality POS sistemi kullanacak
+
+- **Tarih:** 2026-08-12
+- **Durum:** Kabul edildi
+
+**Karar.** Uygulama arayüzü sıcak nötr yüzeyler, kahve/terracotta marka rengi,
+semantik durum tokenları ve ortak erişilebilir UI primitive'leriyle kurulur.
+Operasyon ekranları masa/adisyon/KDS yoğunluğuna göre ayrışır; `/mutfak` yüksek
+kontrastlı koyu bir KDS yüzeyidir. Dialog mobilde bottom-sheet, geniş ekranda modal
+olarak çalışır. Tüm dokunma hedefleri en az 44px, focus durumu görünürdür.
+
+**Gerekçe.** Cafe personeli yoğun servis sırasında durum, tutar ve sonraki eylemi
+hızla ayırt etmelidir. Ortak token ve primitive katmanı ekranlar arasındaki görsel
+tutarlılığı korurken rol, REST, session ve Socket.IO sözleşmelerinden bağımsızdır.
+
+**Sonuç.** Frontend yeniden tasarımı yalnız `apps/web` ve arayüz belgelerini
+değiştirir; backend, contracts, Prisma şeması/migration ve iş kuralları değişmez.
+Animasyonlar kısa ve işlevseldir; `prefers-reduced-motion` bütün geçişleri kapatır.

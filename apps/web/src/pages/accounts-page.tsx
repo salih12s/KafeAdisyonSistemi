@@ -10,6 +10,9 @@ import {
   updateCustomer,
 } from '../lib/api';
 import { formatTimestamp } from '../lib/datetime';
+import { Search, UserPlus, UsersRound } from 'lucide-react';
+import { Badge } from '../components/ui/badge';
+import { EmptyState } from '../components/ui/empty-state';
 
 const input = 'min-h-touch w-full rounded-panel border border-line bg-white px-3 text-sm';
 const button =
@@ -64,138 +67,175 @@ export function AccountsPage(): JSX.Element {
     },
   });
   return (
-    <div className="grid gap-4 xl:grid-cols-[22rem_minmax(0,1fr)]">
-      <div className="space-y-4">
-        <Panel title="Cari müşteriler">
-          <div className="space-y-3 p-4">
-            <input
-              aria-label="Müşteri ara"
-              className={input}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Ad veya telefon ara"
-            />
-            <ul className="divide-y divide-line">
-              {customers.data?.map((customer) => (
-                <li key={customer.id}>
-                  <button
-                    className="min-h-touch w-full py-2 text-left"
-                    onClick={() => setSelectedId(customer.id)}
-                  >
-                    <strong>{customer.name}</strong>
-                    <span className="tabular block text-sm text-ink-muted">
-                      Bakiye: {formatKurus(customer.balanceKurus)}
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </Panel>
-        <Panel title="Müşteri oluştur">
-          <form
-            aria-label="Müşteri oluşturma formu"
-            className="space-y-2 p-4"
-            onSubmit={(e: FormEvent<HTMLFormElement>) => {
-              e.preventDefault();
-              create.mutate(new FormData(e.currentTarget));
-            }}
+    <div className="space-y-5">
+      <header>
+        <p className="text-sm font-bold uppercase tracking-[0.14em] text-primary">Cari yönetimi</p>
+        <h2 className="mt-1 text-2xl font-extrabold tracking-tight">Müşteriler ve hesaplar</h2>
+        <p className="mt-1 text-sm text-ink-secondary">
+          Müşteri bakiyelerini izleyin, tahsilat ve ekstre işlemlerini yönetin.
+        </p>
+      </header>
+      <div className="grid gap-4 xl:grid-cols-[23rem_minmax(0,1fr)]">
+        <div className="space-y-4">
+          <Panel
+            title="Cari müşteriler"
+            meta={`${customers.data?.length ?? 0} kayıt`}
+            variant="elevated"
           >
-            <input
-              aria-label="Ad soyad veya ünvan"
-              name="name"
-              className={input}
-              required
-              minLength={2}
-            />
-            <input aria-label="Telefon" name="phone" className={input} />
-            <textarea aria-label="Not" name="note" className={input} />
-            <button className={button}>Müşteri oluştur</button>
-          </form>
-        </Panel>
-      </div>
-      <Panel title="Cari ekstre">
-        {statement.data === undefined ? (
-          <p className="p-5 text-sm text-ink-muted">Ekstre için müşteri seçin.</p>
-        ) : (
-          <div className="space-y-4 p-4">
-            <div>
-              <h2 className="font-semibold">{statement.data.name}</h2>
-              <p className="tabular text-lg">Bakiye: {formatKurus(statement.data.balanceKurus)}</p>
+            <div className="space-y-3 p-4">
+              <label className="relative block">
+                <span className="sr-only">Müşteri ara</span>
+                <Search className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-ink-subtle" />
+                <input
+                  aria-label="Müşteri ara"
+                  className={`${input} pl-9`}
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Ad veya telefon ara"
+                />
+              </label>
+              <ul className="grid gap-2">
+                {customers.data?.map((customer) => (
+                  <li key={customer.id}>
+                    <button
+                      className={`${selectedId === customer.id ? 'border-primary bg-primary-soft' : 'border-line bg-surface hover:bg-surface-muted'} min-h-touch w-full rounded-card border p-3 text-left transition`}
+                      onClick={() => setSelectedId(customer.id)}
+                    >
+                      <strong>{customer.name}</strong>
+                      <span className="tabular mt-1 block text-sm font-semibold text-ink-secondary">
+                        Bakiye: {formatKurus(customer.balanceKurus)}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
             </div>
+          </Panel>
+          <Panel title="Müşteri oluştur" variant="muted">
             <form
-              aria-label="Müşteri düzenleme formu"
-              className="grid gap-2 sm:grid-cols-2"
-              onSubmit={(e) => {
+              aria-label="Müşteri oluşturma formu"
+              className="space-y-2 p-4"
+              onSubmit={(e: FormEvent<HTMLFormElement>) => {
                 e.preventDefault();
-                update.mutate(new FormData(e.currentTarget));
+                create.mutate(new FormData(e.currentTarget));
               }}
             >
               <input
-                aria-label="Müşteri adı"
+                aria-label="Ad soyad veya ünvan"
                 name="name"
                 className={input}
-                defaultValue={statement.data.name}
                 required
+                minLength={2}
               />
-              <input
-                aria-label="Müşteri telefonu"
-                name="phone"
-                className={input}
-                defaultValue={statement.data.phone ?? ''}
-              />
-              <input
-                aria-label="Müşteri notu"
-                name="note"
-                className={input}
-                defaultValue={statement.data.note ?? ''}
-              />
-              <label className="flex min-h-touch items-center gap-2">
-                <input type="checkbox" name="isActive" defaultChecked={statement.data.isActive} />{' '}
-                Aktif
-              </label>
-              <button className={button}>Müşteriyi güncelle</button>
+              <input aria-label="Telefon" name="phone" className={input} />
+              <textarea aria-label="Not" name="note" className={input} />
+              <button className={button}>
+                <UserPlus className="mr-2 inline h-4 w-4" />
+                Müşteri oluştur
+              </button>
             </form>
-            <form
-              aria-label="Tahsilat formu"
-              className="grid gap-2 sm:grid-cols-[10rem_1fr_auto]"
-              onSubmit={(e) => {
-                e.preventDefault();
-                collect.mutate(new FormData(e.currentTarget));
-              }}
-            >
-              <input
-                aria-label="Tahsilat tutarı"
-                name="amount"
-                className={input}
-                inputMode="decimal"
-                required
-              />
-              <input
-                aria-label="Tahsilat açıklaması"
-                name="description"
-                className={input}
-                minLength={3}
-                required
-              />
-              <button className={button}>Tahsilat gir</button>
-            </form>
-            <ul aria-label="Cari hareketleri" className="divide-y divide-line">
-              {statement.data.entries.map((entry) => (
-                <li className="flex justify-between gap-3 py-3" key={entry.id}>
-                  <span>
-                    {ACCOUNT_ENTRY_TYPE_LABELS[entry.type]} · {entry.description}
-                    <small className="block text-ink-muted">
-                      {entry.actorName} · {formatTimestamp(entry.createdAt)}
-                    </small>
-                  </span>
-                  <strong className="tabular">{formatKurus(entry.amountKurus)}</strong>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </Panel>
+          </Panel>
+        </div>
+        <Panel title="Cari ekstre" variant="elevated">
+          {statement.data === undefined ? (
+            <EmptyState
+              icon={UsersRound}
+              title="Bir müşteri seçin"
+              description="Bakiye, müşteri bilgileri ve cari hareketler burada görüntülenir."
+            />
+          ) : (
+            <div className="space-y-4 p-4">
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="text-xl font-extrabold">{statement.data.name}</h2>
+                  <Badge tone={statement.data.isActive ? 'success' : 'danger'}>
+                    {statement.data.isActive ? 'Aktif' : 'Pasif'}
+                  </Badge>
+                </div>
+                <div className="mt-3 inline-flex rounded-card bg-primary px-4 py-3 text-white">
+                  <span className="mr-5 text-sm text-white/70">Cari bakiye</span>
+                  <strong className="tabular text-xl">
+                    {formatKurus(statement.data.balanceKurus)}
+                  </strong>
+                </div>
+              </div>
+              <form
+                aria-label="Müşteri düzenleme formu"
+                className="grid gap-2 sm:grid-cols-2"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  update.mutate(new FormData(e.currentTarget));
+                }}
+              >
+                <input
+                  aria-label="Müşteri adı"
+                  name="name"
+                  className={input}
+                  defaultValue={statement.data.name}
+                  required
+                />
+                <input
+                  aria-label="Müşteri telefonu"
+                  name="phone"
+                  className={input}
+                  defaultValue={statement.data.phone ?? ''}
+                />
+                <input
+                  aria-label="Müşteri notu"
+                  name="note"
+                  className={input}
+                  defaultValue={statement.data.note ?? ''}
+                />
+                <label className="flex min-h-touch items-center gap-2">
+                  <input type="checkbox" name="isActive" defaultChecked={statement.data.isActive} />{' '}
+                  Aktif
+                </label>
+                <button className={button}>Müşteriyi güncelle</button>
+              </form>
+              <form
+                aria-label="Tahsilat formu"
+                className="grid gap-2 sm:grid-cols-[10rem_1fr_auto]"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  collect.mutate(new FormData(e.currentTarget));
+                }}
+              >
+                <input
+                  aria-label="Tahsilat tutarı"
+                  name="amount"
+                  className={input}
+                  inputMode="decimal"
+                  required
+                />
+                <input
+                  aria-label="Tahsilat açıklaması"
+                  name="description"
+                  className={input}
+                  minLength={3}
+                  required
+                />
+                <button className={button}>Tahsilat gir</button>
+              </form>
+              <div className="border-t border-line pt-4">
+                <h3 className="mb-2 font-bold">Hesap hareketleri</h3>
+                <ul aria-label="Cari hareketleri" className="divide-y divide-line">
+                  {statement.data.entries.map((entry) => (
+                    <li className="flex justify-between gap-3 py-3" key={entry.id}>
+                      <span>
+                        {ACCOUNT_ENTRY_TYPE_LABELS[entry.type]} · {entry.description}
+                        <small className="block text-ink-muted">
+                          {entry.actorName} · {formatTimestamp(entry.createdAt)}
+                        </small>
+                      </span>
+                      <strong className="tabular">{formatKurus(entry.amountKurus)}</strong>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
+        </Panel>
+      </div>
     </div>
   );
 }

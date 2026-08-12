@@ -13,6 +13,8 @@ describe('Frontend authentication', () => {
     expect(await screen.findByText(/npm run setup:owner/)).toBeInTheDocument();
     expect(screen.getByLabelText('Kullanıcı adı')).toBeInTheDocument();
     expect(screen.getByLabelText('Şifre')).toHaveAttribute('type', 'password');
+    await userEvent.click(screen.getByRole('button', { name: 'Şifreyi göster' }));
+    expect(screen.getByLabelText('Şifre')).toHaveAttribute('type', 'text');
   });
 
   it('başarılı login sonrası korumalı uygulamaya gider', async () => {
@@ -71,7 +73,9 @@ describe('Frontend authentication', () => {
     stubAppFetch({ user: userForRole('WAITER') });
     renderWithProviders(<App />, '/ayarlar');
     await waitFor(() =>
-      expect(screen.getByRole('heading', { level: 1, name: 'Özet' })).toBeInTheDocument(),
+      expect(
+        screen.getByRole('heading', { name: 'Bu bölüme erişim yetkiniz yok' }),
+      ).toBeInTheDocument(),
     );
     expect(screen.queryByRole('link', { name: 'Ayarlar' })).not.toBeInTheDocument();
   });

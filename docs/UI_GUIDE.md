@@ -7,7 +7,7 @@ gibi görünmemelidir.
 
 ---
 
-## 1. Tasarım ilkesi
+## 1. Tasarım ilkesi — Warm Modern Hospitality POS
 
 Bu bir **çalışma aracıdır**, bir tanıtım sayfası değil. Garson yoğun serviste
 masaya bakıp iki saniyede durumu anlamalıdır. Buna göre:
@@ -64,7 +64,8 @@ Kurallar:
 - Vurgu rengi **eylem ve seçim** içindir; dekorasyon için kullanılmaz.
 - Renk tek başına anlam taşımaz; yanında her zaman metin bulunur
   (renk körlüğü ve parlak ışık altında okunabilirlik).
-- Gradient yoktur. Gölge yoktur; ayrım kenarlıkla yapılır.
+- Gradient yoktur. Hafif gölge yalnız yükseltilmiş dialog, ticket ve etkileşimli
+  kart hiyerarşisinde kullanılır; ana ayrım yine kenarlık ve yüzey tonlarıdır.
 
 Belirteçler `apps/web/src/styles/index.css` içinde `@theme` bloğunda
 tanımlıdır. Renk değeri bileşen içine doğrudan yazılmaz.
@@ -129,8 +130,8 @@ Font yığını (Windows ve mobil cihazlarda güvenilir, indirme yok):
 - İçerik alanının altında, alt çubuğun altında kalmaması için boşluk bırakılır.
 - `env(safe-area-inset-bottom)` dikkate alınır (çentikli ekranlar).
 
-Kontrol genişlikleri: **390px** (telefon), **768px** (tablet),
-**1440px** (masaüstü).
+Kontrol genişlikleri: **390px** (telefon), **768px** (tablet), **1024px**
+(küçük masaüstü/tablet yatay) ve **1440px** (masaüstü).
 
 ---
 
@@ -171,6 +172,20 @@ Kontrol genişlikleri: **390px** (telefon), **768px** (tablet),
 | `HealthIndicator` | Canlı sunucu/veritabanı durumu rozeti |
 | `Panel` | Kenarlıklı içerik yüzeyi; isteğe bağlı başlık ve meta |
 | `EmptyState` | Veri/işlev yokken durumu anlatan blok |
+| `Button` | Primary, secondary, outline, ghost, success ve danger eylemleri |
+| `TextField` / `SelectField` / `TextareaField` | Etiket, yardım ve hata bağını kuran form alanları |
+| `Badge` | Metinle desteklenen durum ve rol göstergesi |
+| `SegmentedControl` | Kısa, birbirini dışlayan görünüm/filtre seçimi |
+| `Dialog` | Mobilde bottom-sheet, geniş ekranda modal; focus trap ve Escape içerir |
+| `ToastProvider` | `aria-live` ile kısa işlem geri bildirimi |
+| `Skeleton` / `ErrorState` | Yükleme ve kurtarılabilir hata yüzeyleri |
+
+### KDS istisnası
+
+`/mutfak` yüksek kontrastlı, koyu ve tam ekran bir operasyon yüzeyidir. Yeni,
+hazırlanıyor ve hazır kolonlarının vurgu renkleri ayrıdır; her kart masa, ürün,
+seçenek, not, istasyon ve bekleme süresini metinle taşır. KDS, ana uygulama
+kabuğunun açık renkli panellerini kullanmaz ve dekoratif animasyon/ses içermez.
 
 Yeni bileşen yazmadan önce bu listeye bakılır; aynı işi yapan ikinci bir
 bileşen üretilmez.

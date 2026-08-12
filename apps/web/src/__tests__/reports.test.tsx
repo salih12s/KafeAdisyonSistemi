@@ -63,10 +63,12 @@ describe('Phase 7 rapor ekranı', () => {
     expect(requestedPaths).toContain('/api/reports/sales?from=2026-08-01&to=2026-08-12');
   });
 
-  it('WAITER için rapor ekranını göstermeyip özete yönlendirir', async () => {
+  it('WAITER için rapor ekranını göstermeyip 403 ekranına yönlendirir', async () => {
     stubAppFetch({ user: userForRole('WAITER') });
     renderWithProviders(<App />, '/raporlar');
-    expect(await screen.findByRole('heading', { name: 'Sistem durumu' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: 'Bu bölüme erişim yetkiniz yok' }),
+    ).toBeInTheDocument();
     expect(screen.queryByText('Tarih aralığı')).not.toBeInTheDocument();
   });
 });
