@@ -989,3 +989,40 @@ değiştirilmedi, merge yapılmadı.
   uygulama tarafından hiç okunmadığı tespit edildi; uygulama yalnız
   `DATABASE_URL` okur ve API ile arayüz aynı origin üzerinde olduğu için CORS
   yapılandırması gerekmez.
+
+## 2026-08-12 — Claude — Arayüzün ayrı origin'de barındırılabilmesi (ADR-020)
+
+**Branch:** `main`
+**Sonuç:** Tamamlandı; canlı API üzerinde doğrulandı.
+
+- Kullanıcı arayüzü Hostinger'da, API'yi Railway'de tutmak istedi. Mevcut
+  mimaride bu çalışmıyordu: istemci göreli `/api` yolları kullanıyor, Socket.IO
+  aynı origin'e bağlanıyor ve oturum çerezi `SameSite=Strict` olduğu için
+  tarayıcı çerezi farklı origin'e göndermiyordu.
+- Frontend: `config/api-base.ts` eklendi. `VITE_API_URL` boşken davranış birebir
+  eskisi gibi (göreli yollar, `credentials: same-origin`); dolduğunda istekler
+  mutlak adrese gider, `credentials: include` olur ve Socket.IO aynı adrese
+  bağlanır. `vite-env.d.ts` ile değişken tipi tanımlandı.
+- Backend: `CORS_ORIGIN` env değişkeni eklendi (virgüllü liste, sondaki eğik
+  çizgi atılır, şemasız değer reddedilir). `middleware/cors.ts` yalnız birebir
+  eşleşen origin'e izin verir; joker kullanılmaz, izinsiz preflight 403 alır.
+  Yeni bağımlılık eklenmedi. Socket.IO sunucusu aynı listeyle yapılandırıldı.
+- Çerez politikası yapılandırmaya bağlandı: `CORS_ORIGIN` boşken `SameSite=Strict`
+  korunur; doluyken `SameSite=None; Secure` kullanılır. Çıkışta çerez aynı
+  politikayla temizlenir.
+- Karar `DECISIONS.md` içine ADR-020 olarak yazıldı; ADR-004 ve ADR-013 geçerli
+  kalır, bu karar onlara isteğe bağlı ikinci bir kurulum ekler.
+- Testler: `apps/api/tests/cross-origin.test.ts` (10 test) env ayrıştırma,
+  CORS başlıkları, preflight izin/ret ve iki kurulumun çerez politikasını
+  kapsıyor. `npm run verify` PASS: lint 0 hata, typecheck temiz, 24 dosyada
+  **203/203** test (API 142, web 61).
+- Canlı API üzerinde gerçek HTTP doğrulaması yapıldı:
+  izinli origin preflight `204` + doğru `Allow-Origin`; yanlış şema, yabancı
+  origin ve sonek saldırısı (`...hostingersite.com.kotu.com`) `403` ve
+  `Allow-Origin` yok. Cross-origin login `200`, `Allow-Credentials: true` ve
+  çerez `HttpOnly; Secure; SameSite=None`.
+- Derlenen paket ayrı bir origin'den (`127.0.0.1:4173`) yüklendiğinde tüm
+  API istekleri mutlak Railway adresine gitti; göreli isteğe düşen olmadı.
+- Hostinger yüklemesi için `apps/web/dist` + SPA `.htaccess` arşivi üretildi;
+  29 girdinin tamamı `/` ayracı kullanıyor (Compress-Archive yerine
+  System.IO.Compression ile elle kuruldu).
