@@ -947,3 +947,45 @@ değiştirilmedi, merge yapılmadı.
   select yok, açıklama var, düğme devre dışı; adet alanı boşaltılabiliyor,
   boşken düğme devre dışı, "2" yazılınca kalem toplamı ₺500,00 oluyor.
   İki genişlikte de konsol temiz. `CafeAdisyon` veritabanına dokunulmadı.
+
+## 2026-08-12 — Claude — Railway deployment ve ortam geçiş betikleri
+
+**Branch:** `main` (kullanıcı onayıyla merge edildi)
+**Sonuç:** Production canlıda ve doğrulandı.
+
+- Railway build'i "Railpack could not determine how to build the app" veriyordu.
+  Kök neden: `main` yalnız `.gitignore` ve `README.md` içeriyordu; tüm kod
+  merge edilmemiş branch zincirindeydi. Kullanıcı onayıyla
+  `feat/final-ui-polish-joker-cafe` (17 commit) `main`'e merge edildi.
+- İkinci build hatası `EBUSY: rmdir /app/apps/web/node_modules/.vite` idi.
+  Kök neden: Railpack install adımında `npm install` çalıştırıyor, ardından
+  `railway.json` içindeki `buildCommand: "npm ci && npm run build"` node_modules'ü
+  silmeye çalışıp Railpack'in cache olarak mount ettiği dizinlere çarpıyordu.
+  `buildCommand` yalnız `npm run build` olarak değiştirildi.
+- `NODE_ENV=production` servis değişkeni npm'in devDependencies'i atlamasına yol
+  açıyordu; derleme typescript/vite/tailwind'e ihtiyaç duyduğu için kök `.npmrc`
+  dosyasına `include=dev` eklendi.
+- Çalışma zamanı bağımlılıkları düzeltildi: `cross-env` kök `dependencies`'e,
+  `prisma` CLI `apps/api` `dependencies`'e taşındı. `cross-env` olmadan
+  `NODE_ENV` ayarlanmazsa sunucu 127.0.0.1 dinleyip healthcheck'i düşürüyordu.
+- Deploy öncesi Railway ortamı yerelde birebir simüle edildi (temiz klon,
+  `NODE_ENV=production`): install 572 paket, `npm run build` PASS,
+  `npm start` + canlı DB ile `/api/health` 200 `database: connected`,
+  `/` ve `/ayarlar` 200, `/api/yok` JSON 404.
+- Canlı doğrulama `https://kafeadisyonsistemi-production.up.railway.app`:
+  `/api/health` 200 `{"status":"ok","database":"connected"}`, `/` ve `/login`
+  200, `/api/setup/status` `{"initialized":true}`, gerçek `POST /api/auth/login`
+  200 ve `GET /api/auth/me` 200.
+- Canlı veritabanına yedi migration uygulandı (hepsi additive; DROP/TRUNCATE
+  taraması temiz). 17 domain tablosu ve 8 enum oluştu. İlk owner tek seferlik
+  etkileşimsiz bir betikle oluşturuldu (`IdentityService.bootstrapOwner`,
+  `setup-owner.ts` ile aynı çağrı); betik çalıştırıldıktan sonra silindi.
+- `scripts/set-local-env` ve `scripts/set-production-env` betikleri önbellekli
+  hâle getirildi: bağlantı bilgisi ilk çalıştırmada bir kez sorulup
+  `apps/api/.env.local` / `apps/api/.env.production` dosyalarına yazılır,
+  sonraki geçişler soru sormadan tamamlanır. `-Reset` ile kayıt değiştirilir.
+  Üç dosya da `.gitignore` içindedir. Her iki yön `db:check` ile doğrulandı.
+- Kullanıcının `CORS_ORIGIN` ve `DATABASE_PUBLIC_URL` servis değişkenlerinin
+  uygulama tarafından hiç okunmadığı tespit edildi; uygulama yalnız
+  `DATABASE_URL` okur ve API ile arayüz aynı origin üzerinde olduğu için CORS
+  yapılandırması gerekmez.

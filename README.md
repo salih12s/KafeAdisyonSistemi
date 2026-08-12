@@ -132,6 +132,24 @@ DATABASE_URL=postgresql://postgres:PAROLANIZ@localhost:5432/CafeAdisyon?schema=p
 > Parolanızda `@ : / ? # [ ] %` gibi karakterler varsa URL kodlaması gerekir.
 > `npm run setup:env` bunu kendisi yapar.
 
+#### Yerel ve production arasında geçiş
+
+`apps/api/.env` dosyasının hangi veritabanına baktığını iki betik değiştirir:
+
+```powershell
+scripts\set-local-env.bat        # localhost/CafeAdisyon
+scripts\set-production-env.bat   # Railway PostgreSQL
+```
+
+Bağlantı bilgisi **ilk çalıştırmada bir kez** sorulur ve `apps/api/.env.local`
+ile `apps/api/.env.production` dosyalarına kaydedilir; sonraki geçişler soru
+sormadan tamamlanır. Kayıtlı bilgiyi değiştirmek için `-Reset` ekleyin. Bu üç
+dosya da `.gitignore` içindedir; parola depoya gönderilmez.
+
+Betik hangi ortamın aktif olduğunu parolayı maskeleyerek yazar. `db:check`,
+`db:migrate:deploy` ve `setup:owner` komutları o anda aktif olan veritabanına
+bağlanır.
+
 ### 4.4 Migration'ı uygulayın ve bağlantıyı doğrulayın
 
 Mevcut veritabanını sıfırlamadan, repodaki additive migration'ları uygulayın:

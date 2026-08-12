@@ -1,91 +1,90 @@
 <#
-  Production (Railway) baglantisi icin apps/api/.env dosyasini olusturur.
+  apps/api/.env dosyasini PRODUCTION (Railway) veritabanina yonlendirir.
 
-  Bu betik, yerel makinenizden CANLI veritabanina baglanmak icindir:
-  migration calistirmak, tablo durumunu gormek, ilk owner hesabini olusturmak.
+  Baglanti adresi ILK CALISTIRMADA bir kez sorulur ve apps/api/.env.production
+  dosyasina kaydedilir. Sonraki calistirmalarda hicbir sey sorulmaz.
 
-  GERCEK PAROLA BU BETIGIN ICINDE YAZILI DEGILDIR. Calisirken sorulur ve yalniz
-  apps/api/.env dosyasina yazilir; o dosya .gitignore icindedir.
-
-  Railway baglanti adresini soyle bulursunuz:
-    Railway > Postgres servisi > Variables > DATABASE_PUBLIC_URL
-  Degeri oldugu gibi kopyalayip buraya yapistirin.
+  Her iki dosya da .gitignore icindedir; parola repoya gonderilmez.
 
   Kullanim:
-    powershell -ExecutionPolicy Bypass -File scripts\set-production-env.ps1
-  veya
-    scripts\set-production-env.bat
+    scripts\set-production-env.bat          # hizli gecis (soru sormaz)
+    scripts\set-production-env.bat -Reset   # kayitli adresi degistir
 #>
+
+param(
+    [switch]$Reset
+)
 
 $ErrorActionPreference = 'Stop'
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $envPath = Join-Path $repoRoot 'apps\api\.env'
+$cachePath = Join-Path $repoRoot 'apps\api\.env.production'
 
-Write-Host 'Joker Cafe - PRODUCTION (Railway) ortam kurulumu' -ForegroundColor Cyan
-Write-Host ''
-Write-Host 'DIKKAT: Bu dosya yazildiktan sonra asagidaki komutlar CANLI' -ForegroundColor Yellow
-Write-Host 'veritabanina baglanir. Yerel CafeAdisyon veritabaniniza donmek icin' -ForegroundColor Yellow
-Write-Host 'scripts\set-local-env.bat betigini calistirin.' -ForegroundColor Yellow
-Write-Host ''
+function Get-MaskedUrl([string]$url) {
+    return ($url -replace '://[^@]+@', '://***@')
+}
 
-if (Test-Path $envPath) {
-    Write-Host "Zaten var: $envPath" -ForegroundColor Yellow
-    $answer = Read-Host 'Uzerine yazilsin mi? (e/h)'
-    if ($answer -ne 'e') {
-        Write-Host 'Islem iptal edildi. Mevcut dosya korundu.'
-        exit 0
+function Read-CachedUrl([string]$path) {
+    if (-not (Test-Path $path)) { return $null }
+    foreach ($line in Get-Content -Path $path) {
+        if ($line -match '^\s*DATABASE_URL\s*=\s*(.+)$') { return $Matches[1].Trim() }
     }
+    return $null
 }
 
-Write-Host 'Railway > Postgres > Variables > DATABASE_PUBLIC_URL degerini yapistirin.'
-$secureUrl = Read-Host 'DATABASE_PUBLIC_URL' -AsSecureString
-$bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secureUrl)
-try {
-    $databaseUrl = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr)
-}
-finally {
-    [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
-}
+Write-Host 'Joker Cafe - PRODUCTION (Railway) ortamina geciliyor' -ForegroundColor Cyan
+Write-Host ''
 
-$databaseUrl = $databaseUrl.Trim()
+$databaseUrl = $null
+if (-not $Reset) { $databaseUrl = Read-CachedUrl $cachePath }
 
 if ([string]::IsNullOrWhiteSpace($databaseUrl)) {
-    Write-Host 'Baglanti adresi bos olamaz. Islem iptal edildi.' -ForegroundColor Red
-    exit 1
-}
+    Write-Host 'Railway > Postgres > Variables > DATABASE_PUBLIC_URL degerini yapistirin.'
+    Write-Host 'Bu adres kaydedilecek; bir daha sorulmayacak.' -ForegroundColor DarkGray
+    $secureUrl = Read-Host 'DATABASE_PUBLIC_URL' -AsSecureString
+    $bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secureUrl)
+    try {
+        $databaseUrl = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr)
+    }
+    finally {
+        [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
+    }
 
-if (-not ($databaseUrl.StartsWith('postgresql://') -or $databaseUrl.StartsWith('postgres://'))) {
-    Write-Host 'Baglanti adresi postgresql:// veya postgres:// ile baslamalidir.' -ForegroundColor Red
-    exit 1
-}
+    $databaseUrl = $databaseUrl.Trim()
 
-if ($databaseUrl.Contains('localhost') -or $databaseUrl.Contains('127.0.0.1')) {
-    Write-Host 'Bu bir yerel adres. Production betigi yerine set-local-env.bat kullanin.' -ForegroundColor Red
-    exit 1
-}
+    if ([string]::IsNullOrWhiteSpace($databaseUrl)) {
+        Write-Host 'Baglanti adresi bos olamaz. Islem iptal edildi.' -ForegroundColor Red
+        exit 1
+    }
+    if (-not ($databaseUrl.StartsWith('postgresql://') -or $databaseUrl.StartsWith('postgres://'))) {
+        Write-Host 'Adres postgresql:// veya postgres:// ile baslamalidir.' -ForegroundColor Red
+        exit 1
+    }
+    if ($databaseUrl.Contains('localhost') -or $databaseUrl.Contains('127.0.0.1')) {
+        Write-Host 'Bu yerel bir adres. Bunun yerine set-local-env.bat kullanin.' -ForegroundColor Red
+        exit 1
+    }
 
-$port = Read-Host 'Yerel API portu (bos birakilirsa 3000)'
-if ([string]::IsNullOrWhiteSpace($port)) { $port = '3000' }
+    Set-Content -Path $cachePath -Value "DATABASE_URL=$databaseUrl" -Encoding utf8
+    Write-Host "Kaydedildi: $cachePath (gitignore icinde)" -ForegroundColor DarkGray
+}
 
 # NODE_ENV=development kalir: bu dosya yerel makinede calisan komutlar icindir.
-# Railway uzerindeki degiskenler bu dosyadan bagimsizdir.
+# Railway uzerindeki degiskenler bu dosyadan tamamen bagimsizdir.
 $content = @"
 NODE_ENV=development
-PORT=$port
+PORT=3000
 DATABASE_URL=$databaseUrl
 "@
 
-Set-Content -Path $envPath -Value $content -Encoding utf8 -NoNewline:$false
+Set-Content -Path $envPath -Value $content -Encoding utf8
 
 Write-Host ''
-Write-Host "Olusturuldu: $envPath" -ForegroundColor Green
-Write-Host 'Bu dosya .gitignore icindedir, depoya gonderilmez.'
+Write-Host 'AKTIF ORTAM: PRODUCTION (Railway)' -ForegroundColor Yellow
+Write-Host ("  " + (Get-MaskedUrl $databaseUrl)) -ForegroundColor Yellow
 Write-Host ''
-Write-Host 'Sonraki adimlar:' -ForegroundColor Cyan
-Write-Host '  npm run db:check            # canli baglantiyi dogrula'
-Write-Host '  npm run db:migrate:status   # migration durumunu gor'
-Write-Host '  npm run db:migrate:deploy   # eksik migrationlari uygula'
-Write-Host '  npm run setup:owner         # canli ilk yonetici hesabi'
+Write-Host 'Bundan sonra su komutlar CANLI veritabanina baglanir:' -ForegroundColor DarkGray
+Write-Host '  npm run db:check | db:migrate:status | db:migrate:deploy | setup:owner' -ForegroundColor DarkGray
 Write-Host ''
-Write-Host 'Yerel veritabanina donmek icin: scripts\set-local-env.bat' -ForegroundColor Cyan
+Write-Host 'Yerele donmek icin: scripts\set-local-env.bat' -ForegroundColor Cyan

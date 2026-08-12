@@ -1,5 +1,5 @@
 @echo off
-REM Yerel (localhost) baglantisi icin apps/api/.env dosyasini olusturur.
-REM Parola bu dosyada YAZILI DEGILDIR; betik calisirken sorulur.
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0set-local-env.ps1"
-pause
+REM apps/api/.env dosyasini YEREL (localhost) veritabanina yonlendirir.
+REM Parola ilk calistirmada bir kez sorulur, sonra kaydedilir.
+REM Kayitli bilgileri degistirmek icin: set-local-env.bat -Reset
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0set-local-env.ps1" %*

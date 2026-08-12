@@ -6,7 +6,15 @@ import reactRefresh from 'eslint-plugin-react-refresh';
 
 export default tseslint.config(
   {
-    ignores: ['**/dist/**', '**/build/**', '**/coverage/**', '**/node_modules/**', '**/*.d.ts'],
+    // .vite: Vite geliştirme sunucusunun ürettiği bağımlılık önbelleği.
+    ignores: [
+      '**/dist/**',
+      '**/build/**',
+      '**/coverage/**',
+      '**/node_modules/**',
+      '**/.vite/**',
+      '**/*.d.ts',
+    ],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
