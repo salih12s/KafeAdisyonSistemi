@@ -44,7 +44,7 @@ export function createApp({ env, logger, database, webDistPath }: CreateAppOptio
     app.use(createRequestLogger(logger));
   }
 
-  app.use(API_PREFIX, createApiRouter({ env, database }));
+  app.use(API_PREFIX, createApiRouter({ database }));
 
   // /api altındaki bilinmeyen uçlar her zaman JSON hata döner, HTML değil.
   app.use(API_PREFIX, createNotFoundHandler());

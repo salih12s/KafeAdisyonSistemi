@@ -131,22 +131,26 @@ karar ve Phase gerekir.
 | Stok ve reçete takibi | Kendi başına bir ürün; adisyon akışını geciktirir |
 | Termal yazıcı / fiş yazdırma | Donanım bağımlılığı ve sürücü çeşitliliği |
 | ÖKC / yazarkasa entegrasyonu | Yasal sertifikasyon ve donanım gerektirir |
-| Online ödeme | Bulut bağımlılığı yaratır (ADR-001'e aykırı) |
-| QR menü | Müşteriye açık ayrı bir arayüz ve dış erişim gerektirir |
+| Online ödeme | Ödeme sağlayıcı entegrasyonu ve uyum yükü |
+| QR menü | Müşteriye açık ayrı bir arayüz gerektirir |
 | Rezervasyon | Ayrı bir domain; masa akışını karmaşıklaştırır |
 | Paket servis platformları (Yemeksepeti vb.) | Dış servis entegrasyonu |
-| Çoklu şube | ADR-001: tek şube |
-| Çok kiracılı SaaS | ADR-001 |
-| Bulut dağıtımı | ADR-011 |
-| Native mobil uygulama | Tarayıcı üzerinden yerel ağ erişimi yeterlidir |
-| PWA / offline senkronizasyon | Uygulama zaten yerelde çalışır |
+| Çoklu işletme ve çoklu şube | ADR-007: tek işletme, tek şube |
+| Offline çalışma / PWA service worker | İlk sürümde ihtiyaç yok |
+| Yerel ağ üzerinden IP bağlantısı | ADR-001: şimdilik yalnızca local geliştirme |
+| Native mobil uygulama, Electron | Tarayıcı üzerinden erişim yeterlidir |
+| Docker | Railway doğrudan Node.js servisi çalıştırır (ADR-002) |
+
+> **Not:** Railway'e deployment kapsam **dışı değildir**; production hedefidir
+> (ADR-002) ve Phase 7'de yapılır. Bu aşamada yalnızca yapılandırması yazılmaz.
 
 ---
 
 ## 3. Kısıtlar
 
 - Arayüz dili Türkçe, para birimi TRY, zaman dilimi Europe/Istanbul.
-- Para değerleri tam sayı kuruş (ADR-007).
-- Uygulama yerel ağda çalışır; internet gerekmez (ADR-001).
+- Para değerleri tam sayı kuruş (ADR-008).
+- Şu anda yalnızca local geliştirme yapılır (ADR-001); production hedefi
+  Railway'dir (ADR-002).
+- Frontend ve backend production'da aynı origin üzerindedir (ADR-004).
 - Kullanım dokunmatik tablet ve telefonu kapsar: en küçük dokunma hedefi 44px.
-- Kasa bilgisayarı ana bilgisayardır; kapalıysa sistem çalışmaz.

@@ -51,10 +51,7 @@ if ([string]::IsNullOrWhiteSpace($dbName)) { $dbName = 'CafeAdisyon' }
 $content = @"
 NODE_ENV=development
 PORT=$port
-HOST=0.0.0.0
-DATABASE_URL="postgresql://postgres:$encoded@localhost:5432/$dbName"
-LOG_LEVEL=info
-JSON_BODY_LIMIT=1mb
+DATABASE_URL=postgresql://postgres:$encoded@localhost:5432/$dbName`?schema=public
 "@
 
 Set-Content -Path $envPath -Value $content -Encoding utf8 -NoNewline:$false

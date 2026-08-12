@@ -13,9 +13,16 @@ describe('GET /api/health', () => {
     expect(response.body).toMatchObject({
       status: 'ok',
       database: 'connected',
-      environment: 'test',
     });
     expect(isHealthResponse(response.body)).toBe(true);
+  });
+
+  it('sözleşmede tanımlı alanların tamamını döner', async () => {
+    const app = createTestApp({ databaseConnected: true });
+
+    const response = await request(app).get(HEALTH_ENDPOINT);
+
+    expect(Object.keys(response.body).sort()).toEqual(['database', 'status', 'timestamp']);
   });
 
   it('zaman damgası geçerli bir ISO tarihidir', async () => {

@@ -2,10 +2,18 @@ import { z } from 'zod';
 
 const POSTGRES_URL_PREFIXES = ['postgresql://', 'postgres://'];
 
+/**
+ * HOST bilinçli olarak zorunlu değildir.
+ * Geliştirmede yalnızca bu bilgisayardan erişilir (127.0.0.1).
+ * Üretimde (Railway) sunucu tüm arayüzlerden erişilebilir olmalıdır (0.0.0.0).
+ */
+const DEVELOPMENT_HOST = '127.0.0.1';
+const PRODUCTION_HOST = '0.0.0.0';
+
 export const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().min(1).max(65535).default(3000),
-  HOST: z.string().min(1, 'HOST boş olamaz.').default('0.0.0.0'),
+  HOST: z.string().min(1, 'HOST boş olamaz.').optional(),
   DATABASE_URL: z
     .string()
     .min(1, 'DATABASE_URL tanımlı olmalıdır.')
@@ -21,7 +29,11 @@ export const envSchema = z.object({
   JSON_BODY_LIMIT: z.string().min(1).default('1mb'),
 });
 
-export type Env = z.infer<typeof envSchema>;
+type RawEnv = z.infer<typeof envSchema>;
+
+export interface Env extends Omit<RawEnv, 'HOST'> {
+  HOST: string;
+}
 
 /** Ortam değişkeni doğrulaması başarısız olduğunda okunabilir bir hata üretir. */
 export class EnvValidationError extends Error {
@@ -50,5 +62,10 @@ export function parseEnv(source: NodeJS.ProcessEnv = process.env): Env {
     throw new EnvValidationError(issues);
   }
 
-  return result.data;
+  const { HOST, ...rest } = result.data;
+
+  return {
+    ...rest,
+    HOST: HOST ?? (rest.NODE_ENV === 'production' ? PRODUCTION_HOST : DEVELOPMENT_HOST),
+  };
 }

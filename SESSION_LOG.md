@@ -173,3 +173,161 @@ içindedir. Beklenen: diff incelemesi, `npm run verify` ve `npm run db:check`
 bulguların bu dosyaya **yeni kayıt** olarak eklenmesi.
 
 **Merge yapılmadı. Phase 1'e başlanmadı.**
+
+---
+
+## 2026-08-12 09:28–09:55 (Europe/Istanbul) — Claude — PHASE0-FOUNDATION (revizyon)
+
+- **Branch:** `feat/phase-0-foundation`
+
+### Neden bu oturum var
+
+Kullanıcı Phase 0 tanımını güncelledi. Yeni tanım, önceki oturumda uygulanan
+bazı kararlarla **doğrudan çelişiyordu**. Bu oturum kod tabanını yeni tanıma
+hizaladı. `365a907` push edilmiş olduğu için geçmiş yeniden yazılmadı
+(force push yasak, AGENTS.md §10); düzeltmeler ayrı bir commit olarak geldi.
+
+### Değişen kararlar (önceki oturuma göre)
+
+| Konu | Önceki | Yeni |
+| --- | --- | --- |
+| Production hedefi | Bulut yok, kasa bilgisayarı ana bilgisayar | **Railway** + custom domain |
+| Yerel ağ / IP erişimi | Uygulandı (0.0.0.0, LAN IP logu, firewall yönergesi) | **Şimdilik geliştirilmeyecek** — kaldırıldı |
+| `HOST` varsayılanı | Her ortamda `0.0.0.0` | Geliştirmede `127.0.0.1`, production'da `0.0.0.0` |
+| `/api/health` gövdesi | `status, database, timestamp, environment` | **`status, database, timestamp`** (yeni tanımdaki biçim) |
+| `.env` biçimi | Tırnaklı URL + HOST/LOG_LEVEL/JSON_BODY_LIMIT | Tırnaksız + `?schema=public`; diğerleri isteğe bağlı |
+| Belge okuma sırası | AGENTS → WORKFLOW → HANDOFF → DECISIONS → SESSION_LOG → Phase | **AGENTS → HANDOFF → DECISIONS → docs/PHASES.md → kod** |
+| HANDOFF rolü | Kısa devir tablosu | Yapılan işler, dosyalar, testler ve sonuçları da içeriyor |
+| Kontrol genişlikleri | 390 / 1440 | **390 / 768 / 1440** |
+
+### İncelenen dosyalar
+
+Önceki oturumda üretilen tüm kaynak ve belgeler; özellikle
+`packages/contracts/src/health.ts`, `apps/api/src/config/env.ts`,
+`apps/api/src/server.ts`, `apps/api/src/routes/health.ts`,
+`apps/web/src/pages/dashboard-page.tsx`,
+`apps/web/src/components/health-indicator.tsx` ve kök belgeler.
+
+### Değiştirilen dosyalar
+
+- **Sözleşme:** `packages/contracts/src/health.ts` — `environment` alanı
+  kaldırıldı; `isHealthResponse` üç alan doğruluyor.
+- **API:** `src/routes/health.ts`, `src/routes/index.ts`, `src/app.ts`
+  (`env` artık health router'a geçmiyor), `src/config/env.ts`
+  (`HOST` isteğe bağlı, ortama göre varsayılan), `src/server.ts`
+  (LAN IP listeleme kaldırıldı), `.env.example`, `.env.test.example`.
+- **API testleri:** `tests/health.test.ts` (alan kümesi testi eklendi),
+  `tests/env.test.ts` (HOST varsayılanları için 3 yeni test),
+  `tests/helpers/test-app.ts`.
+- **Web:** `health-indicator.tsx` ("Sistem hazır"), `dashboard-page.tsx`
+  ("Veritabanı bağlantısı aktif" + veritabanı kopukken ayrı uyarı),
+  `module-pages.tsx` (boş durumlar ilgili Phase'i adıyla söylüyor),
+  `test/render.tsx`, `__tests__/app.test.tsx` (hata gösterimi testi
+  stack trace içermediğini de doğruluyor).
+- **Betikler:** `scripts/set-local-env.ps1` — yeni `.env` biçimi.
+- **Belgeler:** `AGENTS.md`, `CLAUDE.md`, `HANDOFF.md`, `DECISIONS.md`
+  (ADR-001…ADR-012 yeni karar listesine göre yeniden yazıldı), `README.md`
+  (Railway bölümü eklendi, yerel ağ bölümü kaldırıldı), `WORKFLOW.md`,
+  `docs/PHASES.md`, `docs/ARCHITECTURE.md`, `docs/PRODUCT_SCOPE.md`,
+  `docs/UI_GUIDE.md` (768px kırılımı).
+
+### Alınan kararlar
+
+1. **`/api/health` tam olarak üç alan döner.** Yeni tanımdaki gövde birebir
+   uygulandı; `environment` alanı sözleşmeden çıkarıldı. Ortam bilgisi
+   arayüzde artık gösterilmiyor, sunucu logunda kalıyor.
+2. **`HOST` ortama göre varsayılan alır.** Geliştirmede `127.0.0.1` (yerel ağ
+   erişimi geliştirilmeyecek), production'da `0.0.0.0` (Railway gereği).
+   Açıkça verilirse verilen değer korunur.
+3. **Geçmiş yeniden yazılmadı.** `365a907` push edilmişti; amend + force push
+   yerine ikinci bir commit tercih edildi.
+4. **Ek belgeler silinmedi.** `WORKFLOW.md`, `SESSION_LOG.md`,
+   `docs/ARCHITECTURE.md`, `docs/PRODUCT_SCOPE.md`, `docs/UI_GUIDE.md` yeni
+   tanımın zorunlu listesinde yok ama içerik değeri taşıyor; silinmek yerine
+   yeni kararlarla **tutarlı hâle getirildi**.
+
+### Çalıştırılan komutlar ve gerçek sonuçları
+
+| Komut | Sonuç |
+| --- | --- |
+| `npm run verify` (1. deneme) | **BAŞARISIZ** — `'Logger' is defined but never used` (server.ts'te LAN fonksiyonu kaldırılınca artık kullanılmayan import) |
+| İlgili import kaldırıldı → `npm run verify` | **PASS** — lint → typecheck → test → build |
+| `npm run db:check` | `PostgreSQL bağlantısı başarılı (SELECT 1).` |
+| `npm start` → `GET /api/health` | **200** `{"status":"ok","database":"connected","timestamp":"2026-08-12T06:35:16.229Z"}` — tam üç alan |
+| `GET /` | **200**, `index.html` (597 bayt) |
+| `GET /masalar` | **200** → SPA fallback |
+| `GET /assets/index-*.css` | **200**, 14 197 bayt → statik sunum |
+| `GET /api/yok` | **404** JSON |
+| Sunucu logu | `{"host":"0.0.0.0","port":3000,"environment":"production"}` · `Adres: http://localhost:3000` · `PostgreSQL bağlantısı doğrulandı.` (LAN IP listesi artık yok) |
+
+### Test sonuçları
+
+```
+@kafe/api (vitest 3.2.7)          @kafe/web (vitest 3.2.7)
+ ✓ env.test.ts           (10)      ✓ app.test.tsx        (6)
+ ✓ error-handler.test.ts  (8)      ✓ mobile-nav.test.tsx (4)
+ ✓ health.test.ts         (4)     Test Files 2 passed (2)
+ ✓ not-found.test.ts      (3)          Tests 10 passed (10)
+Test Files 4 passed (4)
+     Tests 25 passed (25)
+```
+
+**Toplam: 35 test, 35 başarılı, 0 başarısız, 0 uyarı.** (Önceki oturum: 30)
+
+Yeni testler: `/api/health` alan kümesinin tam olarak
+`['database','status','timestamp']` olduğu; `HOST` varsayılanının geliştirmede
+`127.0.0.1`, production'da `0.0.0.0` olduğu ve açık değerin korunduğu;
+veritabanı kopukken Türkçe açıklamanın göründüğü; sunucu hatası mesajının
+`Error` ve stack trace içermediği.
+
+### Commit öncesi fark edilen tutarsızlık: react-router-dom
+
+Staged diff incelenirken `apps/web/package.json` içinde **bu oturumda
+yapılmayan** bir değişiklik görüldü: `react-router-dom` aralığı `^6.28.0`
+yerine `^7.18.2` idi ve `package-lock.json` da 7.18.2 gösteriyordu; ancak
+`node_modules` hâlâ **6.30.4** taşıyordu.
+
+Yani manifest/lock ile kurulu sürüm ayrışmıştı: o ana kadarki tüm testler
+v6 üzerinde koşmuştu, temiz bir `npm install` ise v7 kuracaktı. Denenmemiş bir
+major sürüm sessizce commit edilmedi.
+
+Çözüm — Phase 0 tanımındaki "birbiriyle uyumlu güncel ve kararlı sürümler"
+kuralı doğrultusunda gerçekten v7'ye geçildi:
+
+| Adım | Sonuç |
+| --- | --- |
+| `npm install` | `added 98 packages, removed 1` → kurulu sürüm **7.18.2** |
+| `apps/web/src/config/router.ts` silindi | `v7_startTransition` ve `v7_relativeSplatPath` bayrakları v7'de **varsayılan davranıştır**; `future` prop'u artık gereksiz |
+| `main.tsx`, `test/render.tsx` | `future={...}` kullanımları kaldırıldı |
+| `npm run verify` | **PASS** — 35/35 test, 0 uyarı |
+| `npm start` → `GET /api/health` | **200** `{"status":"ok","database":"connected","timestamp":"2026-08-12T06:44:46.277Z"}` |
+| `GET /mutfak` | **200** → SPA fallback v7 ile de çalışıyor |
+
+Bundle boyutu 229.42 kB → **243.79 kB** (gzip 73.01 → 77.81) çıktı; artış
+react-router v7'den geliyor.
+
+### Kalan riskler
+
+Önceki oturumun 1, 3, 4, 5, 6 numaralı riskleri geçerliliğini koruyor
+(Windows konsol kod sayfası, `.js` uzantı zorunluluğu, elle `.env`,
+DB'siz testler, bundle boyutu). Yerel ağ / güvenlik duvarı riski **artık
+geçerli değil** (özellik kapsamdan çıktı).
+
+Yeni/güncel riskler:
+
+1. **Görsel inceleme hâlâ yapılmadı.** 390/768/1440px için düzen kuralları
+   uygulandı ve davranış testlerle doğrulandı; gerçek tarayıcıda göz kontrolü
+   Codex'ten bekleniyor.
+2. **İki commit'lik geçmiş.** `365a907` ilk tanıma, bu commit güncel tanıma
+   göre. Depo son hâliyle tutarlı; ancak `365a907` tek başına okunursa eski
+   kararları yansıtır.
+3. **Railway yapılandırması yok.** Bilinçli (ADR-002, Phase 7). Deployment
+   sırasında `PORT`/`DATABASE_URL` sağlayıcı tarafından verilecek şekilde
+   kodlandı ama uçtan uca denenmedi.
+
+### Sonraki ajana devir
+
+**Codex'e devredildi (reviewer).** Ayrıntı ve kontrol listesi
+[HANDOFF.md](HANDOFF.md) içindedir.
+
+**Merge yapılmadı. Phase 1'e başlanmadı.**

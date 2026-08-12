@@ -1,10 +1,9 @@
-import os from 'node:os';
 import dotenv from 'dotenv';
 import { createApp } from './app';
 import { ENV_FILE_PATH, WEB_DIST_PATH } from './config/paths';
 import { EnvValidationError, parseEnv, type Env } from './config/env';
 import { createPrismaLifecycle } from './lib/database';
-import { createLogger, type Logger } from './lib/logger';
+import { createLogger } from './lib/logger';
 
 dotenv.config({ path: ENV_FILE_PATH });
 
@@ -30,29 +29,6 @@ function loadEnv(): Env {
   }
 }
 
-function listLanIpv4Addresses(): string[] {
-  return Object.values(os.networkInterfaces())
-    .flatMap((entries) => entries ?? [])
-    .filter((entry) => entry.family === 'IPv4' && !entry.internal)
-    .map((entry) => entry.address);
-}
-
-function reportListening(env: Env, logger: Logger): void {
-  logger.info('API sunucusu dinlemede.', {
-    host: env.HOST,
-    port: env.PORT,
-    environment: env.NODE_ENV,
-  });
-
-  logger.info(`Bu bilgisayarda: http://localhost:${env.PORT}`);
-
-  if (env.HOST === '0.0.0.0') {
-    for (const address of listLanIpv4Addresses()) {
-      logger.info(`Yerel ağdan: http://${address}:${env.PORT}`);
-    }
-  }
-}
-
 function start(): void {
   const env = loadEnv();
   const logger = createLogger(env.LOG_LEVEL);
@@ -66,7 +42,12 @@ function start(): void {
   });
 
   const server = app.listen(env.PORT, env.HOST, () => {
-    reportListening(env, logger);
+    logger.info('API sunucusu dinlemede.', {
+      host: env.HOST,
+      port: env.PORT,
+      environment: env.NODE_ENV,
+    });
+    logger.info(`Adres: http://localhost:${env.PORT}`);
 
     void database.probe.ping().then((connected) => {
       if (connected) {

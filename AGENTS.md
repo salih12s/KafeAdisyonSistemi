@@ -1,54 +1,26 @@
 # AGENTS.md — Claude ve Codex için bağlayıcı proje kuralları
 
 Bu belge Kafe Adisyon Sistemi üzerinde çalışan tüm yapay zekâ ajanları için
-**bağlayıcıdır**. Claude ve Codex bu kuralların tamamına uymak zorundadır.
-Diğer belgeler bu kuralları tekrar etmez, buraya referans verir.
+**bağlayıcıdır**. Diğer belgeler bu kuralları tekrar etmez, buraya referans verir.
 
 ---
 
 ## 1. Her görevden önce okunacak dosyalar (bu sırayla)
 
 1. `AGENTS.md` (bu dosya)
-2. `WORKFLOW.md`
-3. `HANDOFF.md`
-4. `DECISIONS.md`
-5. `SESSION_LOG.md` (en az son iki kayıt)
-6. İlgili Phase dokümanı → `docs/PHASES.md` ve ilgili `docs/` dosyaları
-7. Değiştirilecek kod ve o kodun testleri
+2. `HANDOFF.md`
+3. `DECISIONS.md`
+4. `docs/PHASES.md`
+5. Mevcut kod ve testler
+
+Ek belgeler (gerektiğinde): `WORKFLOW.md`, `SESSION_LOG.md`,
+`docs/ARCHITECTURE.md`, `docs/PRODUCT_SCOPE.md`, `docs/UI_GUIDE.md`.
 
 Bu sıra atlanamaz. "Kısa bir değişiklik" gerekçesiyle de atlanamaz.
 
 ---
 
-## 2. Phase disiplini
-
-- Ajan yalnızca **aktif Phase'in kapsamındaki** işi yapar.
-- Kapsam dışı bir ihtiyaç fark edilirse kod yazılmaz; `SESSION_LOG.md` içine
-  "Kalan riskler" başlığı altında not düşülür ve kullanıcıya bildirilir.
-- Bir sonraki Phase'e **kullanıcı açıkça istemeden geçilmez.**
-- Phase'in tamamlanma kriterleri sağlanmadan Phase "tamamlandı" sayılmaz.
-
----
-
-## 3. Aynı anda tek ajan
-
-- Aynı anda **yalnızca bir ajan** aktif geliştirici olabilir.
-- Aktif ajan ve reviewer `HANDOFF.md` içinde yazılıdır.
-- Aktif ajan değilken kod değiştirilmez; yalnızca inceleme ve rapor yazılır.
-- Devir tamamlanmadan diğer ajan çalışmaya başlamaz.
-
----
-
-## 4. Görev sahipliği
-
-- Çalışmaya başlamadan önce `HANDOFF.md` içindeki Task ID, branch ve
-  "Sahip olunan yollar" alanları güncellenir.
-- Bir ajan yalnızca kendi sahip olduğu yollarda değişiklik yapar.
-- Sahiplik dışı bir dosyada değişiklik gerekiyorsa önce `HANDOFF.md` güncellenir.
-
----
-
-## 5. Kod yazmadan önce mevcut kodu inceleme
+## 2. Kod yazmadan önce mevcut repository incelenir
 
 - Yeni dosya oluşturmadan önce aynı işi yapan bir dosya olup olmadığı aranır.
 - Mevcut adlandırma, klasör düzeni ve yorum yoğunluğu korunur.
@@ -56,25 +28,55 @@ Bu sıra atlanamaz. "Kısa bir değişiklik" gerekçesiyle de atlanamaz.
 
 ---
 
-## 6. Test edilmeden görev tamamlanmış sayılmaz
+## 3. Aktif Phase dışına çıkılmaz
+
+- Ajan yalnızca aktif Phase'in kapsamındaki işi yapar.
+- Kapsam dışı bir ihtiyaç fark edilirse kod yazılmaz; `HANDOFF.md` içindeki
+  "Bilinen eksikler" bölümüne not düşülür ve kullanıcıya bildirilir.
+- Bir sonraki Phase'e **kullanıcı açıkça istemeden geçilmez.**
+- Phase'in tamamlanma kriterleri sağlanmadan Phase "tamamlandı" sayılmaz.
+
+---
+
+## 4. Aynı anda yalnızca bir ajan kod yazar
+
+- Aktif geliştirici ve reviewer `HANDOFF.md` içinde yazılıdır.
+- Aktif geliştirici değilken kod değiştirilmez; yalnızca inceleme yapılır.
+- Devir tamamlanmadan diğer ajan çalışmaya başlamaz.
+
+---
+
+## 5. Reviewer kuralları
+
+- Reviewer, **mevcut branch üzerinde** inceleme yapar; yeni branch açmaz.
+- Reviewer yalnızca **gerçek hata** bulursa düzeltme yapar.
+- Üslup tercihi, isimlendirme zevki veya "ben olsam böyle yazardım" gerekçesiyle
+  çalışan kod değiştirilmez.
+- Bulunan her hata `HANDOFF.md` içine kaydedilir.
+- Reviewer merge yapmaz.
+
+---
+
+## 6. Test edilmemiş iş tamamlanmış sayılmaz
 
 - `npm run verify` çalıştırılmadan hiçbir görev "tamamlandı" olarak raporlanmaz.
 - `verify` sırayla `lint`, `typecheck`, `test` ve `build` çalıştırır.
 - Testler kırmızıyken commit atılmaz.
-- Uyarılar görmezden gelinmez; ya giderilir ya da `SESSION_LOG.md` içinde
-  gerekçesiyle birlikte kayıt altına alınır.
-- Test çıktısı **uydurulmaz**. Yalnızca gerçekten çalıştırılan komutların
+- Uyarılar görmezden gelinmez; ya giderilir ya da `HANDOFF.md` içinde
+  gerekçesiyle kaydedilir.
+- Test çıktısı **uydurulmaz.** Yalnızca gerçekten çalıştırılan komutların
   gerçek çıktısı raporlanır.
 
 ---
 
-## 7. SESSION_LOG.md
+## 7. Her ajan yaptığı işi HANDOFF.md içine kaydeder
 
-- Append-only'dir. Eski kayıtlar **değiştirilmez ve silinmez.**
-- Her oturum için yeni kayıt eklenir.
-- Kayıt en az şunları içerir: tarih/saat, ajan, Task ID, branch, incelenen
-  dosyalar, değiştirilen dosyalar, alınan kararlar, çalıştırılan komutlar,
-  komutların gerçek sonuçları, test sonuçları, kalan riskler, devir notu.
+`HANDOFF.md` her görev sonunda güncellenir: aktif Phase, aktif branch, ana
+geliştirici, reviewer, son commit, yapılan işler, değiştirilen önemli dosyalar,
+çalıştırılan testler, test sonuçları, bilinen eksikler, sonraki ajanın işi.
+
+`SESSION_LOG.md` ayrıntılı oturum kaydı tutar ve **append-only**'dir:
+eski kayıtlar değiştirilmez ve silinmez.
 
 ---
 
@@ -89,13 +91,11 @@ Bu sıra atlanamaz. "Kısa bir değişiklik" gerekçesiyle de atlanamaz.
 
 ---
 
-## 9. Veritabanı güvenliği
+## 9. Destructive database işlemi yapılmaz
 
 Aşağıdakiler **kesinlikle yasaktır**:
 
-- `DROP DATABASE`
-- `DROP TABLE`
-- `TRUNCATE`
+- `DROP DATABASE`, `DROP TABLE`, `TRUNCATE`
 - `prisma migrate reset`
 - `prisma db push --force-reset`
 - Tüm tabloları silen veya boşaltan scriptler
@@ -103,7 +103,8 @@ Aşağıdakiler **kesinlikle yasaktır**:
 
 Kurallar:
 
-- Mevcut `CafeAdisyon` veritabanı korunur.
+- Mevcut `CafeAdisyon` veritabanı korunur; silinmez, resetlenmez,
+  yeniden oluşturulmaz.
 - Bağlantı doğrulaması yalnızca `SELECT 1` gibi **okuma** sorgusuyla yapılır.
 - Migration üretilecekse önce kullanıcıya ne yapacağı anlatılır ve onay alınır.
 - Domain kayıtları fiziksel olarak silinmez; iptal/pasif alanları kullanılır.
@@ -112,12 +113,13 @@ Kurallar:
 
 ## 10. Git kuralları
 
-- `main` branch'ine **doğrudan özellik geliştirilmez.** İstisna yalnızca ilk
+- `main` branch'ine **doğrudan Phase kodu yazılmaz.** İstisna yalnızca ilk
   bootstrap commit'idir.
 - Her Phase kendi branch'inde çalışır: `feat/phase-<n>-<konu>`
 - **Kullanıcı istemeden merge yapılmaz.**
-- **Force push yapılmaz.**
-- Branch silinmez.
+- **Force push yapılmaz.** Push edilmiş commit yeniden yazılmaz; düzeltme
+  yeni bir commit ile yapılır.
+- Kullanıcının mevcut dosyaları silinmez.
 - Commit mesajları Conventional Commits biçimindedir.
 - PR'lar draft olarak açılır ve reviewer ajanı beklenir.
 
@@ -129,10 +131,11 @@ Yasak:
 
 - `any`
 - `@ts-ignore`, `@ts-nocheck`
-- Kontrolsüz type assertion (`as` ile tip zorlama). Doğrulanmış tip koruyucu
-  (`value is T` döndüren fonksiyon) kullanılır.
+- Gereksiz/kontrolsüz type assertion (`as` ile tip zorlama). Doğrulanmış tip
+  koruyucu (`value is T` döndüren fonksiyon) kullanılır.
 - Gerçek hatayı gizleyen `eslint-disable`
 - Kalıntı `console.log`
+- Sahte test veya testi geçirmek için anlamsız mock
 - Geçici hack ve "sonra düzeltirim" notuyla bırakılan kod
 - Sahte/uydurma veri (`lorem ipsum`, örnek masa listesi, sahte ciro)
 - Tıklanınca hiçbir şey yapmayan placeholder buton
@@ -143,9 +146,8 @@ Zorunlu:
 - TypeScript `strict` modu açık kalır.
 - Arayüz metinleri **Türkçe**dir.
 - Para değerleri **tam sayı kuruş** olarak tutulur, `Float` kullanılmaz.
-- Yeni bağımlılık eklemek için gerçek bir gerekçe gerekir; küçük bir yardımcı
-  fonksiyonla çözülebilen şey için paket eklenmez.
-- Eklenen her bağımlılık `SESSION_LOG.md` içinde gerekçesiyle kaydedilir.
+- Frontend API adresini hardcode etmez; göreli `/api` yolları kullanılır.
+- Yeni bağımlılık eklemek için gerçek bir gerekçe gerekir.
 
 ---
 
@@ -153,22 +155,23 @@ Zorunlu:
 
 Ayrıntılar `docs/UI_GUIDE.md` içindedir. Özet olarak yasak:
 
-- Mor-mavi neon gradient, glassmorphism, glow, arka plan blob'ları
-- Landing page / pazarlama görünümü, dev başlıklar
-- Hazır admin şablonu görünümü
-- İngilizce arayüz metni
-- 44 pikselden küçük dokunma hedefi
-- Mobilde yatay taşma
+- Mor-mavi gradient, glassmorphism, neon glow, arka plan blob'ları
+- Aşırı büyük kartlar, her yerde yuvarlak pill kullanımı
+- Landing page / hazır AI dashboard görünümü
+- İngilizce arayüz metni, lorem ipsum
+- Gereksiz animasyon, çalışmayan butonlar
+- 44 pikselden küçük dokunma hedefi, mobilde yatay taşma
 
 ---
 
-## 13. Kapsam dışı teknolojiler
+## 13. Şimdilik geliştirilmeyecekler
 
 Kullanıcı açıkça istemedikçe eklenmez:
 
-- Docker
-- Supabase, Firebase, Railway, Vercel veya herhangi bir bulut servisi
-- Electron, native mobil uygulama
-- PWA / offline senkronizasyon
-- Çok kiracılı (multi-tenant) SaaS mimarisi
-- Socket.IO (ilgili Phase'e kadar)
+- Offline çalışma, PWA service worker
+- Yerel ağ üzerinden IP bağlantısı
+- Native mobil uygulama, Electron
+- Docker, Railway deployment yapılandırması
+- Çoklu işletme, çoklu şube
+- Stok sistemi, yazarkasa/termal yazıcı, QR menü
+- Gerçek adisyon özellikleri (aktif Phase kapsamı dışındaysa)

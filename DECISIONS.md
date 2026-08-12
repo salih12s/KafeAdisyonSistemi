@@ -1,210 +1,226 @@
 # DECISIONS.md — Kalıcı teknik kararlar
 
 Bu dosya alınan **kalıcı** teknik kararları kayıt altına alır.
-Bir karar değişecekse eski kayıt silinmez; yeni bir kayıt eklenir ve eski
-kaydın durumu "Değiştirildi" olarak işaretlenir.
+Bir karar değişirse eski kayıt silinmez; durumu güncellenir ve yeni kayıt eklenir.
 
 Biçim: `ADR-<numara> — <başlık>` · Tarih · Durum · Karar · Gerekçe · Sonuç
 
 ---
 
-## ADR-001 — Local-first mimari ve tek şube
+## ADR-001 — Uygulama şu anda local geliştirilecek
 
 - **Tarih:** 2026-08-12
 - **Durum:** Kabul edildi
 
-**Karar.** Uygulama buluta bağımlı olmayacaktır. Kasa bilgisayarı ana
-bilgisayardır; React, Express ve PostgreSQL bu bilgisayarda çalışır. Diğer
-cihazlar aynı yerel ağ üzerinden kasa bilgisayarının IPv4 adresine bağlanır.
-Sistem tek cafe ve tek şube içindir.
+**Karar.** Geliştirme yalnızca yerel bilgisayarda yapılır:
 
-**Gerekçe.** Kafe, internet kesintisinde de satış yapabilmelidir. Adisyon
-sistemi kesintiye tahammül edemez. Tek şube için çok kiracılı mimarinin
-karmaşıklığı gereksiz maliyet üretir.
+```
+Frontend:   http://localhost:5173
+Backend:    http://localhost:3000
+PostgreSQL: localhost:5432/CafeAdisyon
+```
 
-**Sonuç.** Çok kiracılılık, bulut dağıtımı, Docker ve dış servis bağımlılığı
-kapsam dışıdır. Sunucu `0.0.0.0` üzerinde dinler.
+Sunucu geliştirmede yalnızca `127.0.0.1` üzerinde dinler.
+
+**Gerekçe.** Temel sağlam kurulmadan dağıtım ortamıyla uğraşmak, hem hata
+kaynaklarını çoğaltır hem de Phase 0'ın kapsamını dağıtır.
+
+**Sonuç.** Yerel ağ üzerinden IP ile erişim, offline çalışma, PWA service
+worker, Docker ve Railway yapılandırması bu aşamada geliştirilmez.
 
 ---
 
-## ADR-002 — React + TypeScript + Vite
+## ADR-002 — Production ortamında Railway kullanılacak
+
+- **Tarih:** 2026-08-12
+- **Durum:** Kabul edildi (uygulama ileriki bir Phase'te)
+
+**Karar.** Hedef production mimarisi:
+
+```
+Custom domain
+    ↓
+Railway Node.js servisi
+    ├── Express API
+    └── React production build
+    ↓
+Railway PostgreSQL
+```
+
+**Gerekçe.** Tek servis içinde hem API hem statik dosya sunumu, yönetimi en
+basit ve en ucuz seçenektir; ayrı bir CDN/statik barındırma katmanı gerekmez.
+
+**Sonuç.** Kod bugünden bu modele uygun yazılır: port ve veritabanı adresi
+environment değişkeninden okunur, production'da sunucu tüm arayüzlerden
+(`0.0.0.0`) dinler. Railway'e özel yapılandırma dosyaları **henüz yazılmaz.**
+
+---
+
+## ADR-003 — React build'i Express tarafından sunulacak
 
 - **Tarih:** 2026-08-12
 - **Durum:** Kabul edildi
 
-**Karar.** Arayüz React ve TypeScript ile yazılır, Vite ile derlenir.
+**Karar.** Production'da Express, `apps/web/dist` içeriğini statik olarak sunar.
+Bilinmeyen GET yolları `index.html`'e düşürülür (React Router SPA fallback);
+`/api` altındaki bilinmeyen yollar ise her zaman JSON 404 döner.
 
-**Gerekçe.** Vite'ın geliştirme sunucusu hızlıdır ve `host: 0.0.0.0` ile
-yerel ağa doğrudan açılabilir; bu, tablet üzerinde geliştirme sırasında test
-yapmayı kolaylaştırır. TypeScript, adisyon ve para hesapları gibi hata
-toleransı düşük alanlarda derleme zamanı güvence sağlar.
+**Gerekçe.** Tek çalışan süreç, tek dağıtım birimi, tek log akışı.
 
-**Sonuç.** `apps/web`, Vite üretim derlemesini `apps/web/dist` içine üretir.
+**Sonuç.** `/api` 404 katmanı statik dosya katmanından **önce** gelir; aksi
+hâlde tanımsız bir API ucu HTML döndürürdü.
 
 ---
 
-## ADR-003 — Node.js + Express + TypeScript
+## ADR-004 — Frontend ve backend production'da aynı origin üzerinde olacak
 
 - **Tarih:** 2026-08-12
 - **Durum:** Kabul edildi
 
-**Karar.** Sunucu Node.js üzerinde Express ve TypeScript ile yazılır.
-Uygulama kurulumu (`createApp`) ile sunucu başlatma (`server.ts`) ayrılır.
+**Karar.** Arayüz ve API aynı domain üzerinden sunulur. Frontend kodunda
+`localhost:3000` gibi mutlak adres **hardcode edilmez**; yalnızca göreli
+`/api/...` yolları kullanılır.
 
-**Gerekçe.** Express küçük, öngörülebilir ve Windows üzerinde sorunsuz
-çalışır. App/server ayrımı, gerçek port açmadan HTTP testi yazmayı mümkün
-kılar.
+**Gerekçe.** Aynı origin CORS'u tamamen ortadan kaldırır ve aynı kodun
+geliştirmede de production'da da değişmeden çalışmasını sağlar.
 
-**Sonuç.** Testler `supertest` ile `createApp` çıktısını doğrudan sürer.
+**Sonuç.** Geliştirmede Vite proxy'si `/api` isteklerini `localhost:3000`
+adresine iletir. Ortam farkı yalnızca proxy yapılandırmasındadır.
 
 ---
 
-## ADR-004 — PostgreSQL + Prisma ORM
+## ADR-005 — PostgreSQL: local geliştirmede bilgisayarda, production'da Railway'de
 
 - **Tarih:** 2026-08-12
 - **Durum:** Kabul edildi
 
-**Karar.** Veri deposu PostgreSQL, erişim katmanı Prisma ORM'dir.
-Veritabanı adı `CafeAdisyon`, bağlantı `localhost:5432` üzerindendir.
+**Karar.** Veri deposu PostgreSQL, erişim katmanı Prisma ORM'dir. Geliştirmede
+bilgisayardaki `CafeAdisyon` veritabanı, production'da Railway PostgreSQL
+kullanılır.
 
-**Gerekçe.** PostgreSQL, eşzamanlı adisyon güncellemelerinde ihtiyaç
-duyulacak işlem (transaction) garantilerini verir. Prisma şema tabanlı
-migration ve tip güvenli sorgu üretir.
+**Gerekçe.** Aynı veritabanı motoru her iki ortamda kullanıldığı için
+davranış farkı oluşmaz.
 
-**Sonuç.** Bağlantı doğrulaması yalnızca `SELECT 1` ile yapılır. Phase 0'da
-domain tablosu oluşturulmaz.
+**Sonuç.** Mevcut `CafeAdisyon` veritabanı korunur. Bağlantı doğrulaması
+yalnızca `SELECT 1` ile yapılır. Phase 0'da domain tablosu oluşturulmaz.
 
 ---
 
-## ADR-005 — REST API
+## ADR-006 — Veritabanı bağlantısı environment değişkeninden alınacak
 
 - **Tarih:** 2026-08-12
 - **Durum:** Kabul edildi
 
-**Karar.** İstemci-sunucu iletişimi REST üzerinden, `/api` ön ekiyle yapılır.
-Hata yanıtları tek ve değişmez bir gövde biçimindedir:
-`{ error: { code, message, details? } }`.
+**Karar.** Bağlantı adresi yalnızca `DATABASE_URL` ortam değişkeninden okunur.
+Kodda, dokümanda veya commit'te gerçek parola bulunmaz. Ortam değişkenleri
+uygulama açılmadan `zod` ile doğrulanır.
 
-**Gerekçe.** REST bu ölçekte yeterlidir; GraphQL'in şema ve önbellek
-karmaşıklığı gerekmez. Sabit hata biçimi, istemcinin metne değil koda göre
-davranmasını sağlar.
+**Gerekçe.** Aynı kodun farklı ortamlarda değişmeden çalışması ve parolanın
+depoya sızmaması.
 
-**Sonuç.** Hata kodları `packages/contracts` içinde tanımlıdır.
+**Sonuç.** Doğrulama başarısız olursa sunucu stack trace yerine hangi
+değişkenin neden geçersiz olduğunu yazar ve 1 koduyla çıkar. Doldurulmamış
+`CHANGE_ME` değeri de reddedilir.
 
 ---
 
-## ADR-006 — npm workspaces
+## ADR-007 — Çoklu işletme ve çoklu şube ilk sürüm kapsamında olmayacak
 
 - **Tarih:** 2026-08-12
 - **Durum:** Kabul edildi
 
-**Karar.** Depo, npm workspaces ile tek repo olarak yönetilir:
-`apps/web`, `apps/api`, `packages/contracts`.
+**Karar.** Uygulama tek işletme ve tek şube içindir. Çok kiracılı (multi-tenant)
+mimari kurulmaz; veri modeline `tenantId` / `branchId` gibi alanlar eklenmez.
 
-**Gerekçe.** İstemci ve sunucu aynı tipleri paylaşır. Ek bir araç (Turborepo,
-pnpm, Lerna) kurmadan npm'in kendi desteği yeterlidir.
+**Gerekçe.** Çok kiracılılık, her sorguya ve her yetki kontrolüne kalıcı bir
+karmaşıklık ekler. İhtiyaç doğmadan ödenmesi gereken bir maliyet değildir.
 
-**Sonuç.** `packages/contracts` hem CommonJS (Node için) hem ESM (paketleyici
-için) çıktı üretir; göreli içe aktarımlarda `.js` uzantısı zorunludur.
+**Sonuç.** İleride gerekirse ayrı bir karar ve göç planıyla ele alınır.
 
 ---
 
-## ADR-007 — Para değerleri tam sayı kuruş olarak tutulur
+## ADR-008 — Para değerleri tam sayı kuruş olarak tutulacak
 
 - **Tarih:** 2026-08-12
 - **Durum:** Kabul edildi
 
 **Karar.** Tüm para değerleri tam sayı **kuruş** olarak saklanır ve taşınır.
-`Float`/`Double` kullanılmaz. Veritabanında `Int`, TypeScript'te `number`
-(`Kurus` takma adı) kullanılır. Biçimlendirme yalnızca görüntüleme anında
-yapılır.
+`Float`/`Double` kullanılmaz. Veritabanında `Int`, TypeScript'te `Kurus`
+(`number`) kullanılır. Biçimlendirme yalnızca görüntüleme anında yapılır.
 
-**Gerekçe.** Kayan noktalı sayılarla `0.1 + 0.2 !== 0.3`'tür. Adisyon
-toplamı, hesap bölme ve indirim hesaplarında bu hatalar birikir ve kasa
-tutmaz.
+**Gerekçe.** Kayan noktalı sayılarla `0.1 + 0.2 !== 0.3`'tür. Adisyon toplamı,
+hesap bölme ve indirim hesaplarında bu hatalar birikir ve kasa tutmaz.
 
 **Sonuç.** `packages/contracts/src/money.ts` içinde `formatKurus` ve
 `liraToKurus` yardımcıları tanımlıdır.
 
 ---
 
-## ADR-008 — Europe/Istanbul zaman dilimi ve tr-TR biçimlendirme
+## ADR-009 — Tarih ve saat işlemlerinde Europe/Istanbul dikkate alınacak
 
 - **Tarih:** 2026-08-12
 - **Durum:** Kabul edildi
 
-**Karar.** Zaman damgaları UTC olarak saklanır (`ISO 8601`), arayüzde
-`Europe/Istanbul` saatine çevrilerek `tr-TR` biçiminde gösterilir. Arayüz
-dili Türkçe, para birimi TRY'dir.
+**Karar.** Zaman damgaları UTC olarak saklanır ve taşınır (ISO 8601);
+arayüzde `Europe/Istanbul` saatine çevrilerek `tr-TR` biçiminde gösterilir.
 
-**Gerekçe.** UTC saklamak yaz saati ve cihaz saati farklarından bağımsızdır.
-Kullanıcı tek bir yerel saat görür.
+**Gerekçe.** UTC saklamak, sunucu ve cihaz saat dilimi farklarından ve yaz
+saati uygulamasından bağımsızdır. Kullanıcı tek bir yerel saat görür.
 
-**Sonuç.** Sabitler `packages/contracts/src/common.ts` içindedir; çevrim
-`apps/web/src/lib/datetime.ts` içinde tek noktadan yapılır.
+**Sonuç.** Sabitler `packages/contracts/src/common.ts` içinde; çevrim
+`apps/web/src/lib/datetime.ts` içinde tek noktadan yapılır. Gün sonu raporu
+gibi gün sınırı hesapları da bu saat dilimine göre yapılacaktır.
 
 ---
 
-## ADR-009 — Üretimde tek origin
+## ADR-010 — Arayüz dili Türkçe olacak
 
 - **Tarih:** 2026-08-12
 - **Durum:** Kabul edildi
 
-**Karar.** Üretimde Express, React derleme çıktısını (`apps/web/dist`) kendisi
-sunar. Uygulama tek URL'den açılır: `http://<KASA_IP>:3000`. Bilinmeyen GET
-yolları `index.html`'e düşer; `/api` altındaki bilinmeyen yollar JSON 404 döner.
+**Karar.** Kullanıcıya görünen tüm metinler Türkçedir: başlıklar, etiketler,
+boş durumlar ve hata mesajları. Para birimi TRY, biçimlendirme `tr-TR`'dir.
 
-**Gerekçe.** Tek origin CORS'u tamamen ortadan kaldırır, güvenlik yüzeyini
-küçültür ve kullanıcının tek bir adres ezberlemesi yeterli olur.
+**Gerekçe.** Kullanıcı kafe personelidir; İngilizce arayüz doğrudan hata ve
+yavaşlık üretir.
 
-**Sonuç.** Geliştirmede Vite proxy'si `/api` çağrılarını Express'e iletir;
-böylece geliştirme ve üretim aynı göreli yolları kullanır.
+**Sonuç.** Hata mesajları kullanıcıya **ne yapacağını** söyler; teknik stack
+trace gösterilmez. Kod içindeki tanımlayıcılar İngilizce kalır.
 
 ---
 
-## ADR-010 — Domain kayıtları doğrudan silinmez
+## ADR-011 — Domain kayıtları doğrudan silinmeyecek
 
 - **Tarih:** 2026-08-12
 - **Durum:** Kabul edildi
 
 **Karar.** Adisyon, sipariş, ödeme ve müşteri gibi domain kayıtları fiziksel
-olarak silinmez. İptal, pasife alma ve durum alanları kullanılır. Destructive
+olarak silinmez; iptal, pasife alma ve durum alanları kullanılır. Destructive
 veritabanı işlemleri yasaktır (bkz. [AGENTS.md](AGENTS.md) §9).
 
 **Gerekçe.** Kasa denetimi ve anlaşmazlık çözümü için işlem geçmişi eksiksiz
 kalmalıdır. Silinen bir adisyon ciro raporunu sessizce bozar.
 
-**Sonuç.** Raporlar iptal edilmiş kayıtları ayrı gösterir; `İşlem geçmişi`
-ilk sürüm kapsamındadır.
+**Sonuç.** Raporlar iptal edilmiş kayıtları ayrı gösterir.
 
 ---
 
-## ADR-011 — Bulut servisleri kapsam dışıdır
+## ADR-012 — Vitest 3 ve çift biçimli contracts paketi
 
 - **Tarih:** 2026-08-12
-- **Durum:** Kabul edildi
+- **Durum:** Kabul edildi (uygulama sırasında zorunluluktan doğdu)
 
-**Karar.** Supabase, Firebase, Railway, Vercel ve benzeri bulut servisleri;
-Docker; Electron; native mobil uygulama; PWA/offline senkronizasyon kapsam
-dışıdır.
+**Karar.**
+(a) Test koşucusu Vitest 3'tür.
+(b) `packages/contracts` hem CommonJS hem ESM çıktı üretir; paket içi göreli
+içe aktarımlarda `.js` uzantısı zorunludur.
 
-**Gerekçe.** ADR-001'in doğrudan sonucudur. Her dış bağımlılık, internet
-kesintisinde kasanın durması riskini geri getirir.
+**Gerekçe.**
+(a) Vitest 2 kendi içinde Vite 5 taşıdığı için Vite 6 kullanan
+`vite.config.ts` tip denetimi çakıştı.
+(b) Rollup, TypeScript'in CommonJS `export *` çıktısını statik olarak
+çözemedi ve production build kırıldı.
 
-**Sonuç.** Bu kararın değişmesi kullanıcı onayı gerektirir.
-
----
-
-## ADR-012 — Socket.IO sonraki bir Phase'e ertelendi
-
-- **Tarih:** 2026-08-12
-- **Durum:** Kabul edildi
-
-**Karar.** Gerçek zamanlı iletişim (Socket.IO) Phase 0'a dâhil edilmez;
-mutfak ekranı ve masa durumu senkronizasyonunun gerektiği Phase'te eklenir.
-
-**Gerekçe.** Phase 0'da eşzamanlı güncellenecek bir domain durumu yoktur.
-Kullanılmayan bir bağımlılık, altyapıyı bugünden karmaşıklaştırır.
-
-**Sonuç.** Sağlık durumu şimdilik TanStack Query ile 30 saniyede bir
-yeniden sorgulanır.
+**Sonuç.** Node/Express `dist/cjs`, Vite/Rollup `dist/esm` çıktısını kullanır.
+Uzantı unutulursa ESM derlemesi kırılır — bu kural
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) içinde de yazılıdır.

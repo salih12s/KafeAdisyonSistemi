@@ -8,7 +8,7 @@ export const testEnv: Env = {
   NODE_ENV: 'test',
   PORT: 3001,
   HOST: '127.0.0.1',
-  DATABASE_URL: 'postgresql://postgres:test@localhost:5432/CafeAdisyon',
+  DATABASE_URL: 'postgresql://postgres:test@localhost:5432/CafeAdisyon?schema=public',
   LOG_LEVEL: 'error',
   JSON_BODY_LIMIT: '1mb',
 };

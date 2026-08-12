@@ -1,4 +1,4 @@
-import { API_PREFIX, type AppEnvironment } from './common.js';
+import { API_PREFIX } from './common.js';
 
 export const HEALTH_ENDPOINT = `${API_PREFIX}/health`;
 
@@ -10,12 +10,10 @@ export interface HealthResponse {
   status: HealthStatus;
   database: DatabaseStatus;
   timestamp: string;
-  environment: AppEnvironment;
 }
 
 const HEALTH_STATUSES: readonly string[] = ['ok', 'degraded'];
 const DATABASE_STATUSES: readonly string[] = ['connected', 'disconnected'];
-const ENVIRONMENTS: readonly string[] = ['development', 'test', 'production'];
 
 /**
  * Ağdan gelen gövdeyi tip iddiası kullanmadan doğrular.
@@ -31,10 +29,6 @@ export function isHealthResponse(value: unknown): value is HealthResponse {
   }
 
   if (!('database' in value) || !isOneOf(value.database, DATABASE_STATUSES)) {
-    return false;
-  }
-
-  if (!('environment' in value) || !isOneOf(value.environment, ENVIRONMENTS)) {
     return false;
   }
 

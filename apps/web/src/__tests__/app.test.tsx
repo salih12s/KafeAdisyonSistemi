@@ -27,10 +27,6 @@ describe('Uygulama kabuğu', () => {
     for (const label of ['Özet', 'Masalar', 'Menü', 'Mutfak', 'Cariler', 'Raporlar', 'Ayarlar']) {
       expect(within(nav).getByRole('link', { name: label })).toBeInTheDocument();
     }
-
-    await waitFor(() => {
-      expect(screen.getByTestId('health-indicator')).toHaveTextContent('Bağlı');
-    });
   });
 
   it('gezinme bağlantısına tıklandığında ilgili modül açılır', async () => {
@@ -42,7 +38,7 @@ describe('Uygulama kabuğu', () => {
     await user.click(within(mainNav()).getByRole('link', { name: 'Masalar' }));
 
     expect(screen.getByRole('heading', { level: 1, name: 'Masalar' })).toBeInTheDocument();
-    expect(screen.getByText('Henüz salon ve masa tanımlanmadı')).toBeInTheDocument();
+    expect(screen.getByText('Henüz salon veya masa tanımlanmadı')).toBeInTheDocument();
 
     await user.click(within(mainNav()).getByRole('link', { name: 'Raporlar' }));
 
@@ -50,7 +46,19 @@ describe('Uygulama kabuğu', () => {
     expect(screen.getByText('Raporlanacak satış verisi yok')).toBeInTheDocument();
   });
 
-  it('veritabanı bağlantısı yokken durumu açıkça bildirir', async () => {
+  it('bağlantı sağlıklıyken sistemin hazır olduğunu bildirir', async () => {
+    stubHealthFetch(healthyResponse);
+
+    renderWithProviders(<App />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('health-indicator')).toHaveTextContent('Sistem hazır');
+    });
+
+    expect(screen.getByText('Veritabanı bağlantısı aktif')).toBeInTheDocument();
+  });
+
+  it('veritabanı bağlantısı yokken anlaşılır Türkçe uyarı gösterir', async () => {
     stubHealthFetch(degradedResponse, 503);
 
     renderWithProviders(<App />);
@@ -60,9 +68,12 @@ describe('Uygulama kabuğu', () => {
     });
 
     expect(screen.getByText('Bağlantı yok')).toBeInTheDocument();
+    expect(
+      screen.getByText(/Sunucu çalışıyor ancak veritabanına bağlanılamıyor/),
+    ).toBeInTheDocument();
   });
 
-  it('sunucuya ulaşılamadığında uyarı gösterir', async () => {
+  it('sunucuya ulaşılamadığında stack trace yerine anlaşılır mesaj gösterir', async () => {
     stubFailingFetch();
 
     renderWithProviders(<App />);
@@ -71,9 +82,11 @@ describe('Uygulama kabuğu', () => {
       expect(screen.getByTestId('health-indicator')).toHaveTextContent('Sunucu yok');
     });
 
-    expect(
-      screen.getByText(/API sunucusuna ulaşılamıyor\. Kasa bilgisayarında/),
-    ).toBeInTheDocument();
+    const warning = screen.getByText(/API sunucusuna ulaşılamıyor/);
+
+    expect(warning).toBeInTheDocument();
+    expect(warning.textContent).not.toContain('Error');
+    expect(warning.textContent).not.toContain('at ');
   });
 
   it('tanımsız adres için bulunamadı sayfası gösterilir', () => {

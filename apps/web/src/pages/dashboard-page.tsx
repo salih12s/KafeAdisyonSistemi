@@ -6,12 +6,6 @@ import { useHealth } from '../hooks/use-health';
 import { formatTimestamp } from '../lib/datetime';
 import { cn } from '../lib/cn';
 
-const ENVIRONMENT_LABELS: Record<string, string> = {
-  development: 'Geliştirme',
-  test: 'Test',
-  production: 'Üretim',
-};
-
 interface StatusRow {
   label: string;
   value: string;
@@ -21,18 +15,18 @@ interface StatusRow {
 function buildStatusRows(health: ReturnType<typeof useHealth>): StatusRow[] {
   if (health.isPending) {
     return [
+      { label: 'Sistem', value: 'Kontrol ediliyor', tone: 'neutral' },
       { label: 'API sunucusu', value: 'Kontrol ediliyor', tone: 'neutral' },
       { label: 'Veritabanı', value: 'Kontrol ediliyor', tone: 'neutral' },
-      { label: 'Ortam', value: '—', tone: 'neutral' },
       { label: 'Son kontrol', value: '—', tone: 'neutral' },
     ];
   }
 
   if (health.isError) {
     return [
+      { label: 'Sistem', value: 'Hazır değil', tone: 'error' },
       { label: 'API sunucusu', value: 'Ulaşılamıyor', tone: 'error' },
       { label: 'Veritabanı', value: 'Bilinmiyor', tone: 'neutral' },
-      { label: 'Ortam', value: '—', tone: 'neutral' },
       { label: 'Son kontrol', value: '—', tone: 'neutral' },
     ];
   }
@@ -40,16 +34,16 @@ function buildStatusRows(health: ReturnType<typeof useHealth>): StatusRow[] {
   const connected = health.data.database === 'connected';
 
   return [
+    {
+      label: 'Sistem',
+      value: connected ? 'Sistem hazır' : 'Hazır değil',
+      tone: connected ? 'ok' : 'error',
+    },
     { label: 'API sunucusu', value: 'Çalışıyor', tone: 'ok' },
     {
       label: 'Veritabanı',
-      value: connected ? 'Bağlı' : 'Bağlantı yok',
+      value: connected ? 'Veritabanı bağlantısı aktif' : 'Bağlantı yok',
       tone: connected ? 'ok' : 'error',
-    },
-    {
-      label: 'Ortam',
-      value: ENVIRONMENT_LABELS[health.data.environment] ?? health.data.environment,
-      tone: 'neutral',
     },
     { label: 'Son kontrol', value: formatTimestamp(health.data.timestamp), tone: 'neutral' },
   ];
@@ -80,7 +74,14 @@ export function DashboardPage(): JSX.Element {
 
         {health.isError ? (
           <p className="border-t border-line bg-danger-soft px-3.5 py-2.5 text-[13px] text-danger">
-            API sunucusuna ulaşılamıyor. Kasa bilgisayarında sunucunun çalıştığını doğrulayın.
+            API sunucusuna ulaşılamıyor. Sunucunun çalıştığını doğrulayın, ardından sayfayı yenileyin.
+          </p>
+        ) : null}
+
+        {!health.isPending && !health.isError && health.data.database === 'disconnected' ? (
+          <p className="border-t border-line bg-danger-soft px-3.5 py-2.5 text-[13px] text-danger">
+            Sunucu çalışıyor ancak veritabanına bağlanılamıyor. PostgreSQL servisini ve
+            apps/api/.env dosyasındaki bağlantı bilgilerini kontrol edin.
           </p>
         ) : null}
       </Panel>
@@ -109,9 +110,9 @@ export function DashboardPage(): JSX.Element {
 
       <Panel title="Bu sürüm hakkında">
         <p className="px-3.5 py-3 text-sm leading-relaxed text-ink-muted">
-          Kurulum aşaması tamamlandı: uygulama kabuğu, gezinme, API sunucusu ve veritabanı
-          bağlantısı hazır. Masa açma, sipariş alma, hesap kapatma ve raporlama işlevleri sonraki
-          aşamalarda bu modüllere eklenecektir.
+          Proje temeli tamamlandı: uygulama kabuğu, gezinme, API sunucusu ve veritabanı bağlantısı
+          hazır. Masa açma, sipariş alma, hesap kapatma ve raporlama işlevleri sonraki aşamalarda
+          bu modüllere eklenecektir.
         </p>
       </Panel>
     </div>

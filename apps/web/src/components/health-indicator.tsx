@@ -24,7 +24,7 @@ function toPresentation(state: ReturnType<typeof useHealth>): Presentation {
     return {
       tone: 'danger',
       label: 'Sunucu yok',
-      detail: 'API sunucusuna ulaşılamıyor. Kasa bilgisayarında sunucunun açık olduğunu kontrol edin.',
+      detail: 'API sunucusuna ulaşılamıyor. Sunucunun çalıştığını kontrol edin.',
     };
   }
 
@@ -36,7 +36,7 @@ function toPresentation(state: ReturnType<typeof useHealth>): Presentation {
     };
   }
 
-  return { tone: 'success', label: 'Bağlı', detail: 'Sunucu ve veritabanı çalışıyor.' };
+  return { tone: 'success', label: 'Sistem hazır', detail: 'Sunucu ve veritabanı çalışıyor.' };
 }
 
 /** Üst çubukta sistemin canlı durumunu gösterir. */

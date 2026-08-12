@@ -27,7 +27,9 @@ Uyuşmazlık varsa durulur ve kullanıcıya bildirilir.
 
 ## 2. Dokümantasyon okuma
 
-`CLAUDE.md` §1'deki sırayla tüm belgeler okunur. Bu adım atlanamaz.
+`AGENTS.md` §1'deki sırayla okunur: `AGENTS.md` → `HANDOFF.md` →
+`DECISIONS.md` → `docs/PHASES.md` → mevcut kod ve testler.
+Bu adım atlanamaz.
 
 ---
 
@@ -35,12 +37,11 @@ Uyuşmazlık varsa durulur ve kullanıcıya bildirilir.
 
 `HANDOFF.md` güncellenir:
 
-- Task ID
-- Aktif ajan
-- Branch
-- Sahip olunan yollar
+- Aktif Phase
+- Aktif branch
+- Ana geliştirici
+- Reviewer
 - Durum → `Devam ediyor`
-- Başlangıç tarihi
 
 ---
 
@@ -92,22 +93,27 @@ git status
 
 ---
 
-## 8. SESSION_LOG güncelleme
+## 8. Uygulamayı çalıştırıp doğrulama
 
-`SESSION_LOG.md` sonuna **yeni** kayıt eklenir. Eski kayıt değiştirilmez.
-Kayıt biçimi dosyanın başındaki şablona uyar.
+```bash
+npm run build
+npm start
+```
+
+- `GET /api/health` beklenen gövdeyi dönüyor mu?
+- Frontend açılıyor ve rotalar arasında geçiş yapılıyor mu?
+- Doğrudan açılan bir rota (`/masalar`) SPA fallback ile geliyor mu?
 
 ---
 
-## 9. HANDOFF güncelleme
+## 9. HANDOFF ve SESSION_LOG güncelleme
 
-`HANDOFF.md` içinde:
+`HANDOFF.md` içinde: aktif Phase, aktif branch, ana geliştirici, reviewer,
+son commit, yapılan işler, değiştirilen önemli dosyalar, çalıştırılan testler,
+test sonuçları, bilinen eksikler, sonraki ajanın işi.
+Durum → `Review bekliyor`.
 
-- Durum → `Review bekliyor`
-- Yapılan son işlem
-- Sonraki beklenen işlem
-- Bilinen risk veya engel
-- Reviewer
+`SESSION_LOG.md` sonuna **yeni** kayıt eklenir; eski kayıt değiştirilmez.
 
 ---
 

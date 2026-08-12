@@ -2,54 +2,45 @@
 
 Her Phase kendi branch'inde çalışır ve draft PR ile kapanır.
 **Bir Phase tamamlanmadan ve kullanıcı açıkça istemeden sonrakine geçilmez**
-(bkz. [../AGENTS.md](../AGENTS.md) §2).
+(bkz. [../AGENTS.md](../AGENTS.md) §3).
 
 Branch adı kalıbı: `feat/phase-<n>-<konu>`
 
 | Phase | Konu | Durum |
 | --- | --- | --- |
-| 0 | Yerel proje temeli, ajan iş akışı, UI altyapısı | **Tamamlandı — review bekliyor** |
+| 0 | Proje temeli ve arayüz altyapısı | **Tamamlandı — Codex review bekliyor** |
 | 1 | Veri modeli, personel ve yetkilendirme | Başlanmadı |
 | 2 | Salon, masa ve menü yönetimi | Başlanmadı |
 | 3 | Masa açma, adisyon ve sipariş | Başlanmadı |
 | 4 | Gerçek zamanlı mutfak/bar ekranı | Başlanmadı |
 | 5 | Hesap kapatma, ödeme ve hesap bölme | Başlanmadı |
-| 6 | Cari hesap, indirim, masa taşıma/birleştirme | Başlanmadı |
-| 7 | Raporlar, işlem geçmişi ve kurulum paketi | Başlanmadı |
+| 6 | Cari hesap, indirim ve masa işlemleri | Başlanmadı |
+| 7 | Raporlar, işlem geçmişi ve Railway deployment | Başlanmadı |
 
 ---
 
-## Phase 0 — Yerel proje temeli, ajan iş akışı ve UI altyapısı
+## Phase 0 — Proje temeli ve arayüz altyapısı
 
 **Branch:** `feat/phase-0-foundation`
 
 **Kapsam**
-
 - Git bootstrap: `main` başlangıç commit'i ve Phase branch'i
 - npm workspaces: `apps/web`, `apps/api`, `packages/contracts`
-- Ortak ajan belgeleri: AGENTS, CLAUDE, WORKFLOW, HANDOFF, SESSION_LOG, DECISIONS
-- `docs/`: ürün kapsamı, mimari, Phase planı, UI rehberi
-- Express temeli: ortam doğrulama, merkezî hata yönetimi, 404, gövde sınırı,
-  Helmet, geliştirme loglaması, graceful shutdown, Prisma yaşam döngüsü,
-  `GET /api/health`, app/server ayrımı
-- React kabuğu: 7 rota, masaüstü kenar çubuğu, mobil gezinme, boş durumlar,
-  canlı sistem durumu göstergesi
-- Üretimde tek origin: Express, React derlemesini sunar
-- Yerel ağ erişimi: `0.0.0.0`
-- Testler: API 21, web 9
-- `npm run verify` yeşil
+- Ortak ajan belgeleri ve `docs/`
+- Express temeli: app/server ayrımı, environment doğrulaması, merkezî hata
+  yönetimi, 404, Helmet, JSON body limiti, geliştirme loglaması, graceful
+  shutdown, Prisma client yönetimi, `GET /api/health`
+- React kabuğu: 7 rota, masaüstü sol menü, mobil navigasyon, boş durumlar,
+  sistem bağlantı durumu göstergesi
+- Production'da Express'in React build'ini sunması + SPA fallback
+- Testler ve `npm run verify`
 
-**Kapsam dışı**
+**Kapsam dışı:** domain tabloları, migration, iş kuralları, Socket.IO,
+Railway yapılandırması
 
-- Domain tabloları, kullanıcı tablosu, migration
-- Socket.IO
-- Herhangi bir iş kuralı
-
-**Tamamlanma ölçütü**
-
-`npm run verify` yeşil, üretim derlemesi tek URL'den açılıyor, veritabanı
-bağlantısı `SELECT 1` ile doğrulanmış, gizli bilgi commit edilmemiş,
-belgeler eksiksiz, draft PR açılmış.
+**Tamamlanma ölçütü:** `npm run verify` yeşil, production build tek origin
+üzerinden açılıyor, veritabanı bağlantısı `SELECT 1` ile doğrulanmış, gerçek
+secret commit edilmemiş, belgeler hazır, draft PR açılmış.
 
 ---
 
@@ -57,15 +48,13 @@ belgeler eksiksiz, draft PR açılmış.
 
 **Branch:** `feat/phase-1-data-model`
 
-**Kapsam**
-
 - Prisma şeması: personel, rol, salon, masa, kategori, ürün, adisyon,
   adisyon kalemi, ödeme, cari, işlem geçmişi
 - İlk migration (kullanıcı onayıyla, mevcut veri korunarak)
 - Para alanları `Int` (kuruş)
-- Personel giriş akışı (PIN), oturum yönetimi
-- Rol bazlı yetki kontrolü — sunucu tarafında
-- Personel yönetim ekranı
+- Personel giriş akışı (PIN) ve oturum yönetimi
+- Rol bazlı yetki kontrolü — **sunucu tarafında**
+- Personel yönetim ekranı (`/ayarlar`)
 - Şema ve yetki testleri
 
 **Kapsam dışı:** sipariş akışı, ödeme, rapor
@@ -76,14 +65,11 @@ belgeler eksiksiz, draft PR açılmış.
 
 **Branch:** `feat/phase-2-catalog`
 
-**Kapsam**
-
 - Salon ve masa CRUD; masa sıralaması
 - Kategori ve ürün CRUD; fiyat güncelleme
 - Ürün seçenek grupları ve ekstralar
 - Ürünü satışa kapatma
-- Menü ve masalar ekranlarının gerçek verilerle çalışması
-- Salon doluluk görünümünün iskeleti
+- `/masalar` ve `/menu` ekranlarının gerçek verilerle çalışması
 
 **Kapsam dışı:** adisyon açma, sipariş
 
@@ -93,14 +79,11 @@ belgeler eksiksiz, draft PR açılmış.
 
 **Branch:** `feat/phase-3-orders`
 
-**Kapsam**
-
 - Masa açma, garson atama, kişi sayısı
 - Adisyon oluşturma ve kalem ekleme
-- Seçenek ve ekstraların fiyata yansıması
-- Sipariş notu
+- Seçenek/ekstraların fiyata yansıması, sipariş notu
 - Kalem adedi değiştirme ve kalem iptali (gerekçeli)
-- Adisyon ara toplamının sunucuda hesaplanması
+- Adisyon toplamının **sunucuda** hesaplanması
 - Sipariş durum akışı: alındı → hazırlanıyor → hazır → servis edildi
 
 **Kapsam dışı:** ödeme alma, hesap bölme
@@ -111,23 +94,17 @@ belgeler eksiksiz, draft PR açılmış.
 
 **Branch:** `feat/phase-4-realtime`
 
-**Kapsam**
-
-- Socket.IO'nun eklenmesi (ADR-012)
+- Gerçek zamanlı iletişimin eklenmesi (Socket.IO)
 - Yeni siparişlerin mutfak/bar ekranına anlık düşmesi
 - Durum değişikliklerinin tüm cihazlarda anlık güncellenmesi
 - Bağlantı kopması ve yeniden bağlanma davranışı
 - Mutfak/bar ayrımı ve bekleme süresi göstergesi
-
-**Kapsam dışı:** ödeme, rapor
 
 ---
 
 ## Phase 5 — Hesap kapatma, ödeme ve hesap bölme
 
 **Branch:** `feat/phase-5-payments`
-
-**Kapsam**
 
 - Adisyon toplamı ve hesap kapatma
 - Nakit, kart, karışık ödeme; para üstü
@@ -136,38 +113,28 @@ belgeler eksiksiz, draft PR açılmış.
 - Kuruş yuvarlama kurallarının tek noktada toplanması
 - Kapsamlı para hesabı testleri
 
-**Kapsam dışı:** cari hesap, indirim
-
 ---
 
 ## Phase 6 — Cari hesap, indirim ve masa işlemleri
 
 **Branch:** `feat/phase-6-accounts`
 
-**Kapsam**
-
-- Müşteri kartı ve cari hesap
-- Adisyonu cariye aktarma, tahsilat, ekstre
+- Müşteri kartı ve cari hesap; adisyonu cariye aktarma, tahsilat, ekstre
 - Yüzde/tutar indirimi ve ikram; yetki sınırı ve gerekçe
 - Masa taşıma ve masa birleştirme
 - Tüm bu işlemlerin işlem geçmişine yazılması
 
-**Kapsam dışı:** raporlama ekranları
-
 ---
 
-## Phase 7 — Raporlar, işlem geçmişi ve kurulum paketi
+## Phase 7 — Raporlar, işlem geçmişi ve Railway deployment
 
-**Branch:** `feat/phase-7-reports`
-
-**Kapsam**
+**Branch:** `feat/phase-7-reports-deploy`
 
 - Gün sonu özeti; ödeme türü dağılımı
 - Ürün, kategori ve personel bazlı satış raporları
 - İndirim/ikram dökümü; tarih aralığı filtresi
 - İşlem geçmişi ekranı ve arama
+- **Railway deployment** (ADR-002): Node.js servisi + Railway PostgreSQL,
+  production environment değişkenleri, custom domain bağlama
 - Yedekleme ve geri yükleme yönergesi
-- Kasa bilgisayarı için kurulum ve otomatik başlatma yönergesi
 - Kullanım kılavuzu
-
-**Kapsam dışı:** ADR-011'de sayılan tüm bulut ve donanım entegrasyonları

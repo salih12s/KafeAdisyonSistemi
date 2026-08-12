@@ -1,34 +1,36 @@
 # CLAUDE.md — Claude için başlangıç belgesi
 
-Bu dosya Claude'un her oturuma nasıl başlayacağını tanımlar.
+Bu dosya Claude'un her çalışmaya nasıl başlayacağını tanımlar.
 Proje kuralları burada tekrar edilmez; kural kaynağı tek bir yerdedir:
 **[AGENTS.md](AGENTS.md)**.
 
 ---
 
-## 1. Oturuma başlarken zorunlu okuma sırası
+## 1. Çalışmaya başlamadan önce zorunlu okuma sırası
 
 Kod yazmadan, dosya oluşturmadan ve öneri sunmadan önce şunlar okunur:
 
 1. **[AGENTS.md](AGENTS.md)** — bağlayıcı kurallar
-2. **[WORKFLOW.md](WORKFLOW.md)** — Phase çalışma düzeni
-3. **[HANDOFF.md](HANDOFF.md)** — aktif görev, aktif ajan, branch, sahiplik
-4. **[DECISIONS.md](DECISIONS.md)** — kalıcı teknik kararlar
-5. **[SESSION_LOG.md](SESSION_LOG.md)** — en az son iki oturum kaydı
-6. İlgili Phase dokümanı — **[docs/PHASES.md](docs/PHASES.md)** ve gerekiyorsa
-   [docs/PRODUCT_SCOPE.md](docs/PRODUCT_SCOPE.md),
-   [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md),
-   [docs/UI_GUIDE.md](docs/UI_GUIDE.md)
-7. Değiştirilecek kod ve o kodun testleri
+2. **[HANDOFF.md](HANDOFF.md)** — aktif Phase, aktif branch, ana geliştirici,
+   reviewer, son durum
+3. **[DECISIONS.md](DECISIONS.md)** — kalıcı teknik kararlar
+4. **[docs/PHASES.md](docs/PHASES.md)** — Phase planı ve aktif Phase kapsamı
+5. **Mevcut kod ve testler** — değiştirilecek dosyalar ve o dosyaların testleri
+
+Gerektiğinde ek belgeler: [WORKFLOW.md](WORKFLOW.md) (adım adım Phase düzeni),
+[SESSION_LOG.md](SESSION_LOG.md) (ayrıntılı oturum kayıtları),
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md),
+[docs/PRODUCT_SCOPE.md](docs/PRODUCT_SCOPE.md),
+[docs/UI_GUIDE.md](docs/UI_GUIDE.md).
 
 ---
 
-## 2. Çalışmaya başlamadan önce doğrulanacaklar
+## 2. Başlamadan önce doğrulanacaklar
 
-- `HANDOFF.md` içinde **aktif ajan Claude mı?** Değilse kod değiştirilmez.
+- `HANDOFF.md` içinde **ana geliştirici Claude mı?** Değilse kod değiştirilmez.
 - Aktif branch `HANDOFF.md` içindeki branch ile aynı mı?
 - Çalışma ağacı temiz mi? (`git status`)
-- Aktif Phase hangisi ve istenen iş bu Phase'in kapsamında mı?
+- İstenen iş aktif Phase'in kapsamında mı?
 
 Bu dördünden biri sağlanmıyorsa kullanıcıya durum bildirilir ve beklenir.
 
@@ -36,15 +38,20 @@ Bu dördünden biri sağlanmıyorsa kullanıcıya durum bildirilir ve beklenir.
 
 ## 3. Bu projeye özgü hatırlatmalar
 
-- Uygulama **yerel ağda** çalışır. Kasa bilgisayarı ana bilgisayardır;
-  telefon ve tabletler onun IPv4 adresine bağlanır. Bulut yoktur.
-- Arayüz dili **Türkçe**, para birimi **TRY**, zaman dilimi **Europe/Istanbul**,
-  biçimlendirme **tr-TR**.
-- Para değerleri **tam sayı kuruş**tur.
+- Şu anda **yalnızca local geliştirme** yapılıyor:
+  frontend `http://localhost:5173`, backend `http://localhost:3000`,
+  PostgreSQL `localhost:5432/CafeAdisyon`.
+- Production hedefi **Railway**'dir (bkz. DECISIONS.md). Ancak Railway
+  yapılandırması bu aşamada yazılmaz.
+- Production'da Express, React build çıktısını da sunar — frontend ve API
+  **aynı origin** üzerindedir.
+- Frontend API adresini **hardcode etmez**; göreli `/api` yolları kullanılır.
+- Arayüz dili **Türkçe**; tarih/saat işlemlerinde **Europe/Istanbul** esas alınır.
+- Para değerleri **tam sayı kuruş** olarak tutulur.
+- Veritabanı bağlantısı **environment değişkeninden** alınır.
 - Mevcut `CafeAdisyon` veritabanı korunur; destructive işlem yasaktır
-  (bkz. AGENTS.md §9).
-- `apps/api/.env` dosyası asla commit edilmez ve içeriği doküman ya da
-  sohbet çıktısına yazılmaz.
+  (AGENTS.md §9).
+- `apps/api/.env` asla commit edilmez ve içeriği çıktıya yazılmaz.
 
 ---
 
@@ -60,7 +67,7 @@ Bu dördünden biri sağlanmıyorsa kullanıcıya durum bildirilir ve beklenir.
 | `npm run test` | API ve web testleri |
 | `npm run build` | Üretim derlemesi |
 | `npm run verify` | lint → typecheck → test → build |
-| `npm start` | Üretim sunucusu (tek URL: `http://<IP>:3000`) |
+| `npm start` | Production sunucusu (Express + React build, tek origin) |
 
 ---
 
@@ -69,9 +76,10 @@ Bu dördünden biri sağlanmıyorsa kullanıcıya durum bildirilir ve beklenir.
 1. `npm run verify` çalıştır, **gerçek** çıktıyı sakla.
 2. `git diff` çıktısını baştan sona incele.
 3. Gizli bilgi taraması yap.
-4. `SESSION_LOG.md` içine yeni kayıt **ekle** (eskiyi değiştirme).
-5. `HANDOFF.md` durumunu güncelle ve reviewer'a devret.
-6. Commit ve push yap; draft PR aç.
-7. Merge etme, bir sonraki Phase'e geçme.
+4. Uygulamayı başlat, `/api/health` ve frontend'i kontrol et.
+5. `HANDOFF.md` dosyasını güncelle ve reviewer'a devret.
+6. `SESSION_LOG.md` sonuna yeni kayıt **ekle** (eskiyi değiştirme).
+7. Commit ve push yap; draft PR aç.
+8. Merge etme, bir sonraki Phase'e geçme.
 
-Ayrıntılı adımlar: **[WORKFLOW.md](WORKFLOW.md)**.
+Adım adım düzen: **[WORKFLOW.md](WORKFLOW.md)**.

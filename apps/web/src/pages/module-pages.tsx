@@ -7,8 +7,8 @@ export function TablesPage(): JSX.Element {
     <Panel>
       <EmptyState
         icon={UtensilsCrossed}
-        title="Henüz salon ve masa tanımlanmadı"
-        description="Salonlar ve masalar tanımlandığında bu ekranda masa planı, doluluk durumu ve açık adisyon tutarları görünecek."
+        title="Henüz salon veya masa tanımlanmadı"
+        description="Masa yönetimi Phase 2'de etkinleştirilecek. Salonlar ve masalar tanımlandığında bu ekranda masa planı, doluluk durumu ve açık adisyon tutarları görünecek."
         upcoming={[
           'Salon bazlı masa planı ve doluluk renkleri',
           'Masa açma ve açık adisyonu görüntüleme',
@@ -26,7 +26,7 @@ export function MenuPage(): JSX.Element {
       <EmptyState
         icon={NotebookText}
         title="Menü henüz oluşturulmadı"
-        description="Kategoriler ve ürünler eklendiğinde menü bu ekrandan yönetilecek. Fiyatlar kuruş cinsinden tam sayı olarak tutulur."
+        description="Menü yönetimi Phase 2'de etkinleştirilecek. Fiyatlar kuruş cinsinden tam sayı olarak tutulacak."
         upcoming={[
           'Kategori ve ürün tanımları',
           'Ürün seçenekleri ve ekstralar',
@@ -44,7 +44,7 @@ export function KitchenPage(): JSX.Element {
       <EmptyState
         icon={ChefHat}
         title="Bekleyen sipariş yok"
-        description="Sipariş alma devreye girdiğinde mutfak ve bara düşen kalemler burada sırayla listelenecek."
+        description="Mutfak ekranı Phase 4'te etkinleştirilecek. Sipariş alma devreye girdiğinde mutfak ve bara düşen kalemler burada sırayla listelenecek."
         upcoming={[
           'Yeni siparişlerin anlık listelenmesi',
           'Hazırlanıyor ve hazır durum takibi',
@@ -62,7 +62,7 @@ export function AccountsPage(): JSX.Element {
       <EmptyState
         icon={UsersRound}
         title="Cari hesap kaydı bulunmuyor"
-        description="Müşteri cari hesapları açıldığında borç, tahsilat ve hesap özetleri bu ekranda takip edilecek."
+        description="Cari hesaplar Phase 6'da etkinleştirilecek. Müşteri hesapları açıldığında borç, tahsilat ve hesap özetleri bu ekranda takip edilecek."
         upcoming={[
           'Müşteri kartı oluşturma',
           'Adisyonu cariye aktarma',
@@ -80,7 +80,7 @@ export function ReportsPage(): JSX.Element {
       <EmptyState
         icon={BarChart3}
         title="Raporlanacak satış verisi yok"
-        description="Satışlar başladığında gün sonu özeti, ödeme türü dağılımı ve ürün bazlı satış raporları burada oluşturulacak."
+        description="Raporlar Phase 7'de etkinleştirilecek. Satışlar başladığında gün sonu özeti, ödeme türü dağılımı ve ürün bazlı satış raporları burada oluşturulacak."
         upcoming={[
           'Gün sonu özeti',
           'Ödeme türüne göre dağılım',
@@ -98,7 +98,7 @@ export function SettingsPage(): JSX.Element {
       <EmptyState
         icon={Settings}
         title="Ayarlar henüz açılmadı"
-        description="Personel, roller ve salon tanımları eklendikçe bu ekrandan yönetilecek. Veritabanı bağlantısı apps/api/.env dosyasından yapılandırılır."
+        description="Personel ve rol yönetimi Phase 1'de etkinleştirilecek. Veritabanı bağlantısı apps/api/.env dosyasından yapılandırılır."
         upcoming={[
           'Personel ve rol yönetimi',
           'Salon ve masa tanımları',

@@ -110,7 +110,14 @@ Font yığını (Windows ve mobil cihazlarda güvenilir, indirme yok):
 - 1440px genişlikte içerik alanı verimli kullanılır; ortada dar bir sütuna
   sıkıştırılmaz.
 
-### Mobil (<1024px)
+### Tablet (~768px)
+
+- Kenar çubuğu henüz görünmez; alt gezinme kullanılır.
+- Üst barda saat ve tarih görünür hâle gelir.
+- Durum paneli iki sütundan dört sütuna geçer (`md` kırılımı).
+- Dokunma hedefleri masaüstünde de 44px altına düşmez.
+
+### Mobil (<768px)
 
 - Kenar çubuğu **gizlenir**. Daraltılıp ikon şeridine sıkıştırılmaz.
 - Alt gezinme çubuğu: en sık kullanılan 4 modül (Özet, Masalar, Menü, Mutfak)
@@ -122,7 +129,8 @@ Font yığını (Windows ve mobil cihazlarda güvenilir, indirme yok):
 - İçerik alanının altında, alt çubuğun altında kalmaması için boşluk bırakılır.
 - `env(safe-area-inset-bottom)` dikkate alınır (çentikli ekranlar).
 
-Kontrol genişlikleri: **1440px** (masaüstü) ve **390px** (telefon).
+Kontrol genişlikleri: **390px** (telefon), **768px** (tablet),
+**1440px** (masaüstü).
 
 ---
 
