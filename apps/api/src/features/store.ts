@@ -8,8 +8,10 @@ import type {
   UserRole,
 } from '@kafe/contracts';
 import type { MenuStore } from './menu-store';
+import type { OrderStore } from './order-store';
 
 export * from './menu-store';
+export * from './order-store';
 
 export interface UserWithPassword extends CurrentUser {
   passwordHash: string;
@@ -79,7 +81,12 @@ export interface TableWriteInput {
 }
 
 export type StoreErrorCode =
-  'NOT_FOUND' | 'CONFLICT' | 'LAST_OWNER' | 'SELF_DEACTIVATE' | 'ALREADY_INITIALIZED';
+  | 'NOT_FOUND'
+  | 'CONFLICT'
+  | 'VALIDATION'
+  | 'LAST_OWNER'
+  | 'SELF_DEACTIVATE'
+  | 'ALREADY_INITIALIZED';
 
 export class StoreError extends Error {
   constructor(
@@ -91,7 +98,7 @@ export class StoreError extends Error {
   }
 }
 
-export interface AppStore extends MenuStore {
+export interface AppStore extends MenuStore, OrderStore {
   hasActiveOwner(): Promise<boolean>;
   bootstrapOwner(input: BootstrapOwnerInput): Promise<CurrentUser>;
   findUserByUsername(username: string): Promise<UserWithPassword | null>;

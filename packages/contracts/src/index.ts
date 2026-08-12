@@ -4,3 +4,4 @@ export * from './health.js';
 export * from './identity.js';
 export * from './menu.js';
 export * from './money.js';
+export * from './orders.js';

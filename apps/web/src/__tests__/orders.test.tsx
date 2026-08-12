@@ -1,0 +1,221 @@
+import { describe, expect, it } from 'vitest';
+import { screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { App } from '../App';
+import { recordedRequests, renderWithProviders, stubAppFetch, userForRole } from '../test/render';
+
+const tableId = '00000000-0000-4000-8000-000000000101';
+const checkId = '00000000-0000-4000-8000-000000000102';
+const productId = '00000000-0000-4000-8000-000000000103';
+const sizeId = '00000000-0000-4000-8000-000000000104';
+const largeId = '00000000-0000-4000-8000-000000000105';
+const shotId = '00000000-0000-4000-8000-000000000106';
+const itemId = '00000000-0000-4000-8000-000000000107';
+
+const openCheckSummary = {
+  id: checkId,
+  guestCount: 3,
+  openedAt: new Date(Date.now() - 35 * 60_000).toISOString(),
+  totalKurus: 18_500,
+};
+
+function floor(open = true) {
+  return {
+    areas: [
+      {
+        id: '00000000-0000-4000-8000-000000000100',
+        name: 'Salon',
+        sortOrder: 0,
+        tables: [
+          {
+            id: tableId,
+            name: 'Masa 1',
+            capacity: 4,
+            sortOrder: 0,
+            openCheck: open ? openCheckSummary : null,
+          },
+        ],
+      },
+    ],
+  };
+}
+
+const check = {
+  id: checkId,
+  tableId,
+  tableName: 'Masa 1',
+  openedByUserId: '00000000-0000-4000-8000-000000000001',
+  openedByName: 'İşletme Sahibi',
+  guestCount: 3,
+  status: 'OPEN',
+  openedAt: '2026-08-12T09:00:00.000Z',
+  totalKurus: 18_500,
+  items: [
+    {
+      id: itemId,
+      productId,
+      productNameSnapshot: 'Latte',
+      unitPriceKurusSnapshot: 8000,
+      quantity: 2,
+      note: 'Az sıcak',
+      lineTotalKurus: 18_500,
+      createdByUserId: '00000000-0000-4000-8000-000000000001',
+      createdByName: 'İşletme Sahibi',
+      createdAt: '2026-08-12T09:05:00.000Z',
+      cancelledAt: null,
+      cancellationReason: null,
+      cancelledByUserId: null,
+      cancelledByName: null,
+      options: [
+        {
+          id: '00000000-0000-4000-8000-000000000108',
+          optionGroupId: sizeId,
+          optionValueId: largeId,
+          groupNameSnapshot: 'Boyut',
+          valueNameSnapshot: 'Büyük',
+          priceDeltaKurusSnapshot: 1000,
+        },
+      ],
+    },
+  ],
+};
+
+const salesMenu = {
+  categories: [
+    {
+      id: '00000000-0000-4000-8000-000000000109',
+      name: 'Kahveler',
+      sortOrder: 0,
+      products: [
+        {
+          id: productId,
+          name: 'Latte',
+          priceKurus: 8000,
+          preparationArea: 'BAR',
+          sortOrder: 0,
+          optionGroups: [
+            {
+              id: sizeId,
+              name: 'Boyut',
+              selectionType: 'SINGLE',
+              isRequired: true,
+              sortOrder: 0,
+              values: [{ id: largeId, name: 'Büyük', priceDeltaKurus: 1000, sortOrder: 0 }],
+            },
+            {
+              id: '00000000-0000-4000-8000-000000000110',
+              name: 'Ekstralar',
+              selectionType: 'MULTIPLE',
+              isRequired: false,
+              sortOrder: 1,
+              values: [{ id: shotId, name: 'Ekstra shot', priceDeltaKurus: 1500, sortOrder: 0 }],
+            },
+          ],
+        },
+      ],
+    },
+  ],
+};
+
+describe('Phase 3 masa ve adisyon ekranı', () => {
+  it('masa kartında açık/boş durumu, toplam ve açık süreyi gösterir', async () => {
+    stubAppFetch({ floorPlan: floor() });
+    renderWithProviders(<App />, '/masalar');
+    const table = await screen.findByRole('button', { name: /Masa 1/ });
+    expect(within(table).getByText('Açık')).toBeInTheDocument();
+    expect(within(table).getByText(/185,00/)).toBeInTheDocument();
+    expect(within(table).getByText(/35 dk/)).toBeInTheDocument();
+  });
+
+  it('boş masayı kişi sayısı ile açar', async () => {
+    stubAppFetch({ floorPlan: floor(false), check });
+    const user = userEvent.setup();
+    renderWithProviders(<App />, '/masalar');
+    await user.click(await screen.findByRole('button', { name: /Masa 1/ }));
+    const form = screen.getByRole('form', { name: 'Masa açma formu' });
+    const guests = within(form).getByLabelText('Kişi sayısı');
+    await user.clear(guests);
+    await user.type(guests, '3');
+    await user.click(within(form).getByRole('button', { name: 'Masayı aç' }));
+    await waitFor(() => {
+      expect(recordedRequests).toContainEqual({
+        path: '/api/orders/checks',
+        method: 'POST',
+        body: { tableId, guestCount: 3 },
+      });
+    });
+  });
+
+  it('açık masadan adisyonu açar ve snapshot kalemleri gösterir', async () => {
+    stubAppFetch({ floorPlan: floor(), check, salesMenu });
+    const user = userEvent.setup();
+    renderWithProviders(<App />, '/masalar');
+    await user.click(await screen.findByRole('button', { name: /Masa 1/ }));
+    expect(await screen.findByText('Masa 1 adisyonu')).toBeInTheDocument();
+    expect(screen.getAllByText('Latte')).not.toHaveLength(0);
+    expect(screen.getByText(/Boyut: Büyük/)).toBeInTheDocument();
+    expect(screen.getByText('Not: Az sıcak')).toBeInTheDocument();
+    expect(screen.getAllByText(/185,00/)).not.toHaveLength(0);
+  });
+
+  it('ürün seçeneklerini seçerek siparişe ekler', async () => {
+    stubAppFetch({ floorPlan: floor(), check, salesMenu });
+    const user = userEvent.setup();
+    renderWithProviders(<App />, '/masalar');
+    await user.click(await screen.findByRole('button', { name: /Masa 1/ }));
+    await screen.findByText('Masa 1 adisyonu');
+    const menuPanel = screen.getByRole('heading', { name: 'Menü' }).closest('section');
+    if (menuPanel === null) throw new Error('Menü paneli bulunamadı.');
+    await user.click(within(menuPanel).getByRole('button', { name: /Latte/ }));
+    const form = screen.getByRole('form', { name: 'Ürün ekleme formu' });
+    await user.click(within(form).getByLabelText(/Büyük/));
+    await user.click(within(form).getByLabelText(/Ekstra shot/));
+    await user.click(within(form).getByRole('button', { name: 'Siparişe ekle' }));
+    await waitFor(() => {
+      expect(
+        recordedRequests.some((entry) => entry.path === `/api/orders/checks/${checkId}/items`),
+      ).toBe(true);
+    });
+    const request = recordedRequests.find((entry) => entry.path.endsWith('/items'));
+    expect(request?.body).toMatchObject({
+      productId,
+      quantity: 1,
+      optionValueIds: [largeId, shotId],
+    });
+  });
+
+  it('kalemin adet/not güncelleme ve gerekçeli iptal akışlarını sunar', async () => {
+    stubAppFetch({ floorPlan: floor(), check, salesMenu });
+    const user = userEvent.setup();
+    renderWithProviders(<App />, '/masalar');
+    await user.click(await screen.findByRole('button', { name: /Masa 1/ }));
+    await screen.findByText('Masa 1 adisyonu');
+    await user.click(screen.getByRole('button', { name: 'Adet / not' }));
+    const edit = screen.getByRole('form', { name: 'Latte kalemini düzenle' });
+    const quantity = within(edit).getByLabelText('Adet');
+    await user.clear(quantity);
+    await user.type(quantity, '3');
+    await user.click(within(edit).getByRole('button', { name: 'Kaydet' }));
+    await waitFor(() =>
+      expect(recordedRequests.some((entry) => entry.method === 'PATCH')).toBe(true),
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Kalemi iptal et' }));
+    const cancel = screen.getByRole('form', { name: 'Latte kalemini iptal et' });
+    await user.type(within(cancel).getByLabelText('İptal gerekçesi'), 'Müşteri vazgeçti');
+    await user.click(within(cancel).getByRole('button', { name: 'İptali onayla' }));
+    await waitFor(() => {
+      expect(recordedRequests.some((entry) => entry.path.endsWith('/cancel'))).toBe(true);
+    });
+  });
+
+  it('KITCHEN adisyonu görür fakat mutation kontrollerini görmez', async () => {
+    stubAppFetch({ floorPlan: floor(), check, salesMenu, user: userForRole('KITCHEN') });
+    const user = userEvent.setup();
+    renderWithProviders(<App />, '/masalar');
+    await user.click(await screen.findByRole('button', { name: /Masa 1/ }));
+    expect(await screen.findByText(/Mutfak rolü adisyonu görüntüleyebilir/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Adet / not' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Kalemi iptal et' })).not.toBeInTheDocument();
+  });
+});

@@ -21,7 +21,8 @@ import {
   type UpdateStaffInput,
   type UserWithPassword,
 } from '../../src/features/store';
-import { MemoryMenuStore, type MemoryAuditEntry } from './memory-menu-store';
+import type { MemoryAuditEntry } from './memory-menu-store';
+import { MemoryOrderStore } from './memory-order-store';
 
 interface MemoryUser extends UserWithPassword {
   lastLoginAt: Date | null;
@@ -52,7 +53,7 @@ export type MemoryAudit = MemoryAuditEntry;
  * Kimlik/salon/masa store'u. Menü işlemleri `MemoryMenuStore` içindedir ve
  * buradan miras alınır; böylece tek bir `AppStore` uygulaması elde edilir.
  */
-export class MemoryStore extends MemoryMenuStore implements AppStore {
+export class MemoryStore extends MemoryOrderStore implements AppStore {
   public readonly sessions: MemorySession[] = [];
   private readonly users: MemoryUser[] = [];
   private readonly areas: MemoryArea[] = [];
@@ -375,6 +376,42 @@ export class MemoryStore extends MemoryMenuStore implements AppStore {
     const user = this.users.find((entry) => entry.id === id);
     if (user === undefined) throw new StoreError('NOT_FOUND', 'Personel bulunamadı.');
     return user;
+  }
+
+  protected findOrderTable(id: string) {
+    const table = this.tables.find((entry) => entry.id === id);
+    if (table === undefined) return null;
+    const area = this.areas.find((entry) => entry.id === table.areaId);
+    return {
+      id: table.id,
+      name: table.name,
+      isActive: table.isActive,
+      areaIsActive: area?.isActive ?? false,
+    };
+  }
+
+  protected findOrderUserName(id: string): string {
+    return this.requireUser(id).fullName;
+  }
+
+  protected orderFloorPlan(): FloorPlanResponse {
+    const areas = this.areas.filter((area) => area.isActive).sort(sortItems);
+    return {
+      areas: areas.map((area) => ({
+        id: area.id,
+        name: area.name,
+        sortOrder: area.sortOrder,
+        tables: this.tables
+          .filter((table) => table.areaId === area.id && table.isActive)
+          .sort(sortItems)
+          .map((table) => ({
+            id: table.id,
+            name: table.name,
+            capacity: table.capacity,
+            sortOrder: table.sortOrder,
+          })),
+      })),
+    };
   }
 
   private removeSessions(predicate: (session: MemorySession) => boolean): void {

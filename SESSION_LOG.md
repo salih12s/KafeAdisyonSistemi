@@ -562,3 +562,53 @@ için authenticated browser E2E yerine 21 frontend kullanıcı akışı testi ya
 - Phase 1 `feat: complete phase 1 identity and table management` commit'i ve
   draft PR ile Claude review'una devrediliyor. Merge yapılmadı, Phase 2
   başlatılmadı.
+
+## 2026-08-12 — Codex — Phase 3 masa, adisyon ve sipariş
+
+**Branch:** `feat/phase-3-orders`
+**Base:** `feat/phase-2-menu-products` (`7241d17`)
+**Görev:** Phase 3 ana geliştirme
+**Sonuç:** Tamamlandı; merge yapılmadı, Phase 4 başlatılmadı.
+
+### Uygulanan değişiklikler
+
+- `CheckStatus`, `Check`, `OrderItem` ve `OrderItemOption` Prisma şemasına
+  eklendi. `20260812092542_phase_3_orders` additive migration'ı üretildi,
+  destructive kalıp taramasından geçirildi ve gerçek `CafeAdisyon` veritabanına
+  `migrate deploy` ile uygulandı.
+- Aynı masadaki ikinci açık adisyon hem serializable transaction hem
+  `Check_one_open_per_table_key` koşullu unique indeksiyle engellendi.
+- Ürün ve seçenek adı/fiyat snapshot'ları, backend kuruş hesabı, zorunlu ve
+  SINGLE/MULTIPLE seçenek doğrulaması uygulandı. İstemciden fiyat/toplam alınmadı.
+- Kalem adet/not güncelleme ve fiziksel silme yapmayan gerekçeli iptal eklendi;
+  iptal edilen kalemler adisyon toplamından çıkarıldı.
+- Masa/adisyon açma, kalem ekleme/değiştirme/iptal audit kayıtları eklendi.
+- `/masalar` boş/açık masa kartları, kişi sayısıyla açma, adisyon menüsü,
+  seçenek seçimi, kalem yönetimi ve toplamla gerçek operasyon ekranına dönüştü.
+- OWNER/CASHIER/WAITER mutation, KITCHEN salt-okuma yetkisi backend'de uygulandı.
+- ADR-014 ve Phase/mimari/devir belgeleri güncellendi.
+
+### Doğrulama
+
+| Kontrol | Sonuç |
+| --- | --- |
+| `npm run lint` | PASS — 0 hata, 0 uyarı |
+| `npm run typecheck` | PASS |
+| `npm run test` | PASS — 14 dosya, 139/139 (API 103, web 36) |
+| `npm run build` | PASS — web JS 300.24 kB, gzip 89.26 kB |
+| `npm run verify` | PASS |
+| `npm run db:check` | PASS — `SELECT 1` |
+| `npm run db:migrate:status` | PASS — schema up to date |
+| Gerçek Prisma Phase 3 okuması | PASS — operasyon floor plan sorgusu |
+
+**Phase 3'te eklenen test:** 23 (17 backend, 6 frontend).
+
+### Kalan riskler
+
+- Gerçek DB'de OWNER olmadığı için authenticated mutation browser/DB E2E
+  yapılmadı; mutation davranışları bellek içi store üzerinden HTTP testlerinde
+  doğrulandı.
+- 390/768/1440px responsive kuralları uygulandı ve akış testleri geçti; gerçek
+  tarayıcı görsel incelemesi yapılmadı.
+- Tüm adisyonu iptal etme/kapatma akışı minimum Phase 3 API kapsamına dahil
+  edilmedi; ödeme ve kapanış Phase 5 kapsamındadır.

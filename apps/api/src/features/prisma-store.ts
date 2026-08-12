@@ -21,6 +21,7 @@ import {
   type UserWithPassword,
 } from './store';
 import { createPrismaMenuStore } from './prisma-menu-store';
+import { createPrismaOrderStore } from './prisma-order-store';
 
 const BUSINESS_ID = 'business';
 
@@ -58,6 +59,7 @@ export function createPrismaStore(client: PrismaClient): AppStore {
   return {
     // Phase 2 menü işlemleri ayrı dosyada tutulur; sınır aynı AppStore'dur.
     ...createPrismaMenuStore(client),
+    ...createPrismaOrderStore(client),
 
     async hasActiveOwner(): Promise<boolean> {
       return (await client.user.count({ where: { role: 'OWNER', isActive: true } })) > 0;

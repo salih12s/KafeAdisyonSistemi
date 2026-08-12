@@ -2,7 +2,7 @@
 //
 // Phase 1: kimlik, işletme, salon, masa ve audit altyapısı.
 // Phase 2: kategori, ürün, ürün seçenek grupları ve seçenek değerleri.
-// Adisyon, sipariş, ödeme ve cari modelleri sonraki Phase'lere aittir.
+// Phase 3: masa adisyonları, sipariş kalemleri ve seçenek snapshot'ları.
 //
 // Kurallar:
 // - Para alanları her zaman tam sayı kuruş (Int) olarak tutulur, Float kullanılmaz.
@@ -26,17 +26,20 @@ enum UserRole {
 }
 
 model User {
-  id           String     @id @default(uuid()) @db.Uuid
-  fullName     String
-  username     String     @unique
-  passwordHash String
-  role         UserRole
-  isActive     Boolean    @default(true)
-  lastLoginAt  DateTime?
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-  sessions     Session[]
-  auditLogs    AuditLog[]
+  id                  String      @id @default(uuid()) @db.Uuid
+  fullName            String
+  username            String      @unique
+  passwordHash        String
+  role                UserRole
+  isActive            Boolean     @default(true)
+  lastLoginAt         DateTime?
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+  sessions            Session[]
+  auditLogs           AuditLog[]
+  openedChecks        Check[]     @relation("CheckOpenedBy")
+  createdOrderItems   OrderItem[] @relation("OrderItemCreatedBy")
+  cancelledOrderItems OrderItem[] @relation("OrderItemCancelledBy")
 
   @@index([role, isActive])
 }
@@ -87,6 +90,7 @@ model CafeTable {
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
   area      DiningArea @relation(fields: [areaId], references: [id], onDelete: Restrict)
+  checks    Check[]
 
   @@unique([areaId, nameKey])
   @@index([areaId, isActive, sortOrder])
@@ -130,44 +134,111 @@ model Product {
   updatedAt       DateTime             @updatedAt
   category        Category             @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   optionGroups    ProductOptionGroup[]
+  orderItems      OrderItem[]
 
   @@unique([categoryId, nameKey])
   @@index([categoryId, isActive, sortOrder])
 }
 
 model ProductOptionGroup {
-  id            String               @id @default(uuid()) @db.Uuid
-  productId     String               @db.Uuid
-  name          String
-  nameKey       String
-  selectionType OptionSelectionType
-  isRequired    Boolean              @default(false)
-  sortOrder     Int                  @default(0)
-  isActive      Boolean              @default(true)
-  createdAt     DateTime             @default(now())
-  updatedAt     DateTime             @updatedAt
-  product       Product              @relation(fields: [productId], references: [id], onDelete: Restrict)
-  values        ProductOptionValue[]
+  id               String               @id @default(uuid()) @db.Uuid
+  productId        String               @db.Uuid
+  name             String
+  nameKey          String
+  selectionType    OptionSelectionType
+  isRequired       Boolean              @default(false)
+  sortOrder        Int                  @default(0)
+  isActive         Boolean              @default(true)
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  product          Product              @relation(fields: [productId], references: [id], onDelete: Restrict)
+  values           ProductOptionValue[]
+  orderItemOptions OrderItemOption[]
 
   @@unique([productId, nameKey])
   @@index([productId, isActive, sortOrder])
 }
 
 model ProductOptionValue {
-  id              String             @id @default(uuid()) @db.Uuid
-  groupId         String             @db.Uuid
-  name            String
-  nameKey         String
+  id               String             @id @default(uuid()) @db.Uuid
+  groupId          String             @db.Uuid
+  name             String
+  nameKey          String
   // Ürün fiyatına eklenen fark; indirim için negatif olabilir.
-  priceDeltaKurus Int                @default(0)
-  sortOrder       Int                @default(0)
-  isActive        Boolean            @default(true)
-  createdAt       DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
-  group           ProductOptionGroup @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  priceDeltaKurus  Int                @default(0)
+  sortOrder        Int                @default(0)
+  isActive         Boolean            @default(true)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  group            ProductOptionGroup @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  orderItemOptions OrderItemOption[]
 
   @@unique([groupId, nameKey])
   @@index([groupId, isActive, sortOrder])
+}
+
+enum CheckStatus {
+  OPEN
+  CANCELLED
+}
+
+model Check {
+  id             String      @id @default(uuid()) @db.Uuid
+  tableId        String      @db.Uuid
+  openedByUserId String      @db.Uuid
+  guestCount     Int
+  status         CheckStatus @default(OPEN)
+  openedAt       DateTime    @default(now())
+  totalKurus     Int         @default(0)
+  updatedAt      DateTime    @updatedAt
+  table          CafeTable   @relation(fields: [tableId], references: [id], onDelete: Restrict)
+  openedBy       User        @relation("CheckOpenedBy", fields: [openedByUserId], references: [id], onDelete: Restrict)
+  items          OrderItem[]
+
+  @@index([tableId, status])
+  @@index([status, openedAt])
+}
+
+model OrderItem {
+  id                     String            @id @default(uuid()) @db.Uuid
+  checkId                String            @db.Uuid
+  productId              String            @db.Uuid
+  productNameSnapshot    String
+  unitPriceKurusSnapshot Int
+  quantity               Int
+  note                   String?
+  lineTotalKurus         Int
+  createdByUserId        String            @db.Uuid
+  createdAt              DateTime          @default(now())
+  updatedAt              DateTime          @updatedAt
+  cancellationReason     String?
+  cancelledByUserId      String?           @db.Uuid
+  cancelledAt            DateTime?
+  check                  Check             @relation(fields: [checkId], references: [id], onDelete: Restrict)
+  product                Product           @relation(fields: [productId], references: [id], onDelete: Restrict)
+  createdBy              User              @relation("OrderItemCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  cancelledBy            User?             @relation("OrderItemCancelledBy", fields: [cancelledByUserId], references: [id], onDelete: Restrict)
+  options                OrderItemOption[]
+
+  @@index([checkId, createdAt])
+  @@index([productId])
+}
+
+model OrderItemOption {
+  id                      String             @id @default(uuid()) @db.Uuid
+  orderItemId             String             @db.Uuid
+  optionGroupId           String             @db.Uuid
+  optionValueId           String             @db.Uuid
+  groupNameSnapshot       String
+  valueNameSnapshot       String
+  priceDeltaKurusSnapshot Int
+  orderItem               OrderItem          @relation(fields: [orderItemId], references: [id], onDelete: Restrict)
+  optionGroup             ProductOptionGroup @relation(fields: [optionGroupId], references: [id], onDelete: Restrict)
+  optionValue             ProductOptionValue @relation(fields: [optionValueId], references: [id], onDelete: Restrict)
+
+  @@unique([orderItemId, optionValueId])
+  @@index([optionGroupId])
+  @@index([optionValueId])
 }
 
 model AuditLog {

@@ -18,6 +18,9 @@ import {
   type ProductResponse,
   type StaffMember,
   type UserRole,
+  type CheckResponse,
+  type MenuResponse,
+  type OperationalFloorPlanResponse,
 } from '@kafe/contracts';
 
 export class ApiError extends Error {
@@ -143,8 +146,9 @@ async function requestPayload(path: string, init?: RequestInit): Promise<unknown
 }
 
 function expectRecord(payload: unknown, key: string): unknown {
-  if (!isRecord(payload) || !(key in payload))
-    {throw new ApiError('Sunucudan beklenmeyen bir yanıt alındı.');}
+  if (!isRecord(payload) || !(key in payload)) {
+    throw new ApiError('Sunucudan beklenmeyen bir yanıt alındı.');
+  }
   return payload[key];
 }
 
@@ -165,8 +169,9 @@ export async function fetchHealth(signal?: AbortSignal): Promise<HealthResponse>
 
 export async function fetchSetupStatus(): Promise<boolean> {
   const payload = await requestPayload('/api/setup/status');
-  if (!isRecord(payload) || typeof payload.initialized !== 'boolean')
-    {throw new ApiError('Kurulum durumu okunamadı.');}
+  if (!isRecord(payload) || typeof payload.initialized !== 'boolean') {
+    throw new ApiError('Kurulum durumu okunamadı.');
+  }
   return payload.initialized;
 }
 
@@ -200,8 +205,9 @@ export function changePassword(currentPassword: string, newPassword: string): Pr
 
 export async function fetchStaff(): Promise<StaffMember[]> {
   const staff = expectRecord(await requestPayload('/api/staff'), 'staff');
-  if (!Array.isArray(staff) || !staff.every(isStaffMember))
-    {throw new ApiError('Personel listesi okunamadı.');}
+  if (!Array.isArray(staff) || !staff.every(isStaffMember)) {
+    throw new ApiError('Personel listesi okunamadı.');
+  }
   return staff;
 }
 
@@ -261,8 +267,9 @@ export function updateArea(
 
 export async function fetchTables(): Promise<CafeTableResponse[]> {
   const tables = expectRecord(await requestPayload('/api/tables?includeInactive=true'), 'tables');
-  if (!Array.isArray(tables) || !tables.every(isTable))
-    {throw new ApiError('Masa listesi okunamadı.');}
+  if (!Array.isArray(tables) || !tables.every(isTable)) {
+    throw new ApiError('Masa listesi okunamadı.');
+  }
   return tables;
 }
 
@@ -381,8 +388,9 @@ export async function fetchCategories(includeInactive: boolean): Promise<Categor
     await requestPayload(`/api/menu/categories?includeInactive=${String(includeInactive)}`),
     'categories',
   );
-  if (!Array.isArray(categories) || !categories.every(isCategory))
-    {throw new ApiError('Kategori listesi okunamadı.');}
+  if (!Array.isArray(categories) || !categories.every(isCategory)) {
+    throw new ApiError('Kategori listesi okunamadı.');
+  }
   return categories;
 }
 
@@ -402,8 +410,9 @@ export async function fetchProducts(includeInactive: boolean): Promise<ProductRe
     await requestPayload(`/api/menu/products?includeInactive=${String(includeInactive)}`),
     'products',
   );
-  if (!Array.isArray(products) || !products.every(isProduct))
-    {throw new ApiError('Ürün listesi okunamadı.');}
+  if (!Array.isArray(products) || !products.every(isProduct)) {
+    throw new ApiError('Ürün listesi okunamadı.');
+  }
   return products;
 }
 
@@ -428,8 +437,9 @@ export async function fetchOptionGroups(
     ),
     'optionGroups',
   );
-  if (!Array.isArray(groups) || !groups.every(isOptionGroup))
-    {throw new ApiError('Seçenek listesi okunamadı.');}
+  if (!Array.isArray(groups) || !groups.every(isOptionGroup)) {
+    throw new ApiError('Seçenek listesi okunamadı.');
+  }
   return groups;
 }
 
@@ -459,4 +469,187 @@ export function updateOptionValue(id: string, input: OptionValueInput): Promise<
     method: 'PATCH',
     body: JSON.stringify(input),
   });
+}
+
+// --- Phase 3: masa adisyonları ve siparişler ---
+
+function isOrderItemOption(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    typeof value.id === 'string' &&
+    typeof value.optionGroupId === 'string' &&
+    typeof value.optionValueId === 'string' &&
+    typeof value.groupNameSnapshot === 'string' &&
+    typeof value.valueNameSnapshot === 'string' &&
+    typeof value.priceDeltaKurusSnapshot === 'number'
+  );
+}
+
+function isOrderItem(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    typeof value.id === 'string' &&
+    typeof value.productId === 'string' &&
+    typeof value.productNameSnapshot === 'string' &&
+    typeof value.unitPriceKurusSnapshot === 'number' &&
+    typeof value.quantity === 'number' &&
+    (value.note === null || typeof value.note === 'string') &&
+    typeof value.lineTotalKurus === 'number' &&
+    typeof value.createdByUserId === 'string' &&
+    typeof value.createdByName === 'string' &&
+    typeof value.createdAt === 'string' &&
+    (value.cancelledAt === null || typeof value.cancelledAt === 'string') &&
+    (value.cancellationReason === null || typeof value.cancellationReason === 'string') &&
+    (value.cancelledByUserId === null || typeof value.cancelledByUserId === 'string') &&
+    (value.cancelledByName === null || typeof value.cancelledByName === 'string') &&
+    Array.isArray(value.options) &&
+    value.options.every(isOrderItemOption)
+  );
+}
+
+function isCheck(value: unknown): value is CheckResponse {
+  return (
+    isRecord(value) &&
+    typeof value.id === 'string' &&
+    typeof value.tableId === 'string' &&
+    typeof value.tableName === 'string' &&
+    typeof value.openedByUserId === 'string' &&
+    typeof value.openedByName === 'string' &&
+    typeof value.guestCount === 'number' &&
+    (value.status === 'OPEN' || value.status === 'CANCELLED') &&
+    typeof value.openedAt === 'string' &&
+    typeof value.totalKurus === 'number' &&
+    Array.isArray(value.items) &&
+    value.items.every(isOrderItem)
+  );
+}
+
+function isOperationalFloorPlan(value: unknown): value is OperationalFloorPlanResponse {
+  if (!isRecord(value) || !Array.isArray(value.areas)) return false;
+  return value.areas.every(
+    (area) =>
+      isRecord(area) &&
+      typeof area.id === 'string' &&
+      typeof area.name === 'string' &&
+      typeof area.sortOrder === 'number' &&
+      Array.isArray(area.tables) &&
+      area.tables.every(
+        (table) =>
+          isRecord(table) &&
+          typeof table.id === 'string' &&
+          typeof table.name === 'string' &&
+          (table.capacity === null || typeof table.capacity === 'number') &&
+          typeof table.sortOrder === 'number' &&
+          (table.openCheck === null ||
+            (isRecord(table.openCheck) &&
+              typeof table.openCheck.id === 'string' &&
+              typeof table.openCheck.guestCount === 'number' &&
+              typeof table.openCheck.openedAt === 'string' &&
+              typeof table.openCheck.totalKurus === 'number')),
+      ),
+  );
+}
+
+function isMenu(value: unknown): value is MenuResponse {
+  if (!isRecord(value) || !Array.isArray(value.categories)) return false;
+  return value.categories.every(
+    (category) =>
+      isRecord(category) &&
+      typeof category.id === 'string' &&
+      typeof category.name === 'string' &&
+      typeof category.sortOrder === 'number' &&
+      Array.isArray(category.products) &&
+      category.products.every(
+        (product) =>
+          isRecord(product) &&
+          typeof product.id === 'string' &&
+          typeof product.name === 'string' &&
+          typeof product.priceKurus === 'number' &&
+          isPreparationArea(product.preparationArea) &&
+          typeof product.sortOrder === 'number' &&
+          Array.isArray(product.optionGroups) &&
+          product.optionGroups.every(
+            (group) =>
+              isRecord(group) &&
+              typeof group.id === 'string' &&
+              typeof group.name === 'string' &&
+              isOptionSelectionType(group.selectionType) &&
+              typeof group.isRequired === 'boolean' &&
+              typeof group.sortOrder === 'number' &&
+              Array.isArray(group.values) &&
+              group.values.every(
+                (option) =>
+                  isRecord(option) &&
+                  typeof option.id === 'string' &&
+                  typeof option.name === 'string' &&
+                  typeof option.priceDeltaKurus === 'number' &&
+                  typeof option.sortOrder === 'number',
+              ),
+          ),
+      ),
+  );
+}
+
+export async function fetchOperationalFloorPlan(): Promise<OperationalFloorPlanResponse> {
+  const payload = await requestPayload('/api/orders/floor-plan');
+  if (!isOperationalFloorPlan(payload)) throw new ApiError('Masa durumları okunamadı.');
+  return payload;
+}
+
+export async function fetchSalesMenu(): Promise<MenuResponse> {
+  const payload = await requestPayload('/api/menu');
+  if (!isMenu(payload)) throw new ApiError('Satış menüsü okunamadı.');
+  return payload;
+}
+
+function readCheck(payload: unknown): CheckResponse {
+  const check = expectRecord(payload, 'check');
+  if (!isCheck(check)) throw new ApiError('Adisyon bilgisi okunamadı.');
+  return check;
+}
+
+export async function fetchCheck(id: string): Promise<CheckResponse> {
+  return readCheck(await requestPayload(`/api/orders/checks/${id}`));
+}
+
+export async function openTableCheck(tableId: string, guestCount: number): Promise<CheckResponse> {
+  return readCheck(
+    await requestPayload('/api/orders/checks', {
+      method: 'POST',
+      body: JSON.stringify({ tableId, guestCount }),
+    }),
+  );
+}
+
+export async function addOrderItem(
+  checkId: string,
+  input: { productId: string; quantity: number; note: string | null; optionValueIds: string[] },
+): Promise<CheckResponse> {
+  return readCheck(
+    await requestPayload(`/api/orders/checks/${checkId}/items`, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
+  );
+}
+
+export async function updateOrderItem(
+  itemId: string,
+  input: { quantity: number; note: string | null },
+): Promise<CheckResponse> {
+  return readCheck(
+    await requestPayload(`/api/orders/items/${itemId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(input),
+    }),
+  );
+}
+
+export async function cancelOrderItem(itemId: string, reason: string): Promise<CheckResponse> {
+  return readCheck(
+    await requestPayload(`/api/orders/items/${itemId}/cancel`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    }),
+  );
 }

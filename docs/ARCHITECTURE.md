@@ -280,3 +280,21 @@ Oluşturmak için: `npm run setup:env`.
   silinmez (ADR-011).
 - **Para bütünlüğü:** tam sayı kuruş; `Float` kullanılmaz (ADR-008).
 - **Zaman bütünlüğü:** UTC saklanır, `Europe/Istanbul` gösterilir (ADR-009).
+
+---
+
+## 11. Phase 3 adisyon ve sipariş modeli
+
+- `Check`: masa, açan personel, kişi sayısı, `OPEN`/`CANCELLED`, açılış zamanı ve
+  sunucuda tutulan toplam. PostgreSQL koşullu unique indeksi her masada en fazla
+  bir `OPEN` adisyon bulunmasını sağlar.
+- `OrderItem`: ürün referansına ek olarak ürün adı/birim fiyat snapshot'ı, adet,
+  not, kalem toplamı, oluşturan personel ve gerekçeli iptal alanları.
+- `OrderItemOption`: seçenek grup/değer referansları ile ad ve fiyat farkı
+  snapshot'ları.
+
+Adisyon store'u `OrderStore` sınırıyla kimlik ve menü store'larından ayrılır;
+production uygulaması Prisma transaction'ları, test uygulaması bellek içi store
+kullanır. Tüm fiyatlar tam sayı kuruş olarak backend'de hesaplanır. İstemcinin
+gönderdiği fiyat veya toplam alanları kullanılmaz. Kalem iptali fiziksel silme
+yapmaz ve toplam yalnız `cancelledAt IS NULL` kalemlerden yeniden hesaplanır.
