@@ -71,6 +71,7 @@ describe('Phase 1 yönetim ve floor plan', () => {
                 name: 'Masa 1',
                 capacity: 4,
                 sortOrder: 0,
+                openCheck: null,
               },
             ],
           },

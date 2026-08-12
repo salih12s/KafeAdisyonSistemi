@@ -16,8 +16,8 @@ Her Phase branch'i bir önceki Phase branch'inden açılır; PR'ı da ona hedefl
 | ----- | ------------------------------------------------------ | --------------- | ---------------- |
 | 0     | Proje temeli                                           | Claude          | Tamamlandı — draft PR açık |
 | 1     | Authentication, personel, işletme, salon ve masa       | Codex           | Tamamlandı — draft PR açık |
-| 2     | Kategoriler, ürünler, seçenekler ve ekstralar          | Claude          | **Devam ediyor** |
-| 3     | Masa açma, adisyon ve sipariş                          | Codex           | Başlanmadı       |
+| 2     | Kategoriler, ürünler, seçenekler ve ekstralar          | Claude          | Tamamlandı — draft PR açık |
+| 3     | Masa açma, adisyon ve sipariş                          | Codex           | Tamamlandı — draft PR açık |
 | 4     | Mutfak/bar ve gerçek zamanlı güncelleme                | Codex           | Başlanmadı       |
 | 5     | Ödeme, hesap bölme ve hesap kapatma                    | Codex           | Başlanmadı       |
 | 6     | Cari hesap, indirim, ikram, masa taşıma ve birleştirme | Codex           | Başlanmadı       |
@@ -99,9 +99,10 @@ secret commit edilmemiş, belgeler hazır, draft PR açılmış.
 - Seçenek/ekstraların fiyata yansıması, sipariş notu
 - Kalem adedi değiştirme ve kalem iptali (gerekçeli)
 - Adisyon toplamının **sunucuda** hesaplanması
-- Sipariş durum akışı: alındı → hazırlanıyor → hazır → servis edildi
+- Sipariş kaleminde ürün/seçenek fiyat snapshot'ları, adet/not güncelleme ve gerekçeli iptal
+- Aynı masada tek açık adisyonun veritabanı seviyesinde korunması
 
-**Kapsam dışı:** ödeme alma, hesap bölme
+**Kapsam dışı:** sipariş hazırlık durumları (Phase 4), ödeme alma, hesap bölme
 
 ---
 

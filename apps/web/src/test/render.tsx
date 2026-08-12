@@ -86,6 +86,8 @@ export function stubAppFetch(
     products?: unknown[];
     optionGroups?: unknown[];
     menuFails?: boolean;
+    salesMenu?: unknown;
+    check?: unknown;
   } = {},
 ): void {
   let currentUser = options.user === undefined ? ownerUser : options.user;
@@ -96,6 +98,11 @@ export function stubAppFetch(
       const path = String(input);
       recordRequest(path, init);
       const isWrite = (init?.method ?? 'GET') !== 'GET';
+
+      if (path === '/api/orders/floor-plan')
+        {return Promise.resolve(response(options.floorPlan ?? { areas: [] }));}
+      if (path.startsWith('/api/orders/checks') || path.startsWith('/api/orders/items'))
+        {return Promise.resolve(response({ check: options.check ?? null }, isWrite ? 201 : 200));}
 
       if (path.startsWith('/api/menu')) {
         if (options.menuFails === true) {
@@ -118,7 +125,7 @@ export function stubAppFetch(
           {return Promise.resolve(
             isWrite ? response({}, 201) : response({ products: options.products ?? [] }),
           );}
-        return Promise.resolve(response({ categories: [] }));
+        return Promise.resolve(response(options.salesMenu ?? { categories: [] }));
       }
       if (path === '/api/health')
         {return Promise.resolve(response(options.health ?? healthyResponse, options.healthStatus));}

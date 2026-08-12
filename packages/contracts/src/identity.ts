@@ -16,6 +16,8 @@ export const PERMISSIONS = {
   MANAGE_TABLES: 'MANAGE_TABLES',
   VIEW_MENU: 'VIEW_MENU',
   MANAGE_MENU: 'MANAGE_MENU',
+  VIEW_ORDERS: 'VIEW_ORDERS',
+  MANAGE_ORDERS: 'MANAGE_ORDERS',
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];

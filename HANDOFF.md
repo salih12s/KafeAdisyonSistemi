@@ -1,195 +1,122 @@
 # HANDOFF.md — Geliştiriciler arası devir kaydı
 
-Bu dosya **her zaman tek bir aktif görevi** gösterir ve görev sonunda güncellenir
-(bkz. [AGENTS.md](AGENTS.md) §7).
-
-> **Çalışma düzeni (2026-08-12'de değişti):** Phase başına ayrı review adımı
-> **yoktur**. Bir Phase; iş bitip testler geçtikten sonra commit + push + draft PR
-> ile kapanır, merge edilmez ve **sonraki Phase hemen başlayabilir**. Kapsamlı
-> review tüm proje bittikten sonra bir kez yapılacaktır (AGENTS.md §5).
-> Bu dosya bir reviewer'a değil, **sonraki geliştiriciye** hazırlanır.
+Bu dosya her zaman tek aktif görevi gösterir (bkz. [AGENTS.md](AGENTS.md) §7).
+Phase başına ayrı review yoktur; tamamlanan Phase draft PR ile açık bırakılır ve
+sonraki geliştiriciye devredilir.
 
 ---
 
 ## Aktif durum
 
-| Alan | Değer |
-| --- | --- |
-| **Aktif Phase** | Phase 2 — Menü ve ürün yönetimi |
-| **Aktif branch** | `feat/phase-2-menu-products` |
-| **Ana geliştirici** | Claude |
-| **Durum** | **Tamamlandı — draft PR açık, merge edilmedi** |
-| **Base branch / SHA** | `feat/phase-1-identity-tables` / `c4b5e1816a6d44790790aa2aa7d870844a7324bb` |
-| **Phase commit** | `feat: complete phase 2 menu and product management` |
-| **Son güncelleme** | 2026-08-12 |
+| Alan                  | Değer                                              |
+| --------------------- | -------------------------------------------------- |
+| **Tamamlanan Phase**  | Phase 3 — Masa, adisyon ve sipariş                 |
+| **Branch**            | `feat/phase-3-orders`                              |
+| **Ana geliştirici**   | Codex                                              |
+| **Durum**             | **Tamamlandı — draft PR açık, merge edilmedi** |
+| **Base branch / SHA** | `feat/phase-2-menu-products` / `7241d17`           |
+| **Phase commit**      | `feat: complete phase 3 table checks and ordering` |
+| **Son güncelleme**    | 2026-08-12                                         |
 
 ### Phase durumu
 
-| Phase | Branch | Ana geliştirici | Durum |
-| --- | --- | --- | --- |
-| 0 | `feat/phase-0-foundation` | Claude | Tamamlandı · draft PR açık |
-| 1 | `feat/phase-1-identity-tables` | Codex | Tamamlandı · draft PR açık |
-| 2 | `feat/phase-2-menu-products` | Claude | Tamamlandı · draft PR açık |
-| 3 | — | **Codex** | Başlanmadı |
-
-Açık draft PR'lar sonraki Phase'i **bloke etmez**.
+| Phase | Branch                         | Ana geliştirici | Durum                          |
+| ----- | ------------------------------ | --------------- | ------------------------------ |
+| 0     | `feat/phase-0-foundation`      | Claude          | Tamamlandı · draft PR açık     |
+| 1     | `feat/phase-1-identity-tables` | Codex           | Tamamlandı · draft PR açık     |
+| 2     | `feat/phase-2-menu-products`   | Claude          | Tamamlandı · draft PR açık     |
+| 3     | `feat/phase-3-orders`          | Codex           | Tamamlandı · draft PR açık     |
+| 4     | `feat/phase-4-realtime`        | Codex           | Başlanmadı                     |
 
 ---
 
-## Phase 2 teslimi
+## Phase 3 teslimi
 
-### Çalışma düzeni değişikliği
+### Veri modeli ve migration
 
-Kullanıcı Phase başına Claude/Codex review'unu kaldırdı. `AGENTS.md` §5 yeniden
-yazıldı, `WORKFLOW.md` §3/§9/§12/§13 ve `docs/PHASES.md` başlığı güncellendi;
-`HANDOFF.md` artık reviewer değil sonraki geliştirici için hazırlanıyor.
-`SESSION_LOG.md` append-only kaldı — eski kayıtlara dokunulmadı.
-
-### Veri katmanı
-
-- Additive migration: `20260812085207_phase_2_menu_products`.
-- Yalnız `CREATE TYPE` / `CREATE TABLE` / `CREATE INDEX` / `ADD CONSTRAINT`
-  içerir. Mevcut tablolara `ALTER`, hiçbir `DROP` veya veri değişikliği yok.
-- Yeni enum'lar: `PreparationArea` (KITCHEN/BAR),
-  `OptionSelectionType` (SINGLE/MULTIPLE).
-- Yeni modeller: `Category`, `Product`, `ProductOptionGroup`,
-  `ProductOptionValue`.
-- Benzersizlik: `Category.nameKey` global; `Product` kategori içinde;
-  `ProductOptionGroup` ürün içinde; `ProductOptionValue` grup içinde.
-  `nameKey`, `normalizeNameKey` ile tr-TR küçük harfe indirgenir — "TATLILAR"
-  ile "Tatlılar" aynı sayılır.
-- Tüm ilişkiler `onDelete: Restrict`. **Hiçbir DELETE ucu yoktur**; pasife alma
-  `isActive` ile yapılır.
-- Fiyatlar `Int` kuruştur (`priceKurus`, `priceDeltaKurus`); `Float` yok.
-  Fiyat farkı negatif olabilir (küçük boy indirimi).
+- Additive migration: `20260812092542_phase_3_orders`.
+- Yeni enum: `CheckStatus` (`OPEN`, `CANCELLED`).
+- Yeni modeller: `Check`, `OrderItem`, `OrderItemOption`.
+- Migration yalnız yeni enum/tablo/index/constraint/foreign key oluşturur; `DROP`,
+  `TRUNCATE`, `DELETE FROM`, reset veya mevcut veriyi dönüştüren işlem yoktur.
+- Tüm ilişkiler `ON DELETE RESTRICT`; sipariş kalemi iptali fiziksel silme yapmaz.
+- `Check_one_open_per_table_key` koşullu unique indeksi aynı masada yalnız bir
+  `OPEN` adisyon bulunmasını veritabanı seviyesinde korur.
+- Migration gerçek `CafeAdisyon` veritabanına `prisma migrate deploy` ile
+  uygulandı; migration durumu günceldir ve `SELECT 1` başarılıdır.
 
 ### Backend
 
-- `MenuStore` sınırı `src/features/menu-store.ts`; Prisma uygulaması
-  `prisma-menu-store.ts`, `createPrismaStore` içine spread edilir.
-- Yeni izinler: `VIEW_MENU` (tüm roller) ve `MANAGE_MENU` (yalnız OWNER).
-- `/api/menu` altındaki uçlar:
-  - `GET /api/menu` — yalnız aktif kayıtlardan satış görünümü
-  - `GET|POST /api/menu/categories`, `PATCH /api/menu/categories/:id`
-  - `GET|POST /api/menu/products`, `PATCH /api/menu/products/:id`
-  - `GET|POST /api/menu/products/:id/option-groups`
-  - `PATCH /api/menu/option-groups/:id`
-  - `POST /api/menu/option-groups/:id/values`
-  - `PATCH /api/menu/option-values/:id`
-- Validation ve duplicate kontrolü **backend'de**: zod ile ad/sıra/fiyat,
-  `P2002` → 409, `P2025` → 404.
-- Tüm yazma işlemleri `AuditLog` kaydı üretir.
-- Ortak `parse` ve `callStore` yardımcıları `features/http.ts` içine taşındı;
-  `routes.ts` ve `menu-routes.ts` aynı kopyayı kullanır.
+- `OrderStore` sınırı ve Prisma/bellek içi uygulamaları eklendi.
+- Uçlar `/api/orders` altında: operasyon floor plan, masa açma, adisyon okuma,
+  masanın açık adisyonunu okuma, kalem ekleme, adet/not güncelleme ve gerekçeli
+  kalem iptali.
+- OWNER, CASHIER ve WAITER sipariş mutation'ı yapabilir; KITCHEN yalnız okur.
+- Zorunlu seçenek, SINGLE/MULTIPLE, aktif ürün/grup/değer ve seçeneğin ürüne
+  aidiyeti backend'de doğrulanır; geçersiz seçim `400` döner.
+- Ürün adı/fiyatı ile seçenek adı/fiyat farkları sipariş anında snapshot alınır.
+  `(ürün + seçenekler) × adet` ve adisyon toplamı yalnız backend transaction'ında
+  tam sayı kuruşla hesaplanır; istemci fiyat/toplam alanları kullanılmaz.
+- Açma, kalem ekleme, değiştirme ve iptal işlemleri audit kaydı üretir.
 
 ### Frontend
 
-- `/menu` artık gerçek PostgreSQL verisiyle çalışır (`pages/menu-page.tsx`).
-  Eski placeholder `module-pages.tsx` içinden kaldırıldı.
-- OWNER: kategori, ürün, seçenek grubu ve seçenek değeri ekler/düzenler,
-  pasife alır, sıralar.
-- OWNER olmayan roller menüyü **yalnız görüntüler**; hiçbir form veya
-  "Düzenle" düğmesi render edilmez. Yetki hem API hem arayüzde uygulanır.
-- Fiyat arayüzde ₺ olarak girilir, `liraToKurus` ile tam sayı kuruşa çevrilerek
-  gönderilir; listede `formatKurus` ile tr-TR biçiminde gösterilir.
-- Mevcut cafe UI dili korundu: `Panel`, `EmptyState`, aynı palet, 44px dokunma
-  hedefleri, `sm`/`lg`/`xl` kırılımları. Sahte ürün/veri eklenmedi.
+- `/masalar` gerçek operasyon ekranıdır: salonlar, boş/açık durumu, kişi,
+  toplam ve açık süre gösterilir.
+- Boş masa kişi sayısıyla açılır; açık masa adisyon ekranına geçer.
+- Adisyon ekranı kategori/ürün menüsü, SINGLE/MULTIPLE seçenekler, ürün ekleme,
+  snapshot kalemleri, adet/not güncelleme, gerekçeli iptal ve toplamı içerir.
+- KITCHEN salt okuma görünümü alır. Dokunma hedefleri en az 44px, gridler
+  telefon/tablet/masaüstü kırılımlarına uygundur ve yatay taşma oluşturan sabit
+  genişlik eklenmemiştir.
+
+### Kalite kanıtı
+
+| Komut                       | Sonuç                                  |
+| --------------------------- | -------------------------------------- |
+| `npm run lint`              | PASS — 0 hata, 0 uyarı                 |
+| `npm run typecheck`         | PASS — contracts + api + web           |
+| `npm run test`              | PASS — 139/139 (API 103, web 36)       |
+| `npm run build`             | PASS — web JS 300.24 kB, gzip 89.26 kB |
+| `npm run verify`            | PASS — lint → typecheck → test → build |
+| `npm run db:check`          | PASS — PostgreSQL `SELECT 1`           |
+| `npm run db:migrate:status` | PASS — 3 migration, schema up to date  |
+
+Phase 3'te 23 test eklendi: 17 backend + 6 frontend.
+
+### Bilinen riskler
+
+1. Gerçek veritabanında OWNER ve domain verisi yoktur; Prisma operasyon floor
+   plan sorgusu gerçek şemada salt-okuma olarak doğrulandı, authenticated gerçek-DB
+   mutation E2E yapılmadı.
+2. Responsive kurallar ve kullanıcı akışları jsdom testleriyle doğrulandı;
+   390/768/1440px gerçek tarayıcı görsel incelemesi yapılmadı.
+3. Adisyonun tamamını `CANCELLED` durumuna geçiren kullanıcı akışı bu Phase'in
+   minimum API kapsamına dahil edilmedi; enum Phase 5 kapanış/iptal akışına hazırdır.
 
 ---
 
-## Değiştirilen önemli dosyalar
+## Sonraki geliştiricinin işi — Phase 4 (Codex)
 
-| Yol | Not |
-| --- | --- |
-| `apps/api/prisma/schema.prisma` | 4 yeni model + 2 enum |
-| `apps/api/prisma/migrations/20260812085207_phase_2_menu_products/` | Additive migration |
-| `apps/api/src/features/menu-store.ts` | MenuStore sınırı ve write input tipleri |
-| `apps/api/src/features/prisma-menu-store.ts` | Prisma uygulaması + audit |
-| `apps/api/src/features/menu-routes.ts` | `/api/menu` uçları, zod validation |
-| `apps/api/src/features/http.ts` | Ortak `parse` ve `callStore` |
-| `apps/api/src/features/permissions.ts` | `VIEW_MENU` tüm rollere |
-| `apps/api/src/features/store.ts` | `AppStore extends MenuStore` |
-| `packages/contracts/src/menu.ts` | Menü sözleşmeleri ve tip koruyucular |
-| `packages/contracts/src/identity.ts` | `VIEW_MENU` / `MANAGE_MENU` |
-| `apps/web/src/pages/menu-page.tsx` | Gerçek verili menü ekranı |
-| `apps/web/src/lib/api.ts` | Menü istemci fonksiyonları + tip koruyucular |
-| `apps/api/tests/helpers/memory-menu-store.ts` | Bellek içi MenuStore |
-| `AGENTS.md`, `WORKFLOW.md`, `docs/PHASES.md` | Yeni çalışma düzeni |
+Phase 4: mutfak/bar ekranı, hazırlık durumları ve Socket.IO gerçek zamanlı
+güncellemeler. `feat/phase-4-realtime` branch'i bu branch'ten açılmalıdır.
 
----
+- Phase 3 `preparationArea` değerini değiştirmedi; mutfak/bar yönlendirmesinde
+  ürün referansından veya gerekli yeni snapshot kararından yararlanılmalıdır.
+- Phase 3 kalemlerinde hazırlık durum alanı yoktur; Phase 4 migration'ı additive
+  olmalıdır.
+- Ödeme, hesap kapatma/bölme, cari, indirim ve Railway kapsam dışı kalır.
+- Phase 4'e bu teslim sırasında başlanmadı.
 
-## Çalıştırılan testler ve sonuçları
-
-| Komut | Sonuç |
-| --- | --- |
-| `npm run lint` | **PASS** — 0 hata, 0 uyarı |
-| `npm run typecheck` | **PASS** — contracts + api + web |
-| `npm run test` | **PASS** — 116/116 |
-| `npm run build` | **PASS** — `index.js 285.53 kB (gzip 86.16)` |
-| `npm run verify` | **PASS** — lint → typecheck → test → build |
-| `npx prisma migrate deploy` | **PASS** — migration uygulandı, veri kaybı yok |
-
-```
-@kafe/api (vitest 3.2.7)            @kafe/web (vitest 3.2.7)
- ✓ env.test.ts            (10)       ✓ app.test.tsx        (6)
- ✓ error-handler.test.ts   (8)       ✓ mobile-nav.test.tsx (4)
- ✓ health.test.ts          (4)       ✓ auth.test.tsx       (7)
- ✓ not-found.test.ts       (3)       ✓ management.test.tsx (4)
- ✓ password.test.ts        (4)       ✓ menu.test.tsx       (9)
- ✓ phase-one.test.ts      (27)      Test Files 5 passed (5)
- ✓ phase-two.test.ts      (30)           Tests 30 passed (30)
-Test Files 7 passed (7)
-     Tests 86 passed (86)
-```
-
-**Phase 2'de eklenen: 39 test** (30 backend + 9 frontend).
-
-Ayrıca gerçek veritabanına karşı **salt okuma** doğrulaması yapıldı:
-`listCategories`, `listProducts` ve `getMenu` (iç içe include zinciriyle)
-gerçek şemaya karşı hatasız çalıştı. Doğrulama betiği geçici oluşturuldu ve
-silindi; hiçbir kayıt yazılmadı.
-
----
-
-## Bilinen eksikler
-
-| # | Konu | Etki |
-| --- | --- | --- |
-| 1 | Veritabanında henüz OWNER yok (`/api/setup/status` → `initialized: false`), bu yüzden **kimlik doğrulamalı menü uçları gerçek DB ile uçtan uca denenmedi**. Testler bellek içi store ile koşar; Prisma tarafı yalnız salt okuma ile doğrulandı. | Orta — `npm run setup:owner` sonrası elle doğrulanmalı |
-| 2 | Arayüz 390/768/1440px kurallarına göre yazıldı ve testlerle doğrulandı; **gerçek tarayıcıda görsel inceleme yapılmadı** | Orta |
-| 3 | Seçenek grubu/değeri güncellemesi grubu/ürünü taşımaz (tasarım gereği); taşıma gerekirse Phase 3'te ayrı uç gerekir | Düşük |
-| 4 | Ürün silme yok (bilinçli, ADR-011); pasife alınan ürün listede `includeInactive` ile görünür | Yok — planlı |
-| 5 | `packages/contracts` içinde göreli içe aktarımlarda `.js` uzantısı zorunlu | Düşük |
-
----
-
-## Sonraki geliştiricinin işi — Phase 3 (Codex)
-
-**Phase 3 — Masa açma, adisyon ve sipariş.**
-Branch: `feat/phase-3-orders`, base: `feat/phase-2-menu-products`.
-
-1. `AGENTS.md` → `HANDOFF.md` → `DECISIONS.md` → `docs/PHASES.md` sırasıyla oku.
-2. Phase 2'nin bıraktığı sınırları kullan:
-   - Ürün fiyatı `priceKurus`, seçenek farkı `priceDeltaKurus` — **tam sayı kuruş**.
-   - Adisyon toplamı **sunucuda** hesaplanmalı; seçenek farkları ürün fiyatına eklenir.
-   - `preparationArea` (KITCHEN/BAR) sipariş yönlendirmesi için hazırdır.
-   - Zorunlu (`isRequired`) ve tek/çok seçimli (`selectionType`) gruplar sipariş
-     doğrulamasında kullanılmalıdır.
-   - Menü okuması için `GET /api/menu` yalnız aktif kayıtları döner.
-3. Yeni modelleri `MenuStore` gibi ayrı bir store sınırı olarak ekle ve
-   `AppStore`'a bağla; bellek içi karşılığını `tests/helpers/` altında sağla.
-4. Migration additive olmalı; `DELETE` yerine iptal/pasif alanları kullan.
-5. Bitince: `npm run verify` → commit → push → draft PR (base
-   `feat/phase-2-menu-products`) → **merge etme**.
-
-**Merge yapılmadı. Phase 3'e başlanmadı.**
+**Merge yapılmadı. Phase 4'e başlanmadı.**
 
 ---
 
 ## Devir geçmişi
 
-| Tarih | Phase | Devreden | Devralan | Not |
-| --- | --- | --- | --- | --- |
-| 2026-08-12 | Phase 0 | Claude | Codex | Proje temeli tamamlandı. |
-| 2026-08-12 | Phase 1 | Codex | Claude | Kimlik, personel, salon ve masa tamamlandı. |
-| 2026-08-12 | Phase 2 | Claude | **Codex** | Menü, ürün, seçenek ve ekstra yönetimi tamamlandı. |
+| Tarih      | Phase   | Devreden | Devralan | Not                                                       |
+| ---------- | ------- | -------- | -------- | --------------------------------------------------------- |
+| 2026-08-12 | Phase 0 | Claude   | Codex    | Proje temeli tamamlandı.                                  |
+| 2026-08-12 | Phase 1 | Codex    | Claude   | Kimlik, personel, salon ve masa tamamlandı.               |
+| 2026-08-12 | Phase 2 | Claude   | Codex    | Menü, ürün, seçenek ve ekstra yönetimi tamamlandı.        |
+| 2026-08-12 | Phase 3 | Codex    | Codex    | Masa açma, adisyon ve sipariş tamamlandı; Phase 4 sırada. |

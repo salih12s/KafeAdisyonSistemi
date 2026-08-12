@@ -77,6 +77,7 @@ export async function callStore<T>(operation: () => Promise<T>): Promise<T> {
   } catch (error) {
     if (error instanceof StoreError) {
       if (error.code === 'NOT_FOUND') throw new NotFoundError(error.message);
+      if (error.code === 'VALIDATION') throw new ValidationError(error.message);
       throw new ConflictError(error.message);
     }
     throw error;

@@ -247,3 +247,24 @@ ekler.
 yalnız `npm run setup:owner` interaktif komutuyla oluşturulur. Son aktif owner
 kuralı serializable transaction ile korunur. Audit kayıtları parola, hash,
 cookie veya session token içermez.
+
+---
+
+## ADR-014 — Sipariş fiyatları snapshot olarak saklanacak ve sunucuda hesaplanacak
+
+- **Tarih:** 2026-08-12
+- **Durum:** Kabul edildi
+
+**Karar.** Sipariş kalemi oluşturulurken ürün adı, ürün birim fiyatı, seçenek
+grubu/değeri adları ve seçenek fiyat farkları snapshot olarak saklanır. Kalem
+tutarı `(ürün fiyatı + seçenek farkları) × adet`, adisyon toplamı ise iptal
+edilmemiş kalemlerin toplamı olarak yalnız backend transaction'larında hesaplanır.
+
+**Gerekçe.** Menüdeki ad veya fiyat daha sonra değiştiğinde geçmiş adisyonların
+mali kaydı değişmemelidir. İstemciden gelen fiyat/toplam değerleri güvenilir
+değildir ve kasa tutarlılığını bozamamalıdır.
+
+**Sonuç.** Para alanları tam sayı kuruştur. Aynı masada yalnız bir `OPEN` adisyon
+bulunması hem serializable transaction hem koşullu unique PostgreSQL indeksiyle
+korunur. Sipariş kalemleri fiziksel olarak silinmez; gerekçe, aktör ve zaman ile
+iptal edilir ve iptal edilen kalem toplamdan çıkarılır.

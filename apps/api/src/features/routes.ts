@@ -21,6 +21,7 @@ import {
 } from './http';
 import type { AppStore } from './store';
 import { createMenuRouter } from './menu-routes';
+import { createOrderRouter } from './order-routes';
 
 const usernameSchema = z
   .string()
@@ -303,6 +304,7 @@ export function createPhaseOneRouter(store: AppStore, env: Env): Router {
 
   // Phase 2 menü uçları /api/menu altında toplanır.
   router.use('/menu', createMenuRouter(store, authenticate));
+  router.use('/orders', createOrderRouter(store, authenticate));
 
   return router;
 }
