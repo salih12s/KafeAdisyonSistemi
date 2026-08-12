@@ -1,7 +1,8 @@
 import { Route, Routes } from 'react-router-dom';
 import { AppLayout } from './components/layout/app-layout';
 import { DashboardPage } from './pages/dashboard-page';
-import { AccountsPage, KitchenPage, MenuPage, ReportsPage } from './pages/module-pages';
+import { AccountsPage, KitchenPage, ReportsPage } from './pages/module-pages';
+import { MenuPage } from './pages/menu-page';
 import { NotFoundPage } from './pages/not-found-page';
 import { LoginPage } from './pages/login-page';
 import { OwnerRoute, ProtectedRoute } from './components/auth/protected-route';

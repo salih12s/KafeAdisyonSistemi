@@ -1,21 +1,29 @@
 # Phase Planı (0–7)
 
-Her Phase kendi branch'inde çalışır ve draft PR ile kapanır.
-**Bir Phase tamamlanmadan ve kullanıcı açıkça istemeden sonrakine geçilmez**
-(bkz. [../AGENTS.md](../AGENTS.md) §3).
+Her Phase kendi branch'inde çalışır ve **draft PR** ile kapanır.
+
+> **Çalışma düzeni (2026-08-12'de değişti):** Phase başına ayrı Claude/Codex
+> review adımı **yoktur**. Bir Phase; iş bitip testler geçtikten sonra
+> commit + push + draft PR ile kapanır ve **merge edilmez**. Açık bir draft PR
+> sonraki Phase'i **bloke etmez**; kullanıcı istediğinde sonraki Phase hemen
+> başlayabilir. Kapsamlı review **tüm proje bittikten sonra bir kez** yapılır.
+> Kural kaynağı: [../AGENTS.md](../AGENTS.md) §5.
 
 Branch adı kalıbı: `feat/phase-<n>-<konu>`
+Her Phase branch'i bir önceki Phase branch'inden açılır; PR'ı da ona hedeflenir.
 
-| Phase | Konu                                                   | Durum            |
-| ----- | ------------------------------------------------------ | ---------------- |
-| 0     | Proje temeli                                           | Tamamlandı       |
-| 1     | Authentication, personel, işletme, salon ve masa       | **Devam ediyor** |
-| 2     | Kategoriler, ürünler, seçenekler ve ekstralar          | Başlanmadı       |
-| 3     | Masa açma, adisyon ve sipariş                          | Başlanmadı       |
-| 4     | Mutfak/bar ve gerçek zamanlı güncelleme                | Başlanmadı       |
-| 5     | Ödeme, hesap bölme ve hesap kapatma                    | Başlanmadı       |
-| 6     | Cari hesap, indirim, ikram, masa taşıma ve birleştirme | Başlanmadı       |
-| 7     | Raporlar, audit ekranı ve Railway deployment           | Başlanmadı       |
+| Phase | Konu                                                   | Ana geliştirici | Durum            |
+| ----- | ------------------------------------------------------ | --------------- | ---------------- |
+| 0     | Proje temeli                                           | Claude          | Tamamlandı — draft PR açık |
+| 1     | Authentication, personel, işletme, salon ve masa       | Codex           | Tamamlandı — draft PR açık |
+| 2     | Kategoriler, ürünler, seçenekler ve ekstralar          | Claude          | **Devam ediyor** |
+| 3     | Masa açma, adisyon ve sipariş                          | Codex           | Başlanmadı       |
+| 4     | Mutfak/bar ve gerçek zamanlı güncelleme                | Codex           | Başlanmadı       |
+| 5     | Ödeme, hesap bölme ve hesap kapatma                    | Codex           | Başlanmadı       |
+| 6     | Cari hesap, indirim, ikram, masa taşıma ve birleştirme | Codex           | Başlanmadı       |
+| 7     | Raporlar, audit ekranı ve Railway deployment           | Codex           | Başlanmadı       |
+
+**Phase 3'ten itibaren ana geliştirici Codex'tir.**
 
 ---
 
@@ -64,14 +72,21 @@ secret commit edilmemiş, belgeler hazır, draft PR açılmış.
 
 ## Phase 2 — Kategoriler, ürünler, seçenekler ve ekstralar
 
-**Branch:** `feat/phase-2-catalog`
+**Branch:** `feat/phase-2-menu-products` (base: `feat/phase-1-identity-tables`)
 
-- Kategori ve ürün CRUD; fiyat güncelleme
-- Ürün seçenek grupları ve ekstralar
-- Ürünü satışa kapatma
-- `/menu` ekranının gerçek verilerle çalışması
+- **Kategori:** ekle, düzenle, pasife al, sırala, aynı ad tekrarını engelle
+- **Ürün:** ad, kategori, fiyat (kuruş), hazırlık yeri (`KITCHEN` / `BAR`),
+  aktif/pasif, sıralama, ekle/düzenle
+- **Seçenek grubu:** tekli/çoklu seçim, zorunlu/isteğe bağlı, aktif/pasif, sıra
+- **Seçenek değeri:** fiyat farkı (kuruş), aktif/pasif, sıra
+  (ekstralar da çoklu seçimli bir grup olarak modellenir)
+- Validation ve duplicate kontrolleri **backend'de**
+- `/menu` ekranının gerçek PostgreSQL verisiyle çalışması; OWNER yönetir,
+  diğer roller yalnız görüntüler
+- Additive Prisma migration; `DELETE` yok, pasife alma var
 
-**Kapsam dışı:** adisyon açma, sipariş
+**Kapsam dışı:** masa açma, adisyon, sipariş, Socket.IO, mutfak sipariş akışı,
+ödeme, cari, stok, rapor, Railway deployment, security scan
 
 ---
 

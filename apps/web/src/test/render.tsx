@@ -48,6 +48,29 @@ function response(body: unknown, status = 200) {
   };
 }
 
+export interface RecordedRequest {
+  path: string;
+  method: string;
+  body: unknown;
+}
+
+/** stubAppFetch tarafından kaydedilen yazma istekleri; her stub çağrısında sıfırlanır. */
+export const recordedRequests: RecordedRequest[] = [];
+
+function recordRequest(path: string, init?: RequestInit): void {
+  const method = init?.method ?? 'GET';
+  if (method === 'GET') return;
+  let body: unknown = null;
+  if (typeof init?.body === 'string') {
+    try {
+      body = JSON.parse(init.body);
+    } catch {
+      body = init.body;
+    }
+  }
+  recordedRequests.push({ path, method, body });
+}
+
 export function stubAppFetch(
   options: {
     user?: CurrentUser | null;
@@ -59,13 +82,44 @@ export function stubAppFetch(
     staff?: unknown[];
     areas?: unknown[];
     tables?: unknown[];
+    categories?: unknown[];
+    products?: unknown[];
+    optionGroups?: unknown[];
+    menuFails?: boolean;
   } = {},
 ): void {
   let currentUser = options.user === undefined ? ownerUser : options.user;
+  recordedRequests.length = 0;
   vi.stubGlobal(
     'fetch',
     vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
       const path = String(input);
+      recordRequest(path, init);
+      const isWrite = (init?.method ?? 'GET') !== 'GET';
+
+      if (path.startsWith('/api/menu')) {
+        if (options.menuFails === true) {
+          return Promise.resolve(response({ error: { message: 'Menü okunamadı.' } }, 500));
+        }
+        if (path.startsWith('/api/menu/products') && path.includes('/option-groups')) {
+          return Promise.resolve(
+            isWrite
+              ? response({}, 201)
+              : response({ optionGroups: options.optionGroups ?? [] }),
+          );
+        }
+        if (path.startsWith('/api/menu/option-groups') || path.startsWith('/api/menu/option-values'))
+          {return Promise.resolve(response({}, isWrite ? 201 : 200));}
+        if (path.startsWith('/api/menu/categories'))
+          {return Promise.resolve(
+            isWrite ? response({}, 201) : response({ categories: options.categories ?? [] }),
+          );}
+        if (path.startsWith('/api/menu/products'))
+          {return Promise.resolve(
+            isWrite ? response({}, 201) : response({ products: options.products ?? [] }),
+          );}
+        return Promise.resolve(response({ categories: [] }));
+      }
       if (path === '/api/health')
         {return Promise.resolve(response(options.health ?? healthyResponse, options.healthStatus));}
       if (path === '/api/setup/status')

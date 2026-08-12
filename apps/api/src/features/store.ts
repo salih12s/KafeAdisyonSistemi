@@ -7,6 +7,9 @@ import type {
   StaffMember,
   UserRole,
 } from '@kafe/contracts';
+import type { MenuStore } from './menu-store';
+
+export * from './menu-store';
 
 export interface UserWithPassword extends CurrentUser {
   passwordHash: string;
@@ -88,7 +91,7 @@ export class StoreError extends Error {
   }
 }
 
-export interface AppStore {
+export interface AppStore extends MenuStore {
   hasActiveOwner(): Promise<boolean>;
   bootstrapOwner(input: BootstrapOwnerInput): Promise<CurrentUser>;
   findUserByUsername(username: string): Promise<UserWithPassword | null>;

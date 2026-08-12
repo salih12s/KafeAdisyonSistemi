@@ -1,24 +1,6 @@
-import { BarChart3, ChefHat, NotebookText, UsersRound } from 'lucide-react';
+import { BarChart3, ChefHat, UsersRound } from 'lucide-react';
 import { EmptyState } from '../components/ui/empty-state';
 import { Panel } from '../components/ui/panel';
-
-export function MenuPage(): JSX.Element {
-  return (
-    <Panel>
-      <EmptyState
-        icon={NotebookText}
-        title="Menü henüz oluşturulmadı"
-        description="Menü yönetimi Phase 2'de etkinleştirilecek. Fiyatlar kuruş cinsinden tam sayı olarak tutulacak."
-        upcoming={[
-          'Kategori ve ürün tanımları',
-          'Ürün seçenekleri ve ekstralar',
-          'Fiyat güncelleme',
-          'Ürünü satışa kapatma',
-        ]}
-      />
-    </Panel>
-  );
-}
 
 export function KitchenPage(): JSX.Element {
   return (
