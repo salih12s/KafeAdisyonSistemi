@@ -23,6 +23,7 @@ import {
 import { createPrismaMenuStore } from './prisma-menu-store';
 import { createPrismaOrderStore } from './prisma-order-store';
 import { createPrismaAccountStore } from './prisma-account-store';
+import { createPrismaReportStore } from './prisma-report-store';
 
 const BUSINESS_ID = 'business';
 
@@ -62,6 +63,7 @@ export function createPrismaStore(client: PrismaClient): AppStore {
     ...createPrismaMenuStore(client),
     ...createPrismaOrderStore(client),
     ...createPrismaAccountStore(client),
+    ...createPrismaReportStore(client),
 
     async hasActiveOwner(): Promise<boolean> {
       return (await client.user.count({ where: { role: 'OWNER', isActive: true } })) > 0;

@@ -23,3 +23,13 @@ export function OwnerRoute(): JSX.Element {
   if (auth.data.role !== 'OWNER') return <Navigate to="/" replace />;
   return <Outlet />;
 }
+
+export function ReportRoute(): JSX.Element {
+  const auth = useCurrentUser();
+  if (auth.isPending) return <p className="p-4 text-sm text-ink-muted">Yetki kontrol ediliyor…</p>;
+  if (auth.isError) return <Navigate to="/login" replace />;
+  if (auth.data.role !== 'OWNER' && auth.data.role !== 'CASHIER') {
+    return <Navigate to="/" replace />;
+  }
+  return <Outlet />;
+}

@@ -26,7 +26,7 @@ import type {
 import { calculatePaymentSplit } from './payment-calculations';
 
 const MAX_POSTGRES_INT = 2_147_483_647;
-const CHECK_INCLUDE = {
+export const CHECK_INCLUDE = {
   table: true,
   openedBy: true,
   closedBy: true,
@@ -50,6 +50,8 @@ function toOrderItem(row: FullCheck['items'][number]): OrderItemResponse {
     id: row.id,
     productId: row.productId,
     productNameSnapshot: row.productNameSnapshot,
+    categoryIdSnapshot: row.categoryIdSnapshot,
+    categoryNameSnapshot: row.categoryNameSnapshot,
     unitPriceKurusSnapshot: row.unitPriceKurusSnapshot,
     preparationAreaSnapshot: row.preparationAreaSnapshot,
     preparationStatus: row.preparationStatus,
@@ -90,7 +92,7 @@ const STATUS_AUDIT_ACTION: Record<Exclude<OrderItemStatus, 'SENT'>, string> = {
   SERVED: 'ORDER_ITEM_SERVED',
 };
 
-function toCheck(row: FullCheck): CheckResponse {
+export function toCheck(row: FullCheck): CheckResponse {
   const paidKurus = row.payments.reduce((total, payment) => total + payment.amountKurus, 0);
   return {
     id: row.id,
@@ -376,6 +378,8 @@ export function createPrismaOrderStore(client: PrismaClient): OrderStore {
               checkId: input.checkId,
               productId: product.id,
               productNameSnapshot: product.name,
+              categoryIdSnapshot: product.category.id,
+              categoryNameSnapshot: product.category.name,
               unitPriceKurusSnapshot: product.priceKurus,
               preparationAreaSnapshot: product.preparationArea,
               quantity: input.quantity,

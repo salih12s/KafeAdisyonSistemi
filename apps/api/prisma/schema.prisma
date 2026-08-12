@@ -305,6 +305,8 @@ model OrderItem {
   checkId                 String            @db.Uuid
   productId               String            @db.Uuid
   productNameSnapshot     String
+  categoryIdSnapshot      String            @db.Uuid
+  categoryNameSnapshot    String
   unitPriceKurusSnapshot  Int
   preparationAreaSnapshot PreparationArea
   preparationStatus       OrderItemStatus   @default(SENT)

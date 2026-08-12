@@ -22,14 +22,14 @@ kapatmak ve gün sonunu görmek. Kapsamın tamamı:
 
 ## 2. Teknik yapı
 
-| Katman | Teknoloji |
-| --- | --- |
-| Frontend | React 18, TypeScript, Vite 6, React Router, TanStack Query, Tailwind CSS 4, Lucide React |
-| Backend | Node.js, Express 5, Socket.IO, TypeScript, Prisma ORM, Zod, Helmet |
-| Veritabanı | PostgreSQL |
-| Paylaşım | `packages/contracts` (ortak tipler ve sabitler) |
-| Test | Vitest, Supertest, React Testing Library |
-| Depo | npm workspaces, TypeScript strict, ESLint, Prettier |
+| Katman     | Teknoloji                                                                                |
+| ---------- | ---------------------------------------------------------------------------------------- |
+| Frontend   | React 18, TypeScript, Vite 6, React Router, TanStack Query, Tailwind CSS 4, Lucide React |
+| Backend    | Node.js, Express 5, Socket.IO, TypeScript, Prisma ORM, Zod, Helmet                       |
+| Veritabanı | PostgreSQL                                                                               |
+| Paylaşım   | `packages/contracts` (ortak tipler ve sabitler)                                          |
+| Test       | Vitest, Supertest, React Testing Library                                                 |
+| Depo       | npm workspaces, TypeScript strict, ESLint, Prettier                                      |
 
 ```
 apps/api            → Express sunucusu (production'da React build'ini de sunar)
@@ -65,12 +65,12 @@ kullanır. Ayrıntı: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 
 ## 3. Gereksinimler
 
-| Gereksinim | Sürüm |
-| --- | --- |
-| Node.js | 20.10 veya üzeri |
-| npm | 10 veya üzeri |
+| Gereksinim | Sürüm                             |
+| ---------- | --------------------------------- |
+| Node.js    | 20.10 veya üzeri                  |
+| npm        | 10 veya üzeri                     |
 | PostgreSQL | 14 veya üzeri (15 ile doğrulandı) |
-| Git | güncel |
+| Git        | güncel                            |
 
 ```powershell
 node -v
@@ -174,10 +174,10 @@ veya demo hesap üretilmez.
 npm run dev
 ```
 
-| Adres | Ne |
-| --- | --- |
-| `http://localhost:5173` | Arayüz (Vite, anlık yenileme) |
-| `http://localhost:3000/api/health` | API sağlık ucu |
+| Adres                              | Ne                            |
+| ---------------------------------- | ----------------------------- |
+| `http://localhost:5173`            | Arayüz (Vite, anlık yenileme) |
+| `http://localhost:3000/api/health` | API sağlık ucu                |
 
 Vite, `/api` ve `/socket.io` çağrılarını Express'e iletir; ek yapılandırma gerekmez.
 Telefon/tabletten denemek için cihazı aynı yerel ağa bağlayıp bilgisayarın IPv4
@@ -188,18 +188,18 @@ API ve Socket.IO trafiği geliştirme proxy'si üzerinden aynı adresten geçer.
 
 ## 6. Test komutları
 
-| Komut | Ne yapar |
-| --- | --- |
-| `npm run lint` | ESLint |
-| `npm run typecheck` | TypeScript tip denetimi (strict) |
-| `npm run test` | API ve web testleri |
-| `npm run build` | Production derlemesi |
-| `npm run verify` | lint → typecheck → test → build |
-| `npm run db:check` | Veritabanı bağlantısı (`SELECT 1`) |
-| `npm run db:migrate:status` | Uygulanmış/bekleyen Prisma migration durumu |
-| `npm run db:migrate:deploy` | Repodaki bekleyen additive migration'ları uygular |
-| `npm run setup:owner` | İlk işletme sahibi ve işletme kaydını interaktif oluşturur |
-| `npm run format` | Prettier ile biçimlendirme |
+| Komut                       | Ne yapar                                                   |
+| --------------------------- | ---------------------------------------------------------- |
+| `npm run lint`              | ESLint                                                     |
+| `npm run typecheck`         | TypeScript tip denetimi (strict)                           |
+| `npm run test`              | API ve web testleri                                        |
+| `npm run build`             | Production derlemesi                                       |
+| `npm run verify`            | lint → typecheck → test → build                            |
+| `npm run db:check`          | Veritabanı bağlantısı (`SELECT 1`)                         |
+| `npm run db:migrate:status` | Uygulanmış/bekleyen Prisma migration durumu                |
+| `npm run db:migrate:deploy` | Repodaki bekleyen additive migration'ları uygular          |
+| `npm run setup:owner`       | İlk işletme sahibi ve işletme kaydını interaktif oluşturur |
+| `npm run format`            | Prettier ile biçimlendirme                                 |
 
 Testler veritabanına bağlanmaz; PostgreSQL kapalıyken de çalışırlar.
 
@@ -226,24 +226,89 @@ fallback çalışır (örneğin `/masalar` doğrudan açılabilir).
 
 ---
 
-## 8. Gelecekte Railway deployment modeli
+## 8. Railway deployment
 
-Deployment **Phase 7'de** yapılacaktır (bkz. [DECISIONS.md](DECISIONS.md)
-ADR-002). Planlanan model:
+Repo kökündeki `railway.json`, Railpack ile `npm ci && npm run build` çalıştırır,
+deployment başlamadan önce yalnız güvenli `prisma migrate deploy` komutunu uygular
+ve servisi `npm start` ile açar. Health check yolu `/api/health`'tir.
 
-- Railway üzerinde **tek Node.js servisi** çalışır: `npm run build` ile
-  derlenir, `npm start` ile başlatılır.
-- Aynı servis hem `/api/*` uçlarını hem `apps/web/dist` içeriğini sunar —
-  ayrı bir frontend barındırma katmanı yoktur.
-- **Railway PostgreSQL** eklentisi bağlanır; `DATABASE_URL` Railway tarafından
-  environment değişkeni olarak sağlanır.
-- `PORT` de Railway tarafından verilir; uygulama bu değeri environment'tan okur.
-- Production'da sunucu `0.0.0.0` üzerinde dinler (varsayılan davranış).
-- Custom domain Railway servisine bağlanır; frontend ve API aynı domain
-  üzerinde olduğu için CORS yapılandırması gerekmez.
+### 8.1 Proje ve PostgreSQL
 
-> Railway'e özel yapılandırma dosyaları bu aşamada **bilinçli olarak
-> yazılmamıştır.**
+1. Railway'de yeni proje oluşturup bu GitHub reposunu Node.js servisi olarak ekleyin.
+2. Aynı projeye PostgreSQL servisi ekleyin.
+3. Node.js servisinde `DATABASE_URL` değişkenini PostgreSQL servisinin sağladığı
+   bağlantı değişkenine reference olarak bağlayın. Değeri README'ye veya GitHub'a
+   kopyalamayın.
+4. Aşağıdaki production değişkenlerini tanımlayın:
+
+| Değişken          | Değer / kaynak                                            |
+| ----------------- | --------------------------------------------------------- |
+| `NODE_ENV`        | `production`                                              |
+| `DATABASE_URL`    | Railway PostgreSQL reference                              |
+| `PORT`            | Railway otomatik sağlar; elle sabitlemeyin                |
+| `HOST`            | İsteğe bağlı; verilmezse production varsayılanı `0.0.0.0` |
+| `LOG_LEVEL`       | `info` veya ihtiyaca göre `warn`                          |
+| `JSON_BODY_LIMIT` | `1mb`                                                     |
+
+Railway pre-deploy adımı her release'te `npm run db:migrate:deploy` çalıştırır.
+Bu komut yalnız repodaki bekleyen migration'ları uygular; `migrate reset`, `DROP`
+ve `TRUNCATE` kullanılmaz. Migration başarısızsa yeni deployment başlamaz.
+
+### 8.2 Tek servis ve custom domain
+
+Express aynı process/port üzerinde `/api`, `/socket.io` ve React production
+build'ini sunar. Frontend göreli `/api` ve `/socket.io` yollarını kullandığından
+hardcoded localhost veya CORS gerekmez; cookie production'da HttpOnly, Secure ve
+SameSite=Strict'tir.
+
+Deployment sağlıklı olduktan sonra Railway servisinin Networking/Custom Domain
+bölümünden domaini ekleyin ve Railway'in gösterdiği DNS kaydını sağlayıcınızda
+tanımlayın. Domain hazır olduğunda `/api/health`, `/masalar` doğrudan SPA açılışı
+ve Socket.IO bağlantısını aynı HTTPS origin üzerinden kontrol edin.
+
+### 8.3 Manuel doğrulama
+
+Railway ile aynı akışı yerelde doğrulamak için:
+
+```powershell
+npm ci
+npm run build
+npm run db:migrate:deploy
+$env:NODE_ENV="production"
+npm start
+```
+
+`PORT` verilmezse 3000, `HOST` verilmezse production'da `0.0.0.0` kullanılır.
+
+### 8.4 PostgreSQL backup ve restore
+
+Backup dosyasını uygulama sunucusunda değil güvenli, erişimi sınırlı bir konumda
+tutun. Railway PostgreSQL bağlantı adresini terminal ortam değişkeni olarak verin;
+komut geçmişine açık parola yazmayın.
+
+Custom-format backup:
+
+```powershell
+$env:PGDATABASE_URL="RAILWAY_DATABASE_URL"
+pg_dump --format=custom --no-owner --no-acl --file=kafe-adisyon.dump $env:PGDATABASE_URL
+```
+
+Boş ve doğrulanmış hedef veritabanına custom-format restore:
+
+```powershell
+pg_restore --no-owner --no-acl --dbname=$env:PGDATABASE_URL kafe-adisyon.dump
+```
+
+Plain SQL tercih edilirse:
+
+```powershell
+pg_dump --no-owner --no-acl --file=kafe-adisyon.sql $env:PGDATABASE_URL
+psql $env:PGDATABASE_URL --file=kafe-adisyon.sql
+```
+
+Restore mevcut veriyi etkileyebilir. Önce hedefi ve backup tarihini doğrulayın,
+bakım penceresi belirleyin ve production restore işleminden önce ayrı bir test
+veritabanında geri yükleme denemesi yapın.
 
 ---
 
@@ -285,15 +350,15 @@ içermez.
 
 ## 11. Proje belgeleri
 
-| Belge | İçerik |
-| --- | --- |
-| [AGENTS.md](AGENTS.md) | Claude ve Codex için bağlayıcı kurallar |
-| [CLAUDE.md](CLAUDE.md) | Claude'un çalışma başlangıcı |
-| [HANDOFF.md](HANDOFF.md) | Aktif Phase, branch ve devir kaydı |
-| [DECISIONS.md](DECISIONS.md) | Kalıcı teknik kararlar (ADR) |
-| [WORKFLOW.md](WORKFLOW.md) | Phase çalışma düzeni |
-| [SESSION_LOG.md](SESSION_LOG.md) | Oturum kayıtları (append-only) |
-| [docs/PHASES.md](docs/PHASES.md) | Phase 0–7 planı |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Mimari |
-| [docs/PRODUCT_SCOPE.md](docs/PRODUCT_SCOPE.md) | Ürün kapsamı |
-| [docs/UI_GUIDE.md](docs/UI_GUIDE.md) | Arayüz rehberi |
+| Belge                                          | İçerik                                  |
+| ---------------------------------------------- | --------------------------------------- |
+| [AGENTS.md](AGENTS.md)                         | Claude ve Codex için bağlayıcı kurallar |
+| [CLAUDE.md](CLAUDE.md)                         | Claude'un çalışma başlangıcı            |
+| [HANDOFF.md](HANDOFF.md)                       | Aktif Phase, branch ve devir kaydı      |
+| [DECISIONS.md](DECISIONS.md)                   | Kalıcı teknik kararlar (ADR)            |
+| [WORKFLOW.md](WORKFLOW.md)                     | Phase çalışma düzeni                    |
+| [SESSION_LOG.md](SESSION_LOG.md)               | Oturum kayıtları (append-only)          |
+| [docs/PHASES.md](docs/PHASES.md)               | Phase 0–7 planı                         |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)   | Mimari                                  |
+| [docs/PRODUCT_SCOPE.md](docs/PRODUCT_SCOPE.md) | Ürün kapsamı                            |
+| [docs/UI_GUIDE.md](docs/UI_GUIDE.md)           | Arayüz rehberi                          |

@@ -10,12 +10,12 @@ sonraki geliştiriciye devredilir.
 
 | Alan                  | Değer                                              |
 | --------------------- | -------------------------------------------------- |
-| **Tamamlanan Phase**  | Phase 6 — Cari, ayarlamalar ve masa işlemleri       |
-| **Branch**            | `feat/phase-6-accounts-adjustments-tables`          |
+| **Tamamlanan Phase**  | Phase 7 — Raporlar ve production hazırlığı          |
+| **Branch**            | `feat/phase-7-reports-deployment`                   |
 | **Ana geliştirici**   | Codex                                              |
 | **Durum**             | **Tamamlandı — draft PR açık, merge edilmedi** |
-| **Base branch / SHA** | `feat/phase-5-payments` / `336b98e`                |
-| **Phase commit**      | `feat: complete phase 6 accounts discounts and table operations` |
+| **Base branch / SHA** | `feat/phase-6-accounts-adjustments-tables` / `6a698f0` |
+| **Phase commit**      | `feat: complete phase 7 reports and production readiness` |
 | **Son güncelleme**    | 2026-08-12                                         |
 
 ### Phase durumu
@@ -28,7 +28,43 @@ sonraki geliştiriciye devredilir.
 | 3     | `feat/phase-3-orders`          | Codex           | Tamamlandı · draft PR açık     |
 | 4     | `feat/phase-4-realtime-kitchen` | Codex          | Tamamlandı · draft PR açık     |
 | 5     | `feat/phase-5-payments`          | Codex          | Tamamlandı · draft PR açık     |
-| 6     | `feat/phase-6-accounts-adjustments-tables` | Codex | Tamamlandı · draft PR hazırlanıyor |
+| 6     | `feat/phase-6-accounts-adjustments-tables` | Codex | Tamamlandı · draft PR açık |
+| 7     | `feat/phase-7-reports-deployment` | Codex | Tamamlandı · draft PR açık |
+
+---
+
+## Phase 7 teslimi
+
+- `/raporlar`; tarih aralığına göre yalnız `PAID` adisyonlardan ciro, adisyon
+  sayısı, ortalama, nakit/kart/cari dağılımı, ürün/kategori/personel satışları,
+  indirim, ikram, iptal ve saatlik dağılımı backend'de tam sayı kuruşla hesaplar.
+  `MERGED` ve `CANCELLED` adisyonlar ciroya dahil edilmez.
+- Gün sonu görünümü bugünün ciro/ödeme/indirim/ikram özetini, açık adisyonları ve
+  ledger'dan türetilen pozitif açık cari bakiyeyi gösterir; fiskal Z raporu değildir.
+- Ayarlar içindeki salt okunur işlem geçmişi OWNER erişimine açıktır; tarih,
+  personel, işlem ve entity filtreleri vardır. Secret niteliğindeki metadata
+  anahtarları API cevabından çıkarılır.
+- `railway.json`; Railpack build, güvenli `prisma migrate deploy` pre-deploy,
+  `npm start` ve `/api/health` kontrolünü tanımlar. Express React SPA, API ve
+  Socket.IO'yu aynı production origin/port üzerinden sunar.
+- README; Railway PostgreSQL/reference değişkenleri, custom domain, environment,
+  migration deployment ve `pg_dump`/`pg_restore`/`psql` yönergelerini içerir.
+- Additive `20260812163000_phase_7_report_snapshots` migration'ı sipariş kalemine
+  kategori kimliği/adı snapshot'ı ekler ve mevcut kalemleri bağlı ürün/kategoriden
+  backfill eder; böylece ürün sonradan taşınsa da geçmiş kategori satışı değişmez.
+- Yedi migration günceldir; pre-deploy komutu gerçek yerel DB'de güvenli
+  `prisma migrate deploy` akışıyla doğrulandı.
+- `npm run verify`: PASS — 181/181 test (API 131, web 50); web JS 378.01 kB,
+  gzip 110.51 kB. Production smoke test
+  `0.0.0.0:3107` üzerinde health/DB, root, `/raporlar` SPA fallback ve Socket.IO
+  polling hattı için 200 döndürdü.
+
+Kalan risk: Railway üzerinde gerçek deployment/custom domain oluşturulmadı;
+production hazırlığı yerel build/runtime ve resmi Railway yapılandırma biçimiyle
+doğrulandı. Rapor UI'ı responsive kod/jsdom ile doğrulandı, gerçek mobil cihazda
+görsel inceleme yapılmadı.
+
+**Development phases complete — comprehensive final review pending**
 
 ---
 
@@ -207,18 +243,13 @@ Phase 3'te 23 test eklendi: 17 backend + 6 frontend.
 
 ---
 
-## Sonraki geliştiricinin işi — Phase 7
+## Sonraki iş — kapsamlı final review
 
-Phase 7 kapsamı raporlama, audit geçmişi ekranı ve Railway deployment'tır. Yeni
-branch `feat/phase-6-accounts-adjustments-tables` tabanından açılmalıdır.
+Tüm geliştirme phase'leri tamamlandı. Yeni Phase başlatılmamalı; sıradaki çalışma
+branch zinciri, production güvenliği, gerçek veri senaryoları ve uçtan uca kullanıcı
+akışlarını kapsayan tek kapsamlı final review olmalıdır.
 
-- Cari ledger, immutable ödeme ve audit satırları değiştirilmemeli veya fiziksel
-  olarak silinmemelidir.
-- Socket.IO yalnız invalidation sinyali olarak kalmalı; REST veri kaynağı olmalıdır.
-- Phase 7 raporları iptal, ikram, indirim, cari ve birleşmiş adisyon durumlarını
-  birbirinden doğru ayırmalıdır.
-
-**Merge yapılmadı. Phase 7'ye başlanmadı.**
+**Merge yapılmadı. Yeni Phase başlatılmadı.**
 
 ---
 
@@ -233,3 +264,4 @@ branch `feat/phase-6-accounts-adjustments-tables` tabanından açılmalıdır.
 | 2026-08-12 | Phase 4 | Codex    | Codex    | Realtime mutfak/bar tamamlandı; Phase 5 sırada.           |
 | 2026-08-12 | Phase 5 | Codex    | Codex    | Ödeme ve hesap kapatma tamamlandı; Phase 6 sırada.         |
 | 2026-08-12 | Phase 6 | Codex    | Codex    | Cari, indirim/ikram ve masa işlemleri tamamlandı; Phase 7 sırada. |
+| 2026-08-12 | Phase 7 | Codex    | Final reviewer | Raporlar ve production hazırlığı tamamlandı; kapsamlı final review bekleniyor. |

@@ -113,6 +113,8 @@ export interface OrderItemResponse {
   id: string;
   productId: string;
   productNameSnapshot: string;
+  categoryIdSnapshot: string;
+  categoryNameSnapshot: string;
   unitPriceKurusSnapshot: Kurus;
   preparationAreaSnapshot: PreparationArea;
   preparationStatus: OrderItemStatus;

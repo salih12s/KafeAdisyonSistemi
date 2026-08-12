@@ -336,3 +336,31 @@ kopmasını; satır kilitleri de iki cihazın aynı masayı eşzamanlı sahiplen
 tutarının altına indiremez. Cari aktarım kalan bakiyeyi sıfırlar ve normal hesap
 kapatma akışı kullanılabilir. Tüm işlemler backend yetkisi, audit ve küçük realtime
 invalidation event'leriyle yürür.
+
+---
+
+## ADR-018 — Raporlar kapanış zamanına göre türetilecek, production migration ayrı adım olacak
+
+- **Tarih:** 2026-08-12
+- **Durum:** Kabul edildi
+
+**Karar.** Satış raporları Europe/Istanbul takvim sınırlarında `closedAt` alanına
+göre yalnız `PAID` adisyonlardan türetilir. Ödeme dağılımı immutable `Payment`,
+cari toplam `ACCOUNT`, indirim ve ikram ise kendi kalıcı mali kayıtlarından okunur.
+Ürün ve kategori adları sipariş anında snapshotlanır; `MERGED` ve `CANCELLED`
+adisyonlar ciroya eklenmez. Audit ekranı salt okunurdur,
+yalnız OWNER erişir ve secret niteliğindeki metadata anahtarları API katmanında
+çıkarılır.
+
+Production build ile migration birbirinden ayrıdır: Railway pre-deploy aşamasında
+yalnız `prisma migrate deploy` çalışır; uygulama `npm start` ile tek HTTP server
+üzerinde API, Socket.IO ve React SPA'yı sunar.
+
+**Gerekçe.** Satışın açılış yerine kapanış gününe yazılması kasa/ödeme zamanıyla
+uyumludur; iptal ve birleşme kayıtlarını dışlamak cironun şişmesini önler. Migration'ı
+pre-deploy'a ayırmak yeni process başlamadan şemayı güvenli şekilde günceller ve
+reset/destructive komut riskini ortadan kaldırır.
+
+**Sonuç.** Rapor değerleri backend'de tam sayı kuruşla hesaplanır. Gün sonu özeti
+fiskal Z raporu değildir. Deploy için gerçek secret repository'ye yazılmaz; database
+reset, `DROP` veya `TRUNCATE` production akışının parçası değildir.

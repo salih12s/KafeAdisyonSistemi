@@ -21,6 +21,7 @@ export interface NavItem {
   description: string;
   icon: LucideIcon;
   ownerOnly?: boolean;
+  roles?: readonly UserRole[];
 }
 
 export const NAV_ITEMS: readonly NavItem[] = [
@@ -65,6 +66,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     shortLabel: 'Rapor',
     description: 'Gün sonu, ödeme türü ve ürün satış özetleri.',
     icon: BarChart3,
+    roles: ['OWNER', 'CASHIER'],
   },
   {
     to: '/ayarlar',
@@ -84,5 +86,9 @@ export function findNavItem(pathname: string): NavItem | undefined {
 }
 
 export function navigationForRole(role: UserRole): readonly NavItem[] {
-  return NAV_ITEMS.filter((item) => item.ownerOnly !== true || role === 'OWNER');
+  return NAV_ITEMS.filter(
+    (item) =>
+      (item.ownerOnly !== true || role === 'OWNER') &&
+      (item.roles === undefined || item.roles.includes(role)),
+  );
 }

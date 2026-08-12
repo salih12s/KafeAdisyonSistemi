@@ -34,11 +34,13 @@ interface MemoryOptionValue extends OptionValueResponse {
 }
 
 export interface MemoryAuditEntry {
+  id?: string;
   actorUserId: string;
   action: string;
   entityType: string;
   entityId: string;
-  metadata?: Record<string, string | boolean>;
+  metadata?: Record<string, unknown>;
+  createdAt?: string;
 }
 
 function bySortThenName(
@@ -308,8 +310,20 @@ export class MemoryMenuStore implements MenuStore {
     };
   }
 
-  protected record(actorUserId: string, action: string, entityType: string, entityId: string): void {
-    this.audits.push({ actorUserId, action, entityType, entityId });
+  protected record(
+    actorUserId: string,
+    action: string,
+    entityType: string,
+    entityId: string,
+  ): void {
+    this.audits.push({
+      id: randomUUID(),
+      actorUserId,
+      action,
+      entityType,
+      entityId,
+      createdAt: new Date().toISOString(),
+    });
   }
 
   private withValues(group: MemoryOptionGroup, includeInactive: boolean): OptionGroupResponse {

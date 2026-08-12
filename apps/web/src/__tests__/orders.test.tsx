@@ -7,6 +7,7 @@ import { recordedRequests, renderWithProviders, stubAppFetch, userForRole } from
 const tableId = '00000000-0000-4000-8000-000000000101';
 const checkId = '00000000-0000-4000-8000-000000000102';
 const productId = '00000000-0000-4000-8000-000000000103';
+const categoryId = '00000000-0000-4000-8000-000000000109';
 const sizeId = '00000000-0000-4000-8000-000000000104';
 const largeId = '00000000-0000-4000-8000-000000000105';
 const shotId = '00000000-0000-4000-8000-000000000106';
@@ -65,6 +66,8 @@ const check = {
       id: itemId,
       productId,
       productNameSnapshot: 'Latte',
+      categoryIdSnapshot: categoryId,
+      categoryNameSnapshot: 'Kahveler',
       unitPriceKurusSnapshot: 8000,
       preparationAreaSnapshot: 'BAR',
       preparationStatus: 'SENT',
