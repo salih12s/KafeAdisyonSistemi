@@ -1,5 +1,6 @@
-export const APP_NAME = 'Kafe Adisyon';
+/** Kullanıcıya görünen işletme markası. */
+export const APP_NAME = 'Joker Cafe';
 export const APP_SUBTITLE = 'Kasa · Tek şube';
 
-/** Arayüzde gösterilen sürüm etiketi. Phase ilerledikçe güncellenir. */
-export const APP_PHASE_LABEL = 'Frontend redesign · Final review bekliyor';
+/** Marka altında kullanılan kısa tanım; başlıksız ekranlarda yedek metindir. */
+export const APP_TAGLINE = 'Adisyon ve satış noktası';

@@ -810,3 +810,140 @@ değiştirilmedi, merge yapılmadı.
   `SELECT 1` ve yedi migration status PASS.
 - Kanıtlar `docs/FINAL_ACCEPTANCE_REPORT.md`; tekrar çalıştırılabilir yardımcılar
   `scripts/qa/` altındadır. Ana fix commit'i `45f5623`'tür.
+
+## 2026-08-12 — Claude — Joker Cafe final UI polish
+
+**Branch:** `feat/final-ui-polish-joker-cafe`
+**Base:** `review/final-comprehensive-uat`
+**Sonuç:** Tamamlandı; draft PR açık, merge yapılmadı.
+
+- Yeni özellik geliştirilmedi. Değişiklik yüzeyi yalnız `apps/web` ve arayüz
+  belgeleridir; backend, contracts, Prisma şeması, migration, API sözleşmesi ve
+  iş kuralları değişmedi. Railway deployment ve security scan çalıştırılmadı.
+- Marka: `APP_NAME` `Joker Cafe` oldu; `index.html` title/description, kenar
+  çubuğu, mobil "Tüm modüller" çekmecesi ve giriş ekranı bu adı gösterir.
+  Teknik/dahili "Kafe Adisyon" adları (README, paket adları, Prisma şema yorumu,
+  AGENTS) körlemesine değiştirilmedi.
+- `/login` iki kolonlu hero + aside yapısından tek parça ortalanmış giriş
+  ekranına indirildi. Mutation, `setup-status` uyarısı, şifre göster/gizle,
+  `role="alert"` hata satırı, loading ve bağlantı durumu satırı korundu.
+- Başlık tekrarı kaldırıldı: sayfa adı yalnız `TopBar` `<h1>` içindedir. Özet,
+  Masalar, Menü, Cariler, Raporlar ve Ayarlar sayfalarındaki eyebrow + büyük
+  başlık + ikinci açıklama blokları silindi; Masalar'daki salon `SegmentedControl`
+  ve Özet'teki "Merhaba, <ad>" selamlaması korundu. Kural `docs/UI_GUIDE.md`
+  içine "Başlık hiyerarşisi — tekrar yasağı" olarak yazıldı.
+- `AppLayout` içindeki `isKitchen` fullscreen dalı kaldırıldı; `/mutfak` artık
+  kenar çubuğu, üst bar ve alt gezinme ile aynı kabuğun içerik alanında koyu bir
+  KDS paneli olarak açılıyor. `useOrderRealtime`, KDS ticket yapısı ve
+  Mutfak/Bar/Tümü filtreleri değiştirilmedi.
+- Kenar çubuğundaki `Frontend redesign · Final review bekliyor` metni ve
+  `APP_PHASE_LABEL` sabiti kaldırıldı; altta yalnız ad ve rol kaldı. Arayüzde
+  başka review/draft/redesign/acceptance metni bulunamadı.
+- Tanımsız Tailwind tokenları düzeltildi: `bg-kds-bg` → `bg-kds`, `text-kds-new`
+  → `text-kds-info`, `border-t-kds-new/preparing/ready` →
+  `kds-info/warning/success`, `shadow-kds` → `shadow-card`. KDS kolon vurgu
+  renkleri bu düzeltmeden önce hiç render edilmiyordu; tarayıcıda artık
+  `rgb(109,155,210)`, `rgb(216,154,58)` ve `rgb(83,168,107)` ölçüldü.
+  Kullanılmayan `.kds-shell` CSS sınıfı silindi.
+- Testler: `auth.test.tsx` yeni login başlığı ve markayı doğruluyor;
+  `kitchen.test.tsx` içine mutfağın app shell içinde açıldığını (h1 "Mutfak",
+  "Ana menü" navigasyonu, Çıkış düğmesi) kanıtlayan yeni test eklendi.
+- `npm run verify` PASS: lint 0 hata/0 uyarı, strict typecheck temiz, 23 dosyada
+  187/187 test (API 132, web 55), web JS 310,85 kB / gzip 97,40 kB.
+- Gerçek Chrome (playwright-core, `channel: chrome`) ile sekiz rota
+  390/768/1024/1440px'te ölçüldü: 32 görünümün tamamında
+  `scrollWidth == clientWidth`, belge yatay taşması yok. Reports tablosu ve
+  Ayarlar segment kontrolü yalnız kendi `overflow-x-auto` kapsayıcılarında
+  kayıyor. `/mutfak` üzerinde 6 saniyelik beklemede konsol tamamen temiz;
+  KDS aksiyon düğmeleri 44px. Ölçüm sırasında API cevapları tarayıcı seviyesinde
+  karşılandı, `CafeAdisyon` veritabanına dokunulmadı. Görseller yalnız yerel
+  temp klasöründe tutuldu ve commit edilmedi.
+
+## 2026-08-12 — Claude — Yönetim ekranı düzeni: modal düzenleme ve pasife alma
+
+**Branch:** `feat/final-ui-polish-joker-cafe` (aynı branch, ikinci tur)
+**Sonuç:** Tamamlandı; draft PR #11 güncellendi, merge yapılmadı.
+
+- Kullanıcı isteği: Ayarlar'da salon/personel silme, düzenlemenin satır yerine
+  düğme + modal olması, kategorilerde düzenlenin durum rozetinin yanında olması
+  ve satırın tıklanabilir görünmesi, ürün seçeneklerinin anlaşılır bir modal
+  olması, Ayarlar'daki İşletme bölümünün kaldırılması, şifre sıfırlamanın modal
+  olması.
+- **Silme kararı:** API'de personel/salon/masa için DELETE ucu yoktur; AGENTS §9
+  ve ADR-011 domain kayıtlarının fiziksel silinmesini yasaklar (masa `Check`,
+  personel `AuditLog` tarafından `ON DELETE RESTRICT` ile referanslanır). Bu
+  yüzden istek, mevcut `PATCH … isActive` ucuyla **Pasife al / Aktife al** olarak
+  karşılandı. Backend değişmedi. Onay dialogu kaydın silinmediğini, listede
+  "Pasif" görüneceğini ve geri alınabileceğini yazar.
+- Yeni `components/ui/confirm-dialog.tsx`; `Dialog` ve `Button` üzerine kurulu.
+- Ayarlar: `BusinessSection` kaldırıldı, bölümler `Personel | Salonlar ve
+  Masalar | İşlem Geçmişi` oldu ve varsayılan `staff`. Personel satırında
+  Düzenle / Şifre sıfırla / Pasife al düğmeleri; üçü de dialog açar. Salon
+  satırında ikon düğmeler (düzenle, pasife/aktife al), masa kartında etiketli
+  düğmeler. Ekleme işlemleri panel başlığındaki "… ekle" düğmesiyle dialogda.
+- `lib/api.ts` içinden kullanılmayan `fetchBusinessSettings`,
+  `updateBusinessSettings` ve `isBusinessSettings` silindi (AGENTS §11).
+  Backend ucu, contracts tipi ve audit etiketi korundu.
+- Menü: kategori satırları chevron + hover + `aria-current` ile tıklanabilir
+  görünür; düzenle düğmesi `Aktif`/`Pasif` rozetinin yanındadır. Kategori ve
+  ürün ekleme/düzenleme dialoga taşındı.
+- Ürün seçenekleri tek bir açıklamalı dialogda toplandı. Üstte "grup = soru,
+  seçenek = cevap" açıklaması; gruplar numaralı kart, seçim türü/zorunluluk/durum
+  rozetli. Grup ve seçenek formları ikinci dialog açmaz — aynı pencerede görünüm
+  değişir, alt barda **Geri** vardır. Böylece iç içe dialogda Escape'in iki
+  pencereyi birden kapatması sorunu oluşmaz.
+- `Button` `size="small"` 36px'ten `min-h-touch` (44px) değerine çıkarıldı;
+  UI_GUIDE §6 dokunma hedefi kuralına aykırı olan mevcut `check-view`
+  "Masalara dön" düğmesi de bu sayede düzeldi.
+- `docs/UI_GUIDE.md`: `ConfirmDialog` bileşen sözlüğüne eklendi; "Yönetim
+  ekranlarında düzenleme düzeni" ve "Silme yerine pasife alma" kuralları yazıldı.
+- Testler: `management.test.tsx` 3'ten 7 teste çıktı (ekleme/düzenleme/şifre
+  modalleri, personel ve salon pasife alma PATCH gövdeleri, İşletme bölümünün
+  görünmediği); `menu.test.tsx` 9'dan 10 teste çıktı (modal akışları, seçenek
+  dialogundaki açıklama, Geri ile listeye dönüş).
+- `npm run verify` PASS: lint 0 hata/0 uyarı, strict typecheck temiz, 23 dosyada
+  191/191 test (API 132, web 59), web JS 310,51 kB / gzip 97,37 kB.
+- Gerçek Chrome ile 390 ve 1440px'te 26 ölçüm: Ayarlar/Menü listeleri ve sekiz
+  dialog açılıp kapatıldı. Hiçbirinde belge yatay taşması yok, dialog ekran
+  dışına taşmıyor ve dialog içindeki hiçbir düğme 44px'in altında değil.
+  390px'te konsol tamamen temiz. Ölçümde API cevapları tarayıcı seviyesinde
+  karşılandı; `CafeAdisyon` veritabanına dokunulmadı.
+
+## 2026-08-12 — Claude — Üç kullanıcı hatası: masa birleştir, rapor tabloları, adet alanı
+
+**Branch:** `feat/final-ui-polish-joker-cafe` (üçüncü tur)
+**Sonuç:** Tamamlandı; draft PR #11 güncellendi, merge yapılmadı.
+
+- **Masa birleştir bozuk görünüyordu.** Kök neden: seçilecek kayıt yokken
+  `<select>` sıfır `<option>` ile render ediliyordu; kullanıcı tıklayınca Chrome
+  boş bir açılır liste (kaydırma çubuklu ince kutu) açıyordu. Ayrıca boş select
+  gönderildiğinde istek boş kimlikle gidip hata dönüyordu.
+  Aynı kusur dört yerdeydi: masa birleştir, masa taşı, ikram kalemi ve cari
+  müşteri. Dördü de artık kayıt yokken select yerine ne yapılması gerektiğini
+  anlatan bir açıklama gösteriyor ve gönder düğmesi `disabled` oluyor.
+  Birleştirmeye ayrıca "seçilen masanın adisyonu bu adisyona aktarılır ve o masa
+  boşalır" açıklaması eklendi.
+- **Ürün/kategori/personel satış tabloları kötü görünüyordu.** Kök neden:
+  `min-w-[28rem]` (448 px) tablo, `xl:grid-cols-3` ızgarasında ~440 px'lik
+  panele sığmıyor, her panelde ayrı yatay kaydırma çubuğu çıkıyor ve "Tutar"
+  sütunu görünmüyordu. Tablo `table-fixed` yapıldı: Ad sütunu `truncate` +
+  `title`, Adet 4rem sağa hizalı, Tutar 7rem `whitespace-nowrap` ve kalın.
+  Sabit genişlik kaldırıldı; artık yatay kaydırma yok.
+- **Adet alanı 0'da kilitleniyordu.** Kök neden: `value={quantity}` sayısal
+  state'e `Number(event.target.value)` ile yazıyordu; alan boşaltılınca
+  `Number('')` = 0 olup girdiye "0" geri basılıyor ve silinemiyordu. Adet artık
+  metin state'te tutuluyor: alan tamamen boşaltılabiliyor, odakta içerik
+  seçiliyor (`select()`), geçersizken "1 ile 100 arası" hatası çıkıyor ve
+  "Siparişe ekle" devre dışı kalıyor. Kalem toplamı geçersiz adette 1 varsayıyor.
+- Ek olarak "Satış özeti" ödeme dağılımında tek kalem varken kalan iki sütunun
+  boş gri blok bırakması düzeltildi; sütun sayısı kalem sayısına uyuyor.
+- Testler: `orders.test.tsx` 12'den 14 teste çıktı — adet alanının silinip
+  yeniden yazılabilmesi (ve gövdenin `quantity: 2` gitmesi) ile boş liste
+  durumunda select yerine açıklama + `disabled` düğme doğrulanıyor.
+- `npm run verify` PASS: lint 0 hata/0 uyarı, strict typecheck temiz, 23 dosyada
+  193/193 test (API 132, web 61), web JS 310,51 kB / gzip 97,37 kB.
+- Gerçek Chrome ile 390 ve 1440px doğrulama: üç satış tablosunda tutarlar
+  görünür ve panel içinde yatay kaydırma sayısı sıfır; masa birleştir formunda
+  select yok, açıklama var, düğme devre dışı; adet alanı boşaltılabiliyor,
+  boşken düğme devre dışı, "2" yazılınca kalem toplamı ₺500,00 oluyor.
+  İki genişlikte de konsol temiz. `CafeAdisyon` veritabanına dokunulmadı.

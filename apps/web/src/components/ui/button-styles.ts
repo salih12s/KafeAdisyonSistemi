@@ -17,7 +17,8 @@ const VARIANTS: Record<ButtonVariant, string> = {
 };
 
 const SIZES: Record<ButtonSize, string> = {
-  small: 'min-h-9 px-3 text-xs',
+  // Kompakt düğme de 44px dokunma hedefinin altına inmez (docs/UI_GUIDE.md §6).
+  small: 'min-h-touch px-3 text-xs',
   medium: 'min-h-touch px-4 text-sm',
   large: 'min-h-12 px-5 text-[15px]',
   touch: 'min-h-touch px-5 text-sm',

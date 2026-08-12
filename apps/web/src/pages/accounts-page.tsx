@@ -68,13 +68,6 @@ export function AccountsPage(): JSX.Element {
   });
   return (
     <div className="space-y-5">
-      <header>
-        <p className="text-sm font-bold uppercase tracking-[0.14em] text-primary">Cari yönetimi</p>
-        <h2 className="mt-1 text-2xl font-extrabold tracking-tight">Müşteriler ve hesaplar</h2>
-        <p className="mt-1 text-sm text-ink-secondary">
-          Müşteri bakiyelerini izleyin, tahsilat ve ekstre işlemlerini yönetin.
-        </p>
-      </header>
       <div className="grid gap-4 xl:grid-cols-[23rem_minmax(0,1fr)]">
         <div className="space-y-4">
           <Panel

@@ -75,7 +75,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     to: '/ayarlar',
     label: 'Ayarlar',
     shortLabel: 'Ayarlar',
-    description: 'İşletme, personel, salon ve masa yönetimi.',
+    description: 'Personel, salon, masa ve işlem geçmişi yönetimi.',
     icon: Settings,
     ownerOnly: true,
   },

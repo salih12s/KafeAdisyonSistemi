@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { HealthIndicator } from '../health-indicator';
-import { APP_NAME } from '../../config/app-info';
+import { APP_NAME, APP_TAGLINE } from '../../config/app-info';
 import { findNavItem } from '../../config/navigation';
 import { formatClock, formatDay } from '../../lib/datetime';
 import { USER_ROLE_LABELS } from '@kafe/contracts';
@@ -46,7 +46,7 @@ export function TopBar(): JSX.Element {
           {current?.label ?? APP_NAME}
         </h1>
         <p className="hidden truncate text-[13px] text-ink-muted sm:block">
-          {current?.description ?? 'Kafe adisyon ve satış noktası uygulaması'}
+          {current?.description ?? APP_TAGLINE}
         </p>
       </div>
 

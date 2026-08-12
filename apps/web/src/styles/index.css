@@ -156,11 +156,6 @@
     font-variant-numeric: tabular-nums;
   }
 
-  .kds-shell {
-    color: var(--color-kds-ink);
-    background: var(--color-kds);
-  }
-
   .chart-reveal {
     transform-origin: left center;
     animation: chart-reveal var(--motion-chart) var(--ease-product) both;

@@ -108,13 +108,22 @@ describe('Phase 4 mutfak ve realtime arayüzü', () => {
   it('siparişleri durum, istasyon, seçenek, not ve bekleme süresiyle gösterir', async () => {
     stubAppFetch({ kitchenOrders });
     renderWithProviders(<App />, '/mutfak');
-    expect(await screen.findByText('Mutfak ve bar')).toBeInTheDocument();
     expect(await screen.findByText('1 × Latte')).toBeInTheDocument();
     expect(screen.getByText('2 × Tost')).toBeInTheDocument();
     expect(screen.getByText('Süt: Yulaf')).toBeInTheDocument();
     expect(screen.getByText('Az sıcak')).toBeInTheDocument();
     expect(screen.getAllByText(/Bekleme:/)).toHaveLength(2);
     expect(screen.getByRole('button', { name: 'Hazırlamaya başla' })).toHaveClass('min-h-touch');
+  });
+
+  it('mutfak ekranını ayrı tam ekran yerine uygulama kabuğu içinde açar', async () => {
+    stubAppFetch({ kitchenOrders });
+    renderWithProviders(<App />, '/mutfak');
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Mutfak' })).toBeInTheDocument();
+    const nav = await screen.findByRole('navigation', { name: 'Ana menü' });
+    expect(within(nav).getByRole('link', { name: 'Masalar' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Çıkış' })).toBeInTheDocument();
   });
 
   it('Mutfak/Bar/Tümü filtresini REST sorgusuna taşır', async () => {

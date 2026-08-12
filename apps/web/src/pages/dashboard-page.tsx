@@ -42,18 +42,10 @@ export function DashboardPage(): JSX.Element {
 
   return (
     <div className="space-y-6">
-      <section className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-sm font-bold uppercase tracking-[0.14em] text-primary">
-            Operasyon özeti
-          </p>
-          <h2 className="mt-1 text-2xl font-extrabold tracking-tight sm:text-3xl">
-            {firstName.length > 0 ? `Merhaba, ${firstName}` : 'Merhaba'}
-          </h2>
-          <p className="mt-1 text-sm text-ink-secondary">
-            Servisin güncel ritmi ve hızlı geçişler burada.
-          </p>
-        </div>
+      <section className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-xl font-extrabold tracking-tight sm:text-2xl">
+          {firstName.length > 0 ? `Merhaba, ${firstName}` : 'Merhaba'}
+        </h2>
         <Badge
           tone={
             health.data?.database === 'connected'

@@ -8,17 +8,70 @@ sonraki geliştiriciye devredilir.
 
 ## Aktif durum
 
-**Comprehensive final review and UAT complete — user approval pending**
+**Final UI polish for Joker Cafe deployment — user approval pending**
 
-| Alan                  | Değer                                                                  |
-| --------------------- | ---------------------------------------------------------------------- |
-| **Branch**            | `review/final-comprehensive-uat`                                       |
-| **Base branch / SHA** | `feat/frontend-experience-redesign` / `ee8f373`                        |
-| **Ana geliştirici**   | Codex                                                                  |
-| **Durum**             | **PASSED — draft PR açık, merge edilmedi**                             |
-| **Son fix commit**    | `45f5623` — `fix: harden application after comprehensive final review` |
-| **Son commit**        | `docs: record final application acceptance results`                    |
-| **Son güncelleme**    | 2026-08-12                                                             |
+| Alan                  | Değer                                                    |
+| --------------------- | -------------------------------------------------------- |
+| **Branch**            | `feat/final-ui-polish-joker-cafe`                        |
+| **Base branch**       | `review/final-comprehensive-uat`                         |
+| **Ana geliştirici**   | Claude                                                   |
+| **Durum**             | **Tamamlandı — draft PR açık, merge edilmedi**           |
+| **Son commit**        | `feat: polish final UI for Joker Cafe deployment`        |
+| **Son güncelleme**    | 2026-08-12                                               |
+
+Bu görev yeni özellik geliştirmez; yalnız `apps/web` arayüz pürüzlerini giderir.
+Backend, contracts, Prisma şeması, migration ve API sözleşmesi değiştirilmedi.
+
+- Kullanıcıya görünen işletme markası **Joker Cafe**'dir: kenar çubuğu, mobil
+  "Tüm modüller" çekmecesi, giriş ekranı, `document.title` ve meta açıklama.
+  `Kafe Adisyon` yalnız teknik/dahili adlarda (README, paket adları, Prisma
+  şema yorumu, AGENTS) kalır.
+- `/login` iki kolonlu hero yapısından **tek parça, ortalanmış** bir giriş
+  ekranına indirildi. Auth akışı, şifre göster/gizle, hata, yükleniyor, ilk
+  owner uyarısı ve bağlantı durumu korundu.
+- Sayfa adı artık yalnız `TopBar` `<h1>` içinde yazılır. Özet, Masalar, Menü,
+  Cariler, Raporlar ve Ayarlar sayfalarındaki tekrar eden bölüm etiketi + büyük
+  başlık + ikinci açıklama blokları kaldırıldı (bkz. `docs/UI_GUIDE.md` §6).
+- `/mutfak` artık ayrı fullscreen shell değil; `AppLayout` içerik alanında koyu
+  KDS paneli olarak render edilir. Kenar çubuğu, üst bar ve alt gezinme yerinde
+  kalır; Socket.IO, filtreler ve ticket akışı değişmedi.
+- Kenar çubuğundaki `Frontend redesign · Final review bekliyor` durum metni ve
+  `APP_PHASE_LABEL` sabiti kaldırıldı; altta yalnız kullanıcı adı ve rol kalır.
+- Tanımsız Tailwind tokenları düzeltildi: `bg-kds-bg` → `bg-kds`, `text-kds-new`
+  → `text-kds-info`, `border-t-kds-new/preparing/ready` → `kds-info/warning/
+  success`, `shadow-kds` → `shadow-card`. KDS kolon vurgu renkleri bu düzeltmeden
+  önce hiç render edilmiyordu. Kullanılmayan `.kds-shell` CSS sınıfı silindi.
+- **Yönetim ekranı düzeni (ikinci tur).** Ayarlar ve Menü'de liste ile form
+  ayrıldı: düzenleme artık satıra tıklayınca değil, satırdaki **Düzenle**
+  düğmesiyle açılan dialogda yapılır; ekleme de panel başlığındaki "… ekle"
+  düğmesinin açtığı dialogda. Personel şifre sıfırlama da dialoga taşındı.
+- **Pasife alma.** Personel, salon ve masa için `Pasife al` / `Aktife al`
+  eklendi. API'de DELETE ucu yoktur ve domain kayıtları silinmez (AGENTS §9,
+  ADR-011); işlem mevcut `PATCH … isActive` ucunu kullanır ve onay dialogu
+  kaydın korunduğunu açıkça yazar. Yeni `ConfirmDialog` bileşeni eklendi.
+- **Ayarlar → İşletme bölümü kaldırıldı.** Kullanılmayan `fetchBusinessSettings`
+  / `updateBusinessSettings` istemci fonksiyonları ve `isBusinessSettings` tip
+  koruyucusu `lib/api.ts` içinden silindi. Backend ucu ve contracts tipi durur;
+  işletme adı `npm run setup:owner` ile belirlenir.
+- **Menü seçenekleri.** Ürün seçenekleri sayfa altındaki üç ayrı formdan tek bir
+  açıklamalı dialoga taşındı. Grup = siparişte sorulan soru, seçenek = cevabı
+  biçiminde tanımlanır; grup/seçenek formları ikinci dialog açmaz, aynı
+  pencerede görünüm değiştirir ve **Geri** ile listeye döner.
+- **Kategoriler.** Satırlar alt alta; chevron + hover + `aria-current` ile
+  tıklanabilirlik belli edilir, `Aktif`/`Pasif` rozetinin yanında düzenle düğmesi
+  durur.
+- `Button` `size="small"` yüksekliği 36px'ten `min-h-touch` (44px) değerine
+  çıkarıldı; bu, `check-view` içindeki "Masalara dön" düğmesinin de UI_GUIDE §6
+  dokunma hedefi kuralına uymasını sağladı.
+- `npm run verify` PASS: 23 dosyada **191/191** test (API 132, web 59); web JS
+  310,51 kB, gzip 97,37 kB. Lint 0 hata/0 uyarı, strict typecheck temiz.
+- Gerçek Chrome ile `/login`, `/`, `/masalar`, `/menu`, `/mutfak`, `/cariler`,
+  `/raporlar`, `/ayarlar` rotaları 390/768/1024/1440px'te ölçüldü: 32 görünümde
+  `scrollWidth == clientWidth`, yatay taşma yok. `/mutfak` üzerinde 6 saniyelik
+  bekleme ile konsol temiz. Ölçüm sırasında API çağrıları tarayıcı seviyesinde
+  karşılandı; `CafeAdisyon` veritabanına dokunulmadı.
+
+### Önceki durum — kapsamlı final review (Codex)
 
 - `npm ci`, dependency ağacı, lint, strict typecheck, build ve `npm run verify`
   PASS; 23 dosyada 186/186 test (API 132, web 54).
@@ -32,6 +85,15 @@ sonraki geliştiriciye devredilir.
 - Yerel production smoke ve restore raporu geçti. Railway deployment yapılmadı.
 - Ayrı security scan çalıştırılmadı; normal baseline kontrolleri geçti.
 - Ayrıntılı kanıt ve kalan kabul sınırları: `docs/FINAL_ACCEPTANCE_REPORT.md`.
+
+### Bilinen eksikler ve sonraki iş
+
+- Bu polish turunda gerçek veritabanı verisiyle authenticated tarayıcı akışı
+  tekrarlanmadı; yerleşim ölçümleri tarayıcı seviyesinde karşılanan API
+  cevaplarıyla yapıldı. Mali/rol davranışı `review/final-comprehensive-uat`
+  altındaki UAT kanıtlarıyla geçerlidir ve bu turda kod olarak değiştirilmedi.
+- Gerçek telefon/tablet cihazda görsel inceleme yapılmadı; ölçümler masaüstü
+  Chrome'un viewport emülasyonuyla alındı.
 - Sonraki geliştiricinin işi: yeni kod yazmadan kullanıcı manuel kabulü ve PR/merge
   kararını beklemek; merge ve Railway deployment yalnız kullanıcı onayıyla yapılır.
 

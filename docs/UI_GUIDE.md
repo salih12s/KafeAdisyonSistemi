@@ -133,6 +133,12 @@ Font yığını (Windows ve mobil cihazlarda güvenilir, indirme yok):
 Kontrol genişlikleri: **390px** (telefon), **768px** (tablet), **1024px**
 (küçük masaüstü/tablet yatay) ve **1440px** (masaüstü).
 
+### Giriş ekranı
+
+`/login` **tek parça** bir ekrandır: ortalanmış tek sütun, üstte marka, altında
+tek bir kart içinde başlık, açıklama, form ve bağlantı durumu. İki kolonlu
+hero/pazarlama paneli, büyük slogan bloğu ve landing page hissi kullanılmaz.
+
 ---
 
 ## 6. Dokunma ve erişilebilirlik
@@ -148,6 +154,21 @@ Kontrol genişlikleri: **390px** (telefon), **768px** (tablet), **1024px**
   "Alt gezinme", "Tüm modüller listesi").
 - Sayfa başına tek `<h1>`; başlık düzeyi atlanmaz.
 - `lang="tr"`.
+
+### Başlık hiyerarşisi — tekrar yasağı
+
+Sayfa adı **tek bir yerde** yazılır: üst bar. `TopBar` aktif modülün adını `<h1>`,
+açıklamasını da tek satır olarak gösterir; bu iki metin `config/navigation.ts`
+içindeki `label` ve `description` alanlarından gelir.
+
+- Sayfa içeriği kendi adını **tekrar etmez.** "Raporlar" başlığının altına ikinci
+  bir "Raporlar" başlığı, üstüne de küçük bir bölüm etiketi konmaz.
+- Sayfa gövdesi doğrudan içerikle (filtre, panel, liste) başlar; içerik grupları
+  `Panel` başlıklarıyla (`<h2>`) ayrılır.
+- İçerikte gerçekten yeni bilgi taşıyan başlık serbesttir (örneğin Özet
+  ekranındaki "Merhaba, <ad>" selamlaması veya adisyon ekranındaki masa adı).
+- Marka adı gezinmede durur: masaüstünde kenar çubuğu başlığında, telefonda
+  "Tüm modüller" çekmecesinin başlığında.
 
 ---
 
@@ -177,18 +198,42 @@ Kontrol genişlikleri: **390px** (telefon), **768px** (tablet), **1024px**
 | `Badge`                                       | Metinle desteklenen durum ve rol göstergesi                            |
 | `SegmentedControl`                            | Kısa, birbirini dışlayan görünüm/filtre seçimi                         |
 | `Dialog`                                      | Mobilde bottom-sheet, geniş ekranda modal; focus trap ve Escape içerir |
+| `ConfirmDialog`                               | Geri alınması zor işlemi onaylatır; sonucunu açıkça yazar              |
 | `ToastProvider`                               | `aria-live` ile kısa işlem geri bildirimi                              |
 | `Skeleton` / `ErrorState`                     | Yükleme ve kurtarılabilir hata yüzeyleri                               |
 
 ### KDS istisnası
 
-`/mutfak` yüksek kontrastlı, koyu ve tam ekran bir operasyon yüzeyidir. Yeni,
-hazırlanıyor ve hazır kolonlarının vurgu renkleri ayrıdır; her kart masa, ürün,
+`/mutfak` yüksek kontrastlı, **koyu bir operasyon yüzeyidir**; ancak ayrı bir tam
+ekran yerleşim değildir. Diğer modüller gibi uygulama kabuğunun içerik alanında
+render edilir: kenar çubuğu, üst bar ve alt gezinme yerinde kalır, yalnız içerik
+paneli koyu KDS yüzeyini kullanır. Yeni, hazırlanıyor ve hazır kolonlarının vurgu
+renkleri ayrıdır (`kds-info`, `kds-warning`, `kds-success`); her kart masa, ürün,
 seçenek, not, istasyon ve bekleme süresini metinle taşır. KDS, ana uygulama
 kabuğunun açık renkli panellerini kullanmaz ve dekoratif animasyon/ses içermez.
 
 Yeni bileşen yazmadan önce bu listeye bakılır; aynı işi yapan ikinci bir
 bileşen üretilmez.
+
+### Yönetim ekranlarında düzenleme düzeni
+
+Ayarlar ve Menü gibi yönetim ekranlarında **liste ve form ayrılır**:
+
+- Liste satırı yalnız seçim yapar. Düzenleme, satıra tıklayarak yanda açılan bir
+  forma değil, satırdaki açık bir **Düzenle** düğmesiyle açılan **dialoga** girer.
+- Ekleme de aynı biçimde: panel başlığındaki **"… ekle"** düğmesi dialog açar.
+  Panelin altında sürekli duran gizli/çift amaçlı form bırakılmaz.
+- Aynı anda tek dialog açıktır. Bir dialog içinde alt form gerekiyorsa (örneğin
+  seçenek grubu → seçenek) ikinci dialog açılmaz; aynı pencerenin görünümü
+  değişir ve alt barda **Geri** düğmesi bulunur.
+
+### Silme yerine pasife alma
+
+Adisyon, rapor ve işlem geçmişi bozulmasın diye personel, salon, masa, kategori,
+ürün ve seçenek kayıtları **fiziksel olarak silinmez** (bkz. [AGENTS.md](../AGENTS.md) §9,
+ADR-011). Arayüzde "Sil" yazmaz; **Pasife al** / **Aktife al** kullanılır ve
+onay dialogu kaydın korunduğunu, listede "Pasif" görüneceğini ve geri
+alınabileceğini açıkça yazar.
 
 ---
 
