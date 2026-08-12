@@ -25,8 +25,9 @@ import {
   updateStaff,
   updateTable,
 } from '../lib/api';
+import { AuditHistory } from '../components/audit-history';
 
-type Section = 'business' | 'staff' | 'areas';
+type Section = 'business' | 'staff' | 'areas' | 'audit';
 
 const inputClass = 'mt-1 min-h-touch w-full rounded-panel border border-line bg-white px-3 text-sm';
 const buttonClass =
@@ -59,6 +60,7 @@ export function SettingsPage(): JSX.Element {
               ['business', 'İşletme'],
               ['staff', 'Personel'],
               ['areas', 'Salonlar ve Masalar'],
+              ['audit', 'İşlem Geçmişi'],
             ] as const
           ).map(([id, label]) => (
             <button
@@ -75,6 +77,7 @@ export function SettingsPage(): JSX.Element {
       {section === 'business' ? <BusinessSection /> : null}
       {section === 'staff' ? <StaffSection /> : null}
       {section === 'areas' ? <AreasSection /> : null}
+      {section === 'audit' ? <AuditHistory /> : null}
     </div>
   );
 }
@@ -98,18 +101,20 @@ function BusinessSection(): JSX.Element {
     });
   };
 
-  if (settings.isPending)
-    {return (
+  if (settings.isPending) {
+    return (
       <Panel>
         <p className="p-4 text-sm text-ink-muted">İşletme bilgileri yükleniyor…</p>
       </Panel>
-    );}
-  if (settings.isError)
-    {return (
+    );
+  }
+  if (settings.isError) {
+    return (
       <Panel>
         <p className="p-4 text-sm text-danger">İşletme bilgileri yüklenemedi.</p>
       </Panel>
-    );}
+    );
+  }
 
   return (
     <Panel title="İşletme bilgileri">
@@ -167,13 +172,14 @@ function StaffSection(): JSX.Element {
       const id = String(form.get('id') ?? '');
       const fullName = String(form.get('fullName') ?? '');
       const role = readUserRole(form.get('role'));
-      if (id.length === 0)
-        {return createStaff({
+      if (id.length === 0) {
+        return createStaff({
           fullName,
           username: String(form.get('username') ?? ''),
           password: String(form.get('password') ?? ''),
           role,
-        });}
+        });
+      }
       return updateStaff(id, { fullName, role, isActive: form.get('isActive') === 'on' });
     },
     onSuccess: () => {

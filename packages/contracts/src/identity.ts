@@ -25,6 +25,8 @@ export const PERMISSIONS = {
   ADJUST_CHECKS: 'ADJUST_CHECKS',
   MOVE_TABLES: 'MOVE_TABLES',
   MERGE_TABLES: 'MERGE_TABLES',
+  VIEW_REPORTS: 'VIEW_REPORTS',
+  VIEW_AUDIT: 'VIEW_AUDIT',
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];

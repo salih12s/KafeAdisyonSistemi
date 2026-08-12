@@ -25,6 +25,7 @@
     "db:check": "npm run db:check -w @kafe/api",
     "db:migrate:status": "npm run db:migrate:status -w @kafe/api",
     "db:migrate:deploy": "npm run db:migrate:deploy -w @kafe/api",
+    "railway:predeploy": "npm run db:migrate:deploy",
     "setup:owner": "npm run setup:owner -w @kafe/api",
     "postinstall": "npm run db:generate --silent",
     "setup:env": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/set-local-env.ps1"

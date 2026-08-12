@@ -43,7 +43,7 @@ describe('Uygulama kabuğu', () => {
     await user.click(within(await mainNav()).getByRole('link', { name: 'Raporlar' }));
 
     expect(screen.getByRole('heading', { level: 1, name: 'Raporlar' })).toBeInTheDocument();
-    expect(screen.getByText('Raporlanacak satış verisi yok')).toBeInTheDocument();
+    expect(screen.getByText('Tarih aralığı')).toBeInTheDocument();
   });
 
   it('bağlantı sağlıklıyken sistemin hazır olduğunu bildirir', async () => {

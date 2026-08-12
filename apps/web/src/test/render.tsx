@@ -56,6 +56,7 @@ export interface RecordedRequest {
 
 /** stubAppFetch tarafından kaydedilen yazma istekleri; her stub çağrısında sıfırlanır. */
 export const recordedRequests: RecordedRequest[] = [];
+export const requestedPaths: string[] = [];
 
 function recordRequest(path: string, init?: RequestInit): void {
   const method = init?.method ?? 'GET';
@@ -92,16 +93,33 @@ export function stubAppFetch(
     paymentSplit?: unknown;
     customers?: unknown[];
     customer?: unknown;
+    salesReport?: unknown;
+    dayEnd?: unknown;
+    audit?: unknown;
   } = {},
 ): void {
   let currentUser = options.user === undefined ? ownerUser : options.user;
   recordedRequests.length = 0;
+  requestedPaths.length = 0;
   vi.stubGlobal(
     'fetch',
     vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
       const path = String(input);
+      requestedPaths.push(path);
       recordRequest(path, init);
       const isWrite = (init?.method ?? 'GET') !== 'GET';
+
+      if (path.startsWith('/api/reports/sales')) {
+        return Promise.resolve(response({ report: options.salesReport ?? null }));
+      }
+      if (path.startsWith('/api/reports/day-end')) {
+        return Promise.resolve(response({ summary: options.dayEnd ?? null }));
+      }
+      if (path.startsWith('/api/reports/audit')) {
+        return Promise.resolve(
+          response(options.audit ?? { entries: [], actions: [], entityTypes: [] }),
+        );
+      }
 
       if (path === '/api/orders/floor-plan') {
         return Promise.resolve(response(options.floorPlan ?? { areas: [] }));
@@ -113,10 +131,11 @@ export function stubAppFetch(
         return Promise.resolve(response({ split: options.paymentSplit ?? null }));
       }
       if (path.startsWith('/api/accounts')) {
-        if (path === '/api/accounts' || path.startsWith('/api/accounts?'))
-          {return Promise.resolve(
+        if (path === '/api/accounts' || path.startsWith('/api/accounts?')) {
+          return Promise.resolve(
             isWrite ? response({}, 201) : response({ customers: options.customers ?? [] }),
-          );}
+          );
+        }
         return Promise.resolve(
           isWrite
             ? response({ customer: options.customer ?? null }, 201)

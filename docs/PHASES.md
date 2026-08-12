@@ -20,8 +20,8 @@ Her Phase branch'i bir önceki Phase branch'inden açılır; PR'ı da ona hedefl
 | 3     | Masa açma, adisyon ve sipariş                          | Codex           | Tamamlandı — draft PR açık |
 | 4     | Mutfak/bar ve gerçek zamanlı güncelleme                | Codex           | Tamamlandı — draft PR açık |
 | 5     | Ödeme, hesap bölme ve hesap kapatma                    | Codex           | Tamamlandı — draft PR açık |
-| 6     | Cari hesap, indirim, ikram, masa taşıma ve birleştirme | Codex           | Tamamlandı — draft PR hazırlanıyor |
-| 7     | Raporlar, audit ekranı ve Railway deployment           | Codex           | Başlanmadı       |
+| 6     | Cari hesap, indirim, ikram, masa taşıma ve birleştirme | Codex           | Tamamlandı — draft PR açık |
+| 7     | Raporlar, audit ekranı ve Railway deployment           | Codex           | Tamamlandı — draft PR açık |
 
 **Phase 3'ten itibaren ana geliştirici Codex'tir.**
 
@@ -108,7 +108,7 @@ secret commit edilmemiş, belgeler hazır, draft PR açılmış.
 
 ## Phase 4 — Gerçek zamanlı mutfak/bar ekranı
 
-**Branch:** `feat/phase-4-realtime`
+**Branch:** `feat/phase-4-realtime-kitchen`
 
 - Gerçek zamanlı iletişimin eklenmesi (Socket.IO)
 - Yeni siparişlerin mutfak/bar ekranına anlık düşmesi
@@ -133,7 +133,7 @@ secret commit edilmemiş, belgeler hazır, draft PR açılmış.
 
 ## Phase 6 — Cari hesap, indirim ve masa işlemleri
 
-**Branch:** `feat/phase-6-accounts`
+**Branch:** `feat/phase-6-accounts-adjustments-tables`
 
 - Müşteri kartı ve cari hesap; adisyonu cariye aktarma, tahsilat, ekstre
 - Yüzde/tutar indirimi ve ikram; yetki sınırı ve gerekçe
@@ -144,7 +144,7 @@ secret commit edilmemiş, belgeler hazır, draft PR açılmış.
 
 ## Phase 7 — Raporlar, işlem geçmişi ve Railway deployment
 
-**Branch:** `feat/phase-7-reports-deploy`
+**Branch:** `feat/phase-7-reports-deployment`
 
 - Gün sonu özeti; ödeme türü dağılımı
 - Ürün, kategori ve personel bazlı satış raporları
@@ -154,3 +154,6 @@ secret commit edilmemiş, belgeler hazır, draft PR açılmış.
   production environment değişkenleri, custom domain bağlama
 - Yedekleme ve geri yükleme yönergesi
 - Kullanım kılavuzu
+
+Phase 7 ile geliştirme phase'leri tamamlanır. Sonraki adım yeni özellik geliştirme
+değil, tüm branch zincirini kapsayan kapsamlı final review'dur.

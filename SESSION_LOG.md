@@ -714,3 +714,41 @@ incelemesi yapılmadı.
 Kalan riskler: Gerçek DB'de müşteri/adisyon verisi olmadığı için authenticated
 Prisma mutation E2E yapılmadı. Responsive davranış kod ve jsdom ile doğrulandı;
 gerçek telefon/tablet üzerinde görsel inceleme yapılmadı.
+
+## 2026-08-12 — Codex — Phase 7 raporlar ve production hazırlığı
+
+**Branch:** `feat/phase-7-reports-deployment`
+**Base:** `feat/phase-6-accounts-adjustments-tables` (`6a698f0`)
+**Sonuç:** Tamamlandı; merge yapılmadı, yeni Phase başlatılmadı.
+
+- Backend tarih aralıklı satış raporu; günlük ciro, adisyon/ortalama, ödeme türü,
+  ürün/kategori/personel, indirim, ikram, iptal ve İstanbul saatlik dağılımını
+  tam sayı kuruşla hesaplar. Yalnız `PAID` adisyonlar kapanış tarihine göre ciroya
+  girer; `MERGED` ve `CANCELLED` kayıtlar dışarıda kalır.
+- Gün sonu raporu nakit/kart/cari, açık adisyon ve ledger'dan türetilen açık cari
+  bakiyeyi gösterir; ekranda fiskal Z raporu olmadığı açıkça belirtilir.
+- OWNER için tarih/personel/işlem/entity filtreli, salt okunur audit geçmişi eklendi.
+  Password, token, hash, secret, cookie, authorization ve database URL anahtarları
+  API cevabından çıkarılır. CASHIER satış raporunu görebilir ancak audit'e erişemez.
+- `/raporlar` sahte veri olmadan responsive tablolar ve sade saatlik çubuklarla;
+  Ayarlar ise gerçek işlem geçmişi sekmesiyle tamamlandı.
+- `railway.json`; Railpack build, `prisma migrate deploy` pre-deploy, `npm start`
+  ve health check tanımlar. README Railway PostgreSQL, environment, custom domain,
+  same-origin Socket.IO/SPA ile `pg_dump`, `pg_restore` ve `psql` yönergelerini içerir.
+- Additive `20260812163000_phase_7_report_snapshots` migration'ı kategori kimliği
+  ve adını sipariş kalemine snapshotlar; mevcut kalemleri bağlı ürün/kategoriden
+  backfill eder. Gerçek yerel DB'de `SELECT 1`, yedi migration'ın güncelliği ve
+  pre-deploy komutu doğrulandı.
+- `npm run verify` PASS: 23 dosyada 181/181 test (API 131, web 50). Phase 7'ye
+  12 test eklendi (8 backend, 4 frontend). Production build JS 378.01 kB,
+  gzip 110.51 kB.
+- Production smoke test `0.0.0.0:3107` üzerinde health `ok/connected`, root,
+  `/raporlar` SPA fallback ve Socket.IO polling için 200 döndürdü.
+
+Kalan riskler: Gerçek Railway deployment/custom domain bu görevde oluşturulmadı;
+yerel production runtime ve yapılandırma doğrulandı. Yerel DB'de raporlanacak gerçek
+satış verisi olmadığından Prisma rapor sorgusu dolu production-benzeri dataset ile
+gözlenmedi; hesaplar HTTP bellek-store testleriyle doğrulandı. Responsive arayüz
+jsdom ile test edildi, gerçek mobil cihazda görsel inceleme yapılmadı.
+
+**Development phases complete — comprehensive final review pending**

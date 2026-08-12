@@ -27,6 +27,7 @@ export function createTestApp(options: {
   store?: AppStore;
   env?: Env;
   orderEvents?: OrderEventPublisher;
+  webDistPath?: string;
 }): Express {
   return createApp({
     env: options.env ?? testEnv,
@@ -34,5 +35,6 @@ export function createTestApp(options: {
     database: createStubProbe(options.databaseConnected),
     ...(options.store === undefined ? {} : { store: options.store }),
     ...(options.orderEvents === undefined ? {} : { orderEvents: options.orderEvents }),
+    ...(options.webDistPath === undefined ? {} : { webDistPath: options.webDistPath }),
   });
 }

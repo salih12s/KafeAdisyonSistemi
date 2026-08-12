@@ -24,6 +24,7 @@ import { createMenuRouter } from './menu-routes';
 import { createOrderRouter } from './order-routes';
 import type { OrderEventPublisher } from './order-events';
 import { createAccountRouter } from './account-routes';
+import { createReportRouter } from './report-routes';
 
 const usernameSchema = z
   .string()
@@ -312,6 +313,7 @@ export function createPhaseOneRouter(
   router.use('/menu', createMenuRouter(store, authenticate));
   router.use('/orders', createOrderRouter(store, authenticate, orderEvents));
   router.use('/accounts', createAccountRouter(store, authenticate, orderEvents));
+  router.use('/reports', createReportRouter(store, authenticate));
 
   return router;
 }

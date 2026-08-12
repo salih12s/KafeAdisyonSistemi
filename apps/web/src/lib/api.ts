@@ -29,6 +29,9 @@ import {
   type DiscountType,
   type PaymentMethod,
   type PaymentSplitResponse,
+  type SalesReportResponse,
+  type DayEndResponse,
+  type AuditLogListResponse,
 } from '@kafe/contracts';
 
 export class ApiError extends Error {
@@ -499,6 +502,8 @@ function isOrderItem(value: unknown): boolean {
     typeof value.id === 'string' &&
     typeof value.productId === 'string' &&
     typeof value.productNameSnapshot === 'string' &&
+    typeof value.categoryIdSnapshot === 'string' &&
+    typeof value.categoryNameSnapshot === 'string' &&
     typeof value.unitPriceKurusSnapshot === 'number' &&
     isPreparationArea(value.preparationAreaSnapshot) &&
     (value.preparationStatus === 'SENT' ||
@@ -905,4 +910,130 @@ export async function updateOrderItemStatus(
       body: JSON.stringify({ status }),
     }),
   );
+}
+
+function isNamedSales(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    typeof value.id === 'string' &&
+    typeof value.name === 'string' &&
+    typeof value.quantity === 'number' &&
+    typeof value.totalKurus === 'number'
+  );
+}
+
+function isSalesReport(value: unknown): value is SalesReportResponse {
+  return (
+    isRecord(value) &&
+    isRecord(value.range) &&
+    typeof value.range.from === 'string' &&
+    typeof value.range.to === 'string' &&
+    typeof value.revenueKurus === 'number' &&
+    typeof value.paidCheckCount === 'number' &&
+    typeof value.averageCheckKurus === 'number' &&
+    Array.isArray(value.paymentDistribution) &&
+    value.paymentDistribution.every(
+      (row) =>
+        isRecord(row) &&
+        (row.method === 'CASH' || row.method === 'CARD' || row.method === 'ACCOUNT') &&
+        typeof row.amountKurus === 'number',
+    ) &&
+    Array.isArray(value.productSales) &&
+    value.productSales.every(isNamedSales) &&
+    Array.isArray(value.categorySales) &&
+    value.categorySales.every(isNamedSales) &&
+    Array.isArray(value.staffSales) &&
+    value.staffSales.every(isNamedSales) &&
+    typeof value.discountTotalKurus === 'number' &&
+    typeof value.complimentaryTotalKurus === 'number' &&
+    typeof value.cancelledItemCount === 'number' &&
+    typeof value.cancelledItemTotalKurus === 'number' &&
+    Array.isArray(value.hourlySales) &&
+    value.hourlySales.every(
+      (row) => isRecord(row) && typeof row.hour === 'number' && typeof row.totalKurus === 'number',
+    )
+  );
+}
+
+function queryDateRange(from: string, to: string): string {
+  return `from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`;
+}
+
+export async function fetchSalesReport(from: string, to: string): Promise<SalesReportResponse> {
+  const report = expectRecord(
+    await requestPayload(`/api/reports/sales?${queryDateRange(from, to)}`),
+    'report',
+  );
+  if (!isSalesReport(report)) throw new ApiError('Satış raporu okunamadı.');
+  return report;
+}
+
+export async function fetchDayEnd(date: string): Promise<DayEndResponse> {
+  const summary = expectRecord(
+    await requestPayload(`/api/reports/day-end?${queryDateRange(date, date)}`),
+    'summary',
+  );
+  if (!isDayEnd(summary)) {
+    throw new ApiError('Gün sonu özeti okunamadı.');
+  }
+  return summary;
+}
+
+function isDayEnd(value: unknown): value is DayEndResponse {
+  return (
+    isRecord(value) &&
+    typeof value.date === 'string' &&
+    typeof value.revenueKurus === 'number' &&
+    typeof value.cashKurus === 'number' &&
+    typeof value.cardKurus === 'number' &&
+    typeof value.accountKurus === 'number' &&
+    typeof value.openCheckCount === 'number' &&
+    typeof value.openAccountBalanceKurus === 'number' &&
+    typeof value.discountTotalKurus === 'number' &&
+    typeof value.complimentaryTotalKurus === 'number'
+  );
+}
+
+function isAuditEntry(value: unknown): value is AuditLogListResponse['entries'][number] {
+  return (
+    isRecord(value) &&
+    typeof value.id === 'string' &&
+    typeof value.actorUserId === 'string' &&
+    typeof value.actorName === 'string' &&
+    typeof value.action === 'string' &&
+    typeof value.entityType === 'string' &&
+    typeof value.entityId === 'string' &&
+    (value.metadata === null || isRecord(value.metadata)) &&
+    typeof value.createdAt === 'string'
+  );
+}
+
+function isAuditLogList(value: unknown): value is AuditLogListResponse {
+  return (
+    isRecord(value) &&
+    Array.isArray(value.entries) &&
+    value.entries.every(isAuditEntry) &&
+    Array.isArray(value.actions) &&
+    value.actions.every((entry) => typeof entry === 'string') &&
+    Array.isArray(value.entityTypes) &&
+    value.entityTypes.every((entry) => typeof entry === 'string')
+  );
+}
+
+export async function fetchAuditLogs(input: {
+  from: string;
+  to: string;
+  actorUserId?: string;
+  action?: string;
+  entityType?: string;
+}): Promise<AuditLogListResponse> {
+  const params = new URLSearchParams({ from: input.from, to: input.to });
+  if (input.actorUserId) params.set('actorUserId', input.actorUserId);
+  if (input.action) params.set('action', input.action);
+  if (input.entityType) params.set('entityType', input.entityType);
+  const payload = await requestPayload(`/api/reports/audit?${params.toString()}`);
+  if (!isAuditLogList(payload)) {
+    throw new ApiError('İşlem geçmişi okunamadı.');
+  }
+  return payload;
 }

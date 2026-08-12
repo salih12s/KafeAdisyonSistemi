@@ -9,6 +9,9 @@ import type {
   CustomerResponse,
   CustomerStatementResponse,
   AccountEntryResponse,
+  AuditLogListResponse,
+  DayEndResponse,
+  SalesReportResponse,
 } from '@kafe/contracts';
 import {
   StoreError,
@@ -19,6 +22,9 @@ import {
   type OpenCheckInput,
   type OrderStore,
   type AccountStore,
+  type ReportStore,
+  type DateRangeInput,
+  type AuditFilterInput,
   type CustomerWriteInput,
   type AccountEntryInput,
   type TransferCheckInput,
@@ -32,6 +38,11 @@ import {
 } from '../../src/features/store';
 import { calculatePaymentSplit } from '../../src/features/payment-calculations';
 import { MemoryMenuStore } from './memory-menu-store';
+import {
+  buildDayEnd,
+  buildSalesReport,
+  sanitizeAuditMetadata,
+} from '../../src/features/report-calculations';
 
 interface OrderTable {
   id: string;
@@ -40,9 +51,12 @@ interface OrderTable {
   areaIsActive: boolean;
 }
 
-export abstract class MemoryOrderStore extends MemoryMenuStore implements OrderStore, AccountStore {
+export abstract class MemoryOrderStore
+  extends MemoryMenuStore
+  implements OrderStore, AccountStore, ReportStore
+{
   protected readonly checks: CheckResponse[] = [];
-  private readonly customers: CustomerStatementResponse[] = [];
+  protected readonly customers: CustomerStatementResponse[] = [];
 
   protected abstract findOrderTable(id: string): OrderTable | null;
   protected abstract findOrderUserName(id: string): string;
@@ -140,6 +154,10 @@ export abstract class MemoryOrderStore extends MemoryMenuStore implements OrderS
       .flatMap((category) => category.products)
       .find((entry) => entry.id === input.productId);
     if (product === undefined) throw new StoreError('VALIDATION', 'Bu ürün satışa açık değil.');
+    const category = menu.categories.find((entry) =>
+      entry.products.some((entryProduct) => entryProduct.id === product.id),
+    );
+    if (category === undefined) throw new StoreError('VALIDATION', 'Ürün kategorisi bulunamadı.');
     if (new Set(input.optionValueIds).size !== input.optionValueIds.length) {
       throw new StoreError('VALIDATION', 'Aynı seçenek birden fazla kez seçilemez.');
     }
@@ -174,6 +192,8 @@ export abstract class MemoryOrderStore extends MemoryMenuStore implements OrderS
       id: randomUUID(),
       productId: product.id,
       productNameSnapshot: product.name,
+      categoryIdSnapshot: category.id,
+      categoryNameSnapshot: category.name,
       unitPriceKurusSnapshot: product.priceKurus,
       preparationAreaSnapshot: product.preparationArea,
       preparationStatus: 'SENT',
@@ -534,6 +554,51 @@ export abstract class MemoryOrderStore extends MemoryMenuStore implements OrderS
     this.recalculate(check);
     this.record(input.actorUserId, 'CHECK_TRANSFERRED_TO_ACCOUNT', 'Check', check.id);
     return cloneCheck(check);
+  }
+
+  async getSalesReport(range: DateRangeInput): Promise<SalesReportResponse> {
+    return buildSalesReport(range, this.checks);
+  }
+
+  async getDayEnd(range: DateRangeInput): Promise<DayEndResponse> {
+    const report = await this.getSalesReport(range);
+    const accountBalance = this.customers.reduce(
+      (total, customer) => total + Math.max(0, customer.balanceKurus),
+      0,
+    );
+    return buildDayEnd(
+      range,
+      report,
+      this.checks.filter((check) => check.status === 'OPEN').length,
+      accountBalance,
+    );
+  }
+
+  async listAuditLogs(filter: AuditFilterInput): Promise<AuditLogListResponse> {
+    const matches = this.audits.filter((entry) => {
+      const createdAt = new Date(entry.createdAt ?? '2026-08-12T09:00:00.000Z');
+      return (
+        createdAt >= filter.from &&
+        createdAt < filter.toExclusive &&
+        (filter.actorUserId === undefined || entry.actorUserId === filter.actorUserId) &&
+        (filter.action === undefined || entry.action === filter.action) &&
+        (filter.entityType === undefined || entry.entityType === filter.entityType)
+      );
+    });
+    return {
+      entries: matches.reverse().map((entry, index) => ({
+        id: entry.id ?? `audit-${index}`,
+        actorUserId: entry.actorUserId,
+        actorName: this.findOrderUserName(entry.actorUserId),
+        action: entry.action,
+        entityType: entry.entityType,
+        entityId: entry.entityId,
+        metadata: sanitizeAuditMetadata(entry.metadata),
+        createdAt: entry.createdAt ?? '2026-08-12T09:00:00.000Z',
+      })),
+      actions: [...new Set(this.audits.map((entry) => entry.action))].sort(),
+      entityTypes: [...new Set(this.audits.map((entry) => entry.entityType))].sort(),
+    };
   }
 
   protected requireCheck(id: string): CheckResponse {

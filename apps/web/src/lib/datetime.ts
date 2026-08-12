@@ -20,6 +20,15 @@ const timestampFormatter = new Intl.DateTimeFormat(LOCALE, {
   second: '2-digit',
 });
 
+const dateTimeFormatter = new Intl.DateTimeFormat(LOCALE, {
+  timeZone: TIME_ZONE,
+  day: '2-digit',
+  month: '2-digit',
+  year: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
+});
+
 export function formatClock(value: Date): string {
   return clockFormatter.format(value);
 }
@@ -37,4 +46,9 @@ export function formatTimestamp(isoText: string): string {
   }
 
   return timestampFormatter.format(parsed);
+}
+
+export function formatDateTime(isoText: string): string {
+  const parsed = new Date(isoText);
+  return Number.isNaN(parsed.getTime()) ? '—' : dateTimeFormatter.format(parsed);
 }

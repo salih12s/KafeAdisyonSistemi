@@ -28,7 +28,7 @@ API adresi hiçbir yerde hardcode edilmez ve CORS'a gerek kalmaz.
 
 ---
 
-## 2. Gelecekteki production yapısı (ADR-002)
+## 2. Production yapısı (ADR-002)
 
 ```
    Custom domain
@@ -44,9 +44,9 @@ API adresi hiçbir yerde hardcode edilmez ve CORS'a gerek kalmaz.
 
 Tek servis, tek origin. Express hem API uçlarını hem statik dosyaları sunar.
 
-> Railway'e özel yapılandırma dosyaları **bu aşamada yazılmaz** (Phase 7).
-> Kod bugünden bu modele uygundur: `PORT` ve `DATABASE_URL` environment'tan
-> okunur, production'da sunucu `0.0.0.0` üzerinde dinler.
+`railway.json` build, migration pre-deploy, start ve health check komutlarını
+tanımlar. `PORT` ve `DATABASE_URL` environment'tan okunur; production'da sunucu
+`0.0.0.0` üzerinde dinler. Ayrıntılı kurulum ve backup/restore adımları README'dedir.
 
 ---
 
