@@ -2,8 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import { MOBILE_PRIMARY_PATHS, navigationForRole } from '../../config/navigation';
+import { APP_NAME, APP_SUBTITLE } from '../../config/app-info';
 import { cn } from '../../lib/cn';
 import { useCurrentUser } from '../../hooks/use-auth';
+import { BrandMark } from '../ui/brand-mark';
 
 /**
  * Telefon ve tablet için alt gezinme çubuğu.
@@ -84,8 +86,16 @@ export function MobileNav(): JSX.Element {
             aria-label="Tüm modüller"
             className="absolute inset-x-0 bottom-0 max-h-[85dvh] overflow-y-auto rounded-t-xl border-t border-line bg-surface pb-[env(safe-area-inset-bottom)]"
           >
-            <div className="flex h-14 items-center justify-between border-b border-line px-4">
-              <span className="text-sm font-semibold">Tüm modüller</span>
+            <div className="flex h-16 items-center justify-between gap-3 border-b border-line px-4">
+              <span className="flex min-w-0 items-center gap-2.5">
+                <BrandMark className="h-8 w-8 shrink-0 text-primary" />
+                <span className="min-w-0">
+                  <span className="block truncate text-sm font-bold">{APP_NAME}</span>
+                  <span className="block truncate text-[11px] text-ink-secondary">
+                    {APP_SUBTITLE}
+                  </span>
+                </span>
+              </span>
               <button
                 ref={closeRef}
                 type="button"

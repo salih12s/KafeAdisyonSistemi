@@ -85,28 +85,17 @@ export function TablesPage(): JSX.Element {
 
   return (
     <div className="space-y-5">
-      <section className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <p className="text-sm font-bold uppercase tracking-[0.14em] text-primary">
-            Canlı salon planı
-          </p>
-          <h2 className="mt-1 text-2xl font-extrabold tracking-tight">Masalar</h2>
-          <p className="mt-1 text-sm text-ink-secondary">
-            Boş masayı açın veya aktif adisyona devam edin.
-          </p>
-        </div>
-        <SegmentedControl
-          label="Salon seçimi"
-          value={selectedArea?.id ?? ''}
-          options={floor.data.areas.map((area) => ({
-            value: area.id,
-            label: area.name,
-            count: area.tables.length,
-          }))}
-          onChange={setSelectedAreaId}
-        />
-      </section>
-      <h3 className="sr-only">Salonlar</h3>
+      <h2 className="sr-only">Salonlar</h2>
+      <SegmentedControl
+        label="Salon seçimi"
+        value={selectedArea?.id ?? ''}
+        options={floor.data.areas.map((area) => ({
+          value: area.id,
+          label: area.name,
+          count: area.tables.length,
+        }))}
+        onChange={setSelectedAreaId}
+      />
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <Summary label="Toplam masa" value={selectedArea?.tables.length ?? 0} />

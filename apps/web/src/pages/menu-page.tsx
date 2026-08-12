@@ -130,13 +130,6 @@ export function MenuPage(): JSX.Element {
 
   return (
     <div className="flex flex-col gap-5">
-      <header>
-        <p className="text-sm font-bold uppercase tracking-[0.14em] text-primary">Ürün kataloğu</p>
-        <h2 className="mt-1 text-2xl font-extrabold tracking-tight">Menü yönetimi</h2>
-        <p className="mt-1 text-sm text-ink-secondary">
-          Kategorileri, ürünleri ve satış seçeneklerini tek yerden düzenleyin.
-        </p>
-      </header>
       <div className="grid gap-4 lg:grid-cols-[16rem_minmax(0,1fr)]">
         <CategoryPanel
           categories={categories.data}

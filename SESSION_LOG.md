@@ -810,3 +810,51 @@ değiştirilmedi, merge yapılmadı.
   `SELECT 1` ve yedi migration status PASS.
 - Kanıtlar `docs/FINAL_ACCEPTANCE_REPORT.md`; tekrar çalıştırılabilir yardımcılar
   `scripts/qa/` altındadır. Ana fix commit'i `45f5623`'tür.
+
+## 2026-08-12 — Claude — Joker Cafe final UI polish
+
+**Branch:** `feat/final-ui-polish-joker-cafe`
+**Base:** `review/final-comprehensive-uat`
+**Sonuç:** Tamamlandı; draft PR açık, merge yapılmadı.
+
+- Yeni özellik geliştirilmedi. Değişiklik yüzeyi yalnız `apps/web` ve arayüz
+  belgeleridir; backend, contracts, Prisma şeması, migration, API sözleşmesi ve
+  iş kuralları değişmedi. Railway deployment ve security scan çalıştırılmadı.
+- Marka: `APP_NAME` `Joker Cafe` oldu; `index.html` title/description, kenar
+  çubuğu, mobil "Tüm modüller" çekmecesi ve giriş ekranı bu adı gösterir.
+  Teknik/dahili "Kafe Adisyon" adları (README, paket adları, Prisma şema yorumu,
+  AGENTS) körlemesine değiştirilmedi.
+- `/login` iki kolonlu hero + aside yapısından tek parça ortalanmış giriş
+  ekranına indirildi. Mutation, `setup-status` uyarısı, şifre göster/gizle,
+  `role="alert"` hata satırı, loading ve bağlantı durumu satırı korundu.
+- Başlık tekrarı kaldırıldı: sayfa adı yalnız `TopBar` `<h1>` içindedir. Özet,
+  Masalar, Menü, Cariler, Raporlar ve Ayarlar sayfalarındaki eyebrow + büyük
+  başlık + ikinci açıklama blokları silindi; Masalar'daki salon `SegmentedControl`
+  ve Özet'teki "Merhaba, <ad>" selamlaması korundu. Kural `docs/UI_GUIDE.md`
+  içine "Başlık hiyerarşisi — tekrar yasağı" olarak yazıldı.
+- `AppLayout` içindeki `isKitchen` fullscreen dalı kaldırıldı; `/mutfak` artık
+  kenar çubuğu, üst bar ve alt gezinme ile aynı kabuğun içerik alanında koyu bir
+  KDS paneli olarak açılıyor. `useOrderRealtime`, KDS ticket yapısı ve
+  Mutfak/Bar/Tümü filtreleri değiştirilmedi.
+- Kenar çubuğundaki `Frontend redesign · Final review bekliyor` metni ve
+  `APP_PHASE_LABEL` sabiti kaldırıldı; altta yalnız ad ve rol kaldı. Arayüzde
+  başka review/draft/redesign/acceptance metni bulunamadı.
+- Tanımsız Tailwind tokenları düzeltildi: `bg-kds-bg` → `bg-kds`, `text-kds-new`
+  → `text-kds-info`, `border-t-kds-new/preparing/ready` →
+  `kds-info/warning/success`, `shadow-kds` → `shadow-card`. KDS kolon vurgu
+  renkleri bu düzeltmeden önce hiç render edilmiyordu; tarayıcıda artık
+  `rgb(109,155,210)`, `rgb(216,154,58)` ve `rgb(83,168,107)` ölçüldü.
+  Kullanılmayan `.kds-shell` CSS sınıfı silindi.
+- Testler: `auth.test.tsx` yeni login başlığı ve markayı doğruluyor;
+  `kitchen.test.tsx` içine mutfağın app shell içinde açıldığını (h1 "Mutfak",
+  "Ana menü" navigasyonu, Çıkış düğmesi) kanıtlayan yeni test eklendi.
+- `npm run verify` PASS: lint 0 hata/0 uyarı, strict typecheck temiz, 23 dosyada
+  187/187 test (API 132, web 55), web JS 310,85 kB / gzip 97,40 kB.
+- Gerçek Chrome (playwright-core, `channel: chrome`) ile sekiz rota
+  390/768/1024/1440px'te ölçüldü: 32 görünümün tamamında
+  `scrollWidth == clientWidth`, belge yatay taşması yok. Reports tablosu ve
+  Ayarlar segment kontrolü yalnız kendi `overflow-x-auto` kapsayıcılarında
+  kayıyor. `/mutfak` üzerinde 6 saniyelik beklemede konsol tamamen temiz;
+  KDS aksiyon düğmeleri 44px. Ölçüm sırasında API cevapları tarayıcı seviyesinde
+  karşılandı, `CafeAdisyon` veritabanına dokunulmadı. Görseller yalnız yerel
+  temp klasöründe tutuldu ve commit edilmedi.

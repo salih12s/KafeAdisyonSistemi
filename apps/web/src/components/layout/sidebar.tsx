@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { APP_NAME, APP_PHASE_LABEL, APP_SUBTITLE } from '../../config/app-info';
+import { APP_NAME, APP_SUBTITLE } from '../../config/app-info';
 import { navigationForRole } from '../../config/navigation';
 import { cn } from '../../lib/cn';
 import { useCurrentUser } from '../../hooks/use-auth';
@@ -50,9 +50,6 @@ export function Sidebar(): JSX.Element {
           <p className="mt-0.5 text-xs text-espresso-text">{USER_ROLE_LABELS[auth.data.role]}</p>
         </div>
       ) : null}
-      <p className="border-t border-espresso-line px-4 py-2.5 text-[11px] leading-snug text-espresso-text">
-        {APP_PHASE_LABEL}
-      </p>
     </aside>
   );
 }

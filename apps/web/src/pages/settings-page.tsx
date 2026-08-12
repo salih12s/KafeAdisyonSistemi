@@ -54,13 +54,6 @@ export function SettingsPage(): JSX.Element {
   const [section, setSection] = useState<Section>('business');
   return (
     <div className="space-y-5">
-      <header>
-        <p className="text-sm font-bold uppercase tracking-[0.14em] text-primary">Yönetim</p>
-        <h2 className="mt-1 text-2xl font-extrabold tracking-tight">Ayarlar</h2>
-        <p className="mt-1 text-sm text-ink-secondary">
-          İşletme yapısını, personeli ve işlem geçmişini yönetin.
-        </p>
-      </header>
       <SegmentedControl
         label="Ayar bölümleri"
         value={section}

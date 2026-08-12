@@ -1,9 +1,10 @@
 import { useState, type FormEvent } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { CheckCircle2, Eye, EyeOff, ShieldCheck, UtensilsCrossed } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import { AUTH_QUERY_KEY, useCurrentUser } from '../hooks/use-auth';
 import { ApiError, fetchSetupStatus, login } from '../lib/api';
+import { APP_NAME, APP_SUBTITLE } from '../config/app-info';
 import { BrandMark } from '../components/ui/brand-mark';
 import { Button } from '../components/ui/button';
 import { TextField } from '../components/ui/field';
@@ -34,24 +35,23 @@ export function LoginPage(): JSX.Element {
   };
 
   return (
-    <main className="grid min-h-dvh bg-canvas lg:grid-cols-[minmax(28rem,0.9fr)_minmax(34rem,1.1fr)]">
-      <section className="flex items-center justify-center px-5 py-10 sm:px-10 lg:px-16 xl:px-24">
-        <div className="w-full max-w-md">
-          <div className="mb-10 flex items-center gap-3">
-            <BrandMark />
-            <h2 className="text-lg font-extrabold">Kafe Adisyon</h2>
-          </div>
-          <p className="text-sm font-bold uppercase tracking-[0.18em] text-primary">
-            Personel girişi
-          </p>
-          <h1 className="mt-3 text-3xl font-extrabold tracking-tight text-ink sm:text-4xl">
-            Servise kaldığınız yerden devam edin.
-          </h1>
-          <p className="mt-3 max-w-sm text-sm leading-6 text-ink-secondary">
-            Masalar, siparişler ve işletme operasyonları tek güvenli çalışma alanında.
+    <main className="flex min-h-dvh items-center justify-center bg-canvas px-4 py-10 sm:px-6">
+      <div className="w-full max-w-sm">
+        <div className="flex items-center gap-3">
+          <BrandMark className="h-11 w-11 text-primary" />
+          <span className="min-w-0">
+            <span className="block truncate text-lg font-extrabold tracking-tight">{APP_NAME}</span>
+            <span className="block truncate text-[13px] text-ink-secondary">{APP_SUBTITLE}</span>
+          </span>
+        </div>
+
+        <div className="surface-card mt-5 p-5 sm:p-6">
+          <h1 className="text-xl font-extrabold tracking-tight">Personel girişi</h1>
+          <p className="mt-1.5 text-sm leading-6 text-ink-secondary">
+            Masaları, siparişleri ve günlük operasyonu güvenli şekilde yönetin.
           </p>
 
-          <form className="mt-8 space-y-5" onSubmit={onSubmit}>
+          <form className="mt-6 space-y-4" onSubmit={onSubmit}>
             {setup.data === false ? (
               <div className="rounded-card border border-warning/30 bg-warning-soft p-4 text-sm text-ink">
                 <p className="font-bold">İlk yönetici hesabı bekleniyor</p>
@@ -117,46 +117,19 @@ export function LoginPage(): JSX.Element {
             </Button>
           </form>
 
-          <div className="mt-8 flex items-center gap-2 border-t border-line pt-5 text-xs text-ink-secondary">
+          <p className="mt-5 flex items-center gap-2 border-t border-line pt-4 text-xs text-ink-secondary">
             <span
-              className={`h-2 w-2 rounded-full ${setup.isError ? 'bg-danger' : 'bg-success'}`}
+              aria-hidden="true"
+              className={`h-2 w-2 shrink-0 rounded-full ${setup.isError ? 'bg-danger' : 'bg-success'}`}
             />
-            {setup.isError ? 'Sunucu bağlantısı kontrol edilmeli' : 'Yerel sistem bağlantısı hazır'}
-          </div>
-        </div>
-      </section>
-
-      <aside className="hidden bg-[#2B1B14] p-12 text-white lg:flex lg:flex-col lg:justify-between xl:p-16">
-        <div>
-          <span className="inline-flex items-center gap-2 rounded-control border border-white/15 px-3 py-1.5 text-xs font-semibold">
-            <ShieldCheck className="h-4 w-4 text-[#F4B77C]" /> Bu cihazda, tek merkezde
-          </span>
-          <h2 className="mt-7 max-w-xl text-4xl font-extrabold leading-tight tracking-tight xl:text-5xl">
-            Sıcak misafirperverlik, sakin operasyon.
-          </h2>
-          <p className="mt-5 max-w-lg text-base leading-7 text-white/70">
-            Kafe ekibinizin yoğun servis anlarında ihtiyaç duyduğu hız, netlik ve ortak çalışma
-            düzeni.
+            {setup.isError ? 'Sunucu bağlantısı kontrol edilmeli' : 'Sistem bağlantısı hazır'}
           </p>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="rounded-panel border border-white/10 bg-white/[0.07] p-5">
-            <UtensilsCrossed className="h-6 w-6 text-[#F4B77C]" />
-            <p className="mt-5 text-sm font-bold">Operasyon tek bakışta</p>
-            <p className="mt-1 text-sm leading-5 text-white/60">
-              Masa, mutfak ve ödeme akışları ekip için görünür.
-            </p>
-          </div>
-          <div className="rounded-panel border border-white/10 bg-white/[0.07] p-5">
-            <CheckCircle2 className="h-6 w-6 text-[#78C89A]" />
-            <p className="mt-5 text-sm font-bold">Dokunmatik kullanım</p>
-            <p className="mt-1 text-sm leading-5 text-white/60">
-              Telefon, tablet ve kasa ekranı için tutarlı deneyim.
-            </p>
-          </div>
-        </div>
-      </aside>
+        <p className="mt-4 text-center text-xs text-ink-secondary">
+          Oturumunuz 12 saat sonra güvenlik için sona erer.
+        </p>
+      </div>
     </main>
   );
 }

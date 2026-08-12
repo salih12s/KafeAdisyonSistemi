@@ -8,7 +8,6 @@ import {
 } from '@kafe/contracts';
 import { ChefHat, Clock3, Flame, Martini, Wifi } from 'lucide-react';
 import { useState } from 'react';
-import { EmptyState } from '../components/ui/empty-state';
 import { ApiError, fetchKitchenOrders, updateOrderItemStatus } from '../lib/api';
 import { SegmentedControl } from '../components/ui/segmented-control';
 import { Button } from '../components/ui/button';
@@ -29,9 +28,9 @@ const ACTION_LABEL: Record<(typeof ACTIVE_STATUSES)[number], string> = {
   READY: 'Servis edildi',
 };
 const STATUS_ACCENT = {
-  SENT: 'border-t-kds-new',
-  PREPARING: 'border-t-kds-preparing',
-  READY: 'border-t-kds-ready',
+  SENT: 'border-t-kds-info',
+  PREPARING: 'border-t-kds-warning',
+  READY: 'border-t-kds-success',
 } as const;
 
 type ActiveStatus = (typeof ACTIVE_STATUSES)[number];
@@ -49,47 +48,33 @@ export function KitchenPage(): JSX.Element {
   });
 
   return (
-    <div className="min-h-dvh bg-kds-bg text-kds-ink">
-      <header className="sticky top-0 z-20 border-b border-kds-line bg-kds-bg/95 px-3 py-3 backdrop-blur sm:px-5 lg:px-7">
-        <div className="mx-auto flex max-w-[112rem] flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-center gap-3">
-            <span className="flex h-11 w-11 items-center justify-center rounded-card bg-kds-elevated text-kds-new">
-              <ChefHat className="h-6 w-6" />
-            </span>
-            <div>
-              <h1 className="text-xl font-extrabold tracking-tight">Mutfak ve bar</h1>
-              <p className="text-xs text-kds-muted">Canlı hazırlık ekranı</p>
-            </div>
-            <Badge
-              tone={orders.isError ? 'danger' : 'success'}
-              icon={<Wifi className="h-3.5 w-3.5" />}
-            >
-              {orders.isError ? 'Bağlantı sorunu' : 'Canlı'}
-            </Badge>
-          </div>
-          <SegmentedControl
-            dark
-            label="Hazırlık alanı filtresi"
-            value={filter}
-            options={[
-              {
-                value: 'KITCHEN',
-                label: 'Mutfak',
-                count: orders.data?.filter((order) => order.preparationArea === 'KITCHEN').length,
-              },
-              {
-                value: 'BAR',
-                label: 'Bar',
-                count: orders.data?.filter((order) => order.preparationArea === 'BAR').length,
-              },
-              { value: 'ALL', label: 'Tümü', count: orders.data?.length },
-            ]}
-            onChange={setFilter}
-          />
-        </div>
-      </header>
+    <div className="min-w-0 overflow-hidden rounded-panel border border-kds-line bg-kds text-kds-ink shadow-elevated">
+      <div className="flex flex-col items-start gap-3 border-b border-kds-line p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
+        <Badge tone={orders.isError ? 'danger' : 'success'} icon={<Wifi className="h-3.5 w-3.5" />}>
+          {orders.isError ? 'Bağlantı sorunu' : 'Canlı'}
+        </Badge>
+        <SegmentedControl
+          dark
+          label="Hazırlık alanı filtresi"
+          value={filter}
+          options={[
+            {
+              value: 'KITCHEN',
+              label: 'Mutfak',
+              count: orders.data?.filter((order) => order.preparationArea === 'KITCHEN').length,
+            },
+            {
+              value: 'BAR',
+              label: 'Bar',
+              count: orders.data?.filter((order) => order.preparationArea === 'BAR').length,
+            },
+            { value: 'ALL', label: 'Tümü', count: orders.data?.length },
+          ]}
+          onChange={setFilter}
+        />
+      </div>
 
-      <main className="mx-auto max-w-[112rem] p-3 sm:p-5 lg:p-7">
+      <div className="min-h-96 p-3 sm:p-4">
         {orders.isPending ? (
           <div className="grid gap-4 lg:grid-cols-3">
             {ACTIVE_STATUSES.map((status) => (
@@ -105,12 +90,14 @@ export function KitchenPage(): JSX.Element {
             />
           </div>
         ) : orders.data.length === 0 ? (
-          <div className="rounded-panel border border-kds-line bg-kds-surface text-kds-ink">
-            <EmptyState
-              icon={ChefHat}
-              title="Bekleyen sipariş yok"
-              description="Bu istasyonda hazırlanmayı veya servis edilmeyi bekleyen sipariş bulunmuyor."
-            />
+          <div className="flex flex-col items-center rounded-card border border-dashed border-kds-line px-5 py-12 text-center">
+            <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-card bg-kds-elevated text-kds-muted">
+              <ChefHat aria-hidden="true" className="h-6 w-6" />
+            </span>
+            <h2 className="text-base font-bold">Bekleyen sipariş yok</h2>
+            <p className="mt-1.5 max-w-md text-sm leading-relaxed text-kds-muted">
+              Bu istasyonda hazırlanmayı veya servis edilmeyi bekleyen sipariş bulunmuyor.
+            </p>
           </div>
         ) : (
           <div className="grid min-w-0 gap-4 lg:grid-cols-3">
@@ -123,7 +110,7 @@ export function KitchenPage(): JSX.Element {
             ))}
           </div>
         )}
-      </main>
+      </div>
     </div>
   );
 }
@@ -182,7 +169,7 @@ function KitchenOrderCard({ order }: { order: KitchenOrderResponse }): JSX.Eleme
 
   return (
     <li
-      className={`ticket-enter overflow-hidden rounded-card border border-kds-line border-t-4 ${STATUS_ACCENT[status]} bg-kds-surface shadow-kds`}
+      className={`ticket-enter overflow-hidden rounded-card border border-kds-line border-t-4 ${STATUS_ACCENT[status]} bg-kds-surface shadow-card`}
     >
       <div className="p-4">
         <div className="flex items-start justify-between gap-3">
@@ -214,7 +201,7 @@ function KitchenOrderCard({ order }: { order: KitchenOrderResponse }): JSX.Eleme
         ) : null}
         {order.note === null ? null : (
           <p className="mt-3 rounded-control bg-kds-elevated px-3 py-2 text-sm">
-            <span className="font-bold text-kds-new">Not:</span> {order.note}
+            <span className="font-bold text-kds-info">Not:</span> {order.note}
           </p>
         )}
         <div className="mt-3 flex items-center justify-between">
