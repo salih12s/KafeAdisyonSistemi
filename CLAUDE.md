@@ -57,17 +57,17 @@ Bu dördünden biri sağlanmıyorsa kullanıcıya durum bildirilir ve beklenir.
 
 ## 4. Sık kullanılan komutlar
 
-| Komut | Açıklama |
-| --- | --- |
-| `npm run setup:env` | `apps/api/.env` dosyasını sorularla oluşturur |
-| `npm run dev` | API (3000) ve web (5173) geliştirme sunucularını başlatır |
-| `npm run db:check` | Veritabanı bağlantısını `SELECT 1` ile doğrular |
-| `npm run lint` | ESLint |
-| `npm run typecheck` | TypeScript tip denetimi |
-| `npm run test` | API ve web testleri |
-| `npm run build` | Üretim derlemesi |
-| `npm run verify` | lint → typecheck → test → build |
-| `npm start` | Production sunucusu (Express + React build, tek origin) |
+| Komut               | Açıklama                                                  |
+| ------------------- | --------------------------------------------------------- |
+| `npm run setup:env` | `apps/api/.env` dosyasını sorularla oluşturur             |
+| `npm run dev`       | API (3000) ve web (5173) geliştirme sunucularını başlatır |
+| `npm run db:check`  | Veritabanı bağlantısını `SELECT 1` ile doğrular           |
+| `npm run lint`      | ESLint                                                    |
+| `npm run typecheck` | TypeScript tip denetimi                                   |
+| `npm run test`      | API ve web testleri                                       |
+| `npm run build`     | Üretim derlemesi                                          |
+| `npm run verify`    | lint → typecheck → test → build                           |
+| `npm start`         | Production sunucusu (Express + React build, tek origin)   |
 
 ---
 

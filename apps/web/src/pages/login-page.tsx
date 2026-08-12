@@ -126,12 +126,10 @@ export function LoginPage(): JSX.Element {
         </div>
       </section>
 
-      <aside className="relative hidden overflow-hidden bg-[#2B1B14] p-12 text-white lg:flex lg:flex-col lg:justify-between xl:p-16">
-        <div className="absolute -right-24 -top-20 h-96 w-96 rounded-full bg-primary/20 blur-3xl" />
-        <div className="absolute -bottom-28 -left-20 h-80 w-80 rounded-full bg-warning/10 blur-3xl" />
-        <div className="relative">
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-semibold">
-            <ShieldCheck className="h-4 w-4 text-[#F4B77C]" /> Aynı ağda, tek merkezde
+      <aside className="hidden bg-[#2B1B14] p-12 text-white lg:flex lg:flex-col lg:justify-between xl:p-16">
+        <div>
+          <span className="inline-flex items-center gap-2 rounded-control border border-white/15 px-3 py-1.5 text-xs font-semibold">
+            <ShieldCheck className="h-4 w-4 text-[#F4B77C]" /> Bu cihazda, tek merkezde
           </span>
           <h2 className="mt-7 max-w-xl text-4xl font-extrabold leading-tight tracking-tight xl:text-5xl">
             Sıcak misafirperverlik, sakin operasyon.
@@ -142,15 +140,15 @@ export function LoginPage(): JSX.Element {
           </p>
         </div>
 
-        <div className="relative grid gap-3 sm:grid-cols-2">
-          <div className="rounded-panel border border-white/10 bg-white/[0.07] p-5 backdrop-blur-sm">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="rounded-panel border border-white/10 bg-white/[0.07] p-5">
             <UtensilsCrossed className="h-6 w-6 text-[#F4B77C]" />
             <p className="mt-5 text-sm font-bold">Operasyon tek bakışta</p>
             <p className="mt-1 text-sm leading-5 text-white/60">
               Masa, mutfak ve ödeme akışları ekip için görünür.
             </p>
           </div>
-          <div className="rounded-panel border border-white/10 bg-white/[0.07] p-5 backdrop-blur-sm">
+          <div className="rounded-panel border border-white/10 bg-white/[0.07] p-5">
             <CheckCircle2 className="h-6 w-6 text-[#78C89A]" />
             <p className="mt-5 text-sm font-bold">Dokunmatik kullanım</p>
             <p className="mt-1 text-sm leading-5 text-white/60">

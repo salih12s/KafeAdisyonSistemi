@@ -25,7 +25,11 @@ function buildApp(options: { exposeInternalMessage: boolean }): Express {
   });
 
   app.get('/servis-yok', () => {
-    throw new AppError('Servis geçici olarak kullanılamıyor.', 503, API_ERROR_CODES.SERVICE_UNAVAILABLE);
+    throw new AppError(
+      'Servis geçici olarak kullanılamıyor.',
+      503,
+      API_ERROR_CODES.SERVICE_UNAVAILABLE,
+    );
   });
 
   app.post('/govde', (req, res) => {

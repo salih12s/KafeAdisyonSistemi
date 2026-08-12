@@ -63,7 +63,10 @@ function normalize(error: unknown, exposeInternalMessage: boolean): NormalizedEr
  * Merkezî hata yönetimi. Yanıt gövdesi her zaman ApiErrorResponse biçimindedir;
  * stack trace istemciye hiçbir ortamda gönderilmez.
  */
-export function createErrorHandler(logger: Logger, exposeInternalMessage: boolean): ErrorRequestHandler {
+export function createErrorHandler(
+  logger: Logger,
+  exposeInternalMessage: boolean,
+): ErrorRequestHandler {
   return (error, req, res, next) => {
     if (res.headersSent) {
       next(error);

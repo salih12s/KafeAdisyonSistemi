@@ -69,6 +69,7 @@ export function TopBar(): JSX.Element {
         onClick={() => logoutMutation.mutate()}
         variant="ghost"
         size="small"
+        className="min-h-touch"
         icon={<LogOut aria-hidden="true" className="h-4 w-4" />}
         loading={logoutMutation.isPending}
       >

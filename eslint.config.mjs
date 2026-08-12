@@ -6,13 +6,7 @@ import reactRefresh from 'eslint-plugin-react-refresh';
 
 export default tseslint.config(
   {
-    ignores: [
-      '**/dist/**',
-      '**/build/**',
-      '**/coverage/**',
-      '**/node_modules/**',
-      '**/*.d.ts',
-    ],
+    ignores: ['**/dist/**', '**/build/**', '**/coverage/**', '**/node_modules/**', '**/*.d.ts'],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
@@ -49,6 +43,12 @@ export default tseslint.config(
     files: ['apps/api/**/*.ts', 'packages/contracts/**/*.ts', '*.mjs', '*.cjs'],
     languageOptions: {
       globals: { ...globals.node },
+    },
+  },
+  {
+    files: ['scripts/qa/**/*.mjs'],
+    languageOptions: {
+      globals: { ...globals.node, ...globals.browser },
     },
   },
   {

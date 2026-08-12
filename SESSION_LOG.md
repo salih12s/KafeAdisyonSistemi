@@ -776,3 +776,37 @@ değiştirilmedi, merge yapılmadı.
 - Headless Chrome ile Özet, Masalar, KDS ve Raporlar 390/768/1024/1440px
   genişliklerde kontrol edildi; 16 görünümün hiçbirinde belge yatay taşmadı.
   Görsel kanıtlar yalnız yerel temp klasöründe tutuldu ve commit edilmedi.
+
+## 2026-08-12 — Codex — Kapsamlı final review, UAT ve production acceptance
+
+**Branch:** `review/final-comprehensive-uat`
+**Base:** `feat/frontend-experience-redesign` (`ee8f373`)
+**Sonuç:** PASSED; kullanıcı manuel kabulü bekleniyor, merge yapılmadı.
+
+- Phase 0–7, frontend redesign, yedi migration, bütün API/web/contracts kaynakları,
+  testler, Railway config ve belgeler incelendi. Ayrı security scan/threat-model
+  workflow'u çalıştırılmadı. Eski güvenlik review stash'i değiştirilmeden korundu:
+  `backup: failed Codex security review before phase 1`.
+- Kullanıcının `CafeAdisyon` DB'sine UAT verisi yazılmadı. İzole UAT, fresh/EDGE ve
+  restore DB'lerinde migration deploy/status/check, resmî owner setup, dört rol,
+  gerçek REST/Socket.IO/browser akışları, concurrency ve backup/restore tamamlandı.
+- CORE-ORACLE-1 birebir geçti: 2 paid check; ciro 75.000, kart 45.000, nakit
+  20.000, cari 10.000, indirim 2.500, ikram 8.000, açık cari 10.000 kuruş.
+  4.000 kuruş tahsilat bakiyeyi 6.000'e indirdi, ciro değişmedi.
+- Aynı masa `[201,409]`, concurrent ödeme `[201,409]`, KDS status `[200,409]` ve
+  son OWNER yarışı `[200,409]`; snapshot ve split remainder kontrolleri geçti.
+- Üç bağımsız Chrome session'ı ve realtime KDS geçti. Altı viewport × sekiz route
+  için 48 ölçümde body overflow yok; console/failed response 0, touch/focus/reduced
+  motion kontrolleri başarılı. On bir gerçek UAT screenshot yalnız tempte tutuldu.
+- Pasif session'ın açık socket'ini kesme, cari N+1'i iki sorguya indirme, cari route
+  guard/izinli query, mobile drawer accessibility, form validation/error state,
+  Türkçe audit etiketleri, touch target/favicon ve güvenli type guard düzeltmeleri
+  yapıldı. Route lazy loading ana JS'yi 407,56 kB'den 310,86 kB'ye düşürdü.
+- Büyük fixture: 3 salon, 40 masa, 15 kategori, 100 ürün, 31 option group,
+  100 müşteri, 932 audit, 100 paid/28 open check ve 303 item. Cari liste iki sorgu,
+  110 ms. Yerel production smoke ve restore oracle geçti; Railway deploy edilmedi.
+- Final `npm ci` ve dependency ağaçları geçti; 0 vulnerability. `npm run verify`
+  PASS: API 13 dosya/132 test, web 10 dosya/54 test, toplam 186/186. İzole UAT DB
+  `SELECT 1` ve yedi migration status PASS.
+- Kanıtlar `docs/FINAL_ACCEPTANCE_REPORT.md`; tekrar çalıştırılabilir yardımcılar
+  `scripts/qa/` altındadır. Ana fix commit'i `45f5623`'tür.

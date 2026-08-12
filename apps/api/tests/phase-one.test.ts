@@ -37,15 +37,17 @@ async function login(app: Express, username = 'owner', password = OWNER_PASSWORD
   expect(response.status).toBe(200);
   const cookies: unknown = response.headers['set-cookie'];
   expect(Array.isArray(cookies)).toBe(true);
-  if (!Array.isArray(cookies) || typeof cookies[0] !== 'string')
-    {throw new Error('Session cookie alınamadı.');}
+  if (!Array.isArray(cookies) || typeof cookies[0] !== 'string') {
+    throw new Error('Session cookie alınamadı.');
+  }
   return cookies[0].split(';')[0] ?? '';
 }
 
 function firstCookie(response: { headers: Record<string, unknown> }): string {
   const cookies = response.headers['set-cookie'];
-  if (!Array.isArray(cookies) || typeof cookies[0] !== 'string')
-    {throw new Error('Session cookie alınamadı.');}
+  if (!Array.isArray(cookies) || typeof cookies[0] !== 'string') {
+    throw new Error('Session cookie alınamadı.');
+  }
   return cookies[0];
 }
 
@@ -177,15 +179,12 @@ describe('Authorization ve personel', () => {
   it('owner personel oluşturur ve cevap şifre içermez', async () => {
     const { app, store } = createScenario();
     const cookie = await login(app);
-    const response = await request(app)
-      .post('/api/staff')
-      .set('Cookie', cookie)
-      .send({
-        fullName: 'Mustafa Yılmaz',
-        username: 'mustafa',
-        password: STAFF_PASSWORD,
-        role: 'WAITER',
-      });
+    const response = await request(app).post('/api/staff').set('Cookie', cookie).send({
+      fullName: 'Mustafa Yılmaz',
+      username: 'mustafa',
+      password: STAFF_PASSWORD,
+      role: 'WAITER',
+    });
     expect(response.status).toBe(201);
     expect(response.body.staff).toMatchObject({
       username: 'mustafa',

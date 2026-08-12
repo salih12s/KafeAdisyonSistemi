@@ -37,12 +37,12 @@ describe('Uygulama kabuğu', () => {
 
     await user.click(within(await mainNav()).getByRole('link', { name: 'Masalar' }));
 
-    expect(screen.getByRole('heading', { level: 1, name: 'Masalar' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 1, name: 'Masalar' })).toBeInTheDocument();
     expect(await screen.findByText('Henüz salon veya masa tanımlanmadı')).toBeInTheDocument();
 
     await user.click(within(await mainNav()).getByRole('link', { name: 'Raporlar' }));
 
-    expect(screen.getByRole('heading', { level: 1, name: 'Raporlar' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 1, name: 'Raporlar' })).toBeInTheDocument();
     expect(screen.getByText('Tarih aralığı')).toBeInTheDocument();
   });
 

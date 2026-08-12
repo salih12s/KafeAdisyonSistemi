@@ -2,12 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { App } from '../App';
-import {
-  recordedRequests,
-  renderWithProviders,
-  stubAppFetch,
-  userForRole,
-} from '../test/render';
+import { recordedRequests, renderWithProviders, stubAppFetch, userForRole } from '../test/render';
 
 const COFFEE_CATEGORY = {
   id: '00000000-0000-4000-8000-0000000000c1',
@@ -113,9 +108,7 @@ describe('Menü ekranı', () => {
     await user.click(screen.getByRole('button', { name: 'Kategori ekle' }));
 
     await waitFor(() => {
-      expect(
-        writeRequests().some((entry) => entry.path === '/api/menu/categories'),
-      ).toBe(true);
+      expect(writeRequests().some((entry) => entry.path === '/api/menu/categories')).toBe(true);
     });
 
     const created = writeRequests().find((entry) => entry.path === '/api/menu/categories');
@@ -183,9 +176,9 @@ describe('Menü ekranı', () => {
     await user.click(within(form).getByRole('button', { name: 'Seçeneği ekle' }));
 
     await waitFor(() => {
-      expect(
-        writeRequests().some((entry) => entry.path.endsWith(`/${SIZE_GROUP.id}/values`)),
-      ).toBe(true);
+      expect(writeRequests().some((entry) => entry.path.endsWith(`/${SIZE_GROUP.id}/values`))).toBe(
+        true,
+      );
     });
   });
 

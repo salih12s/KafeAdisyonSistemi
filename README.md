@@ -6,8 +6,9 @@ Cafe için adisyon ve satış noktası (POS) uygulaması.
 uygulama bir custom domain üzerinden Railway'de çalışacak; Express hem API'yi
 hem React production build'ini aynı origin üzerinden sunacaktır.
 
-> **Phase durumu:** Phase 4 (gerçek zamanlı mutfak/bar ve hazırlık akışı)
-> tamamlandı. Hesap kapatma ve ödeme Phase 5'te geliştirilecektir.
+> **Phase durumu:** Phase 0–7 ve frontend deneyim tasarımı tamamlandı. Uygulama
+> kapsamlı final review ve izole UAT'tan geçti; kullanıcı kabulü ve merge kararı
+> bekleniyor. Kanıtlar: [docs/FINAL_ACCEPTANCE_REPORT.md](docs/FINAL_ACCEPTANCE_REPORT.md)
 > Plan: [docs/PHASES.md](docs/PHASES.md)
 
 ---
@@ -45,7 +46,7 @@ Backend:    http://localhost:3000
 PostgreSQL: localhost:5432/CafeAdisyon
 ```
 
-### Gelecekteki production yapısı
+### Hedeflenen production yapısı
 
 ```
 Custom domain
@@ -180,9 +181,8 @@ npm run dev
 | `http://localhost:3000/api/health` | API sağlık ucu                |
 
 Vite, `/api` ve `/socket.io` çağrılarını Express'e iletir; ek yapılandırma gerekmez.
-Telefon/tabletten denemek için cihazı aynı yerel ağa bağlayıp bilgisayarın IPv4
-adresiyle `http://BILGISAYAR_IP:5173` adresini açın. Vite tüm arayüzlerde dinler;
-API ve Socket.IO trafiği geliştirme proxy'si üzerinden aynı adresten geçer.
+Local geliştirme servisleri varsayılan olarak bu cihazdan kullanılır. Yerel ağ/IP
+üzerinden erişim bu projenin mevcut kapsamına dahil değildir.
 
 ---
 
@@ -342,23 +342,25 @@ kayıtları ileride de fiziksel olarak silinmez; iptal ve pasife alma alanları
 kullanılır (bkz. [DECISIONS.md](DECISIONS.md) ADR-011).
 
 Yeni migration gerektiren bir değişiklikte SQL önce create-only üretilir ve
-baştan sona incelenir. Phase 1'in `phase_1_identity_tables` migration'ı yalnızca
-kimlik, işletme, salon, masa ve audit tablolarını oluşturur; destructive SQL
-içermez.
+baştan sona incelenir. Phase 0–7 boyunca eklenen yedi migration additive olarak
+tasarlanmıştır; final kabulde tamamen boş izole veritabanına sırasıyla uygulanmış
+ve destructive SQL içermedikleri doğrulanmıştır.
 
 ---
 
 ## 11. Proje belgeleri
 
-| Belge                                          | İçerik                                  |
-| ---------------------------------------------- | --------------------------------------- |
-| [AGENTS.md](AGENTS.md)                         | Claude ve Codex için bağlayıcı kurallar |
-| [CLAUDE.md](CLAUDE.md)                         | Claude'un çalışma başlangıcı            |
-| [HANDOFF.md](HANDOFF.md)                       | Aktif Phase, branch ve devir kaydı      |
-| [DECISIONS.md](DECISIONS.md)                   | Kalıcı teknik kararlar (ADR)            |
-| [WORKFLOW.md](WORKFLOW.md)                     | Phase çalışma düzeni                    |
-| [SESSION_LOG.md](SESSION_LOG.md)               | Oturum kayıtları (append-only)          |
-| [docs/PHASES.md](docs/PHASES.md)               | Phase 0–7 planı                         |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)   | Mimari                                  |
-| [docs/PRODUCT_SCOPE.md](docs/PRODUCT_SCOPE.md) | Ürün kapsamı                            |
-| [docs/UI_GUIDE.md](docs/UI_GUIDE.md)           | Arayüz rehberi                          |
+| Belge                                                              | İçerik                                  |
+| ------------------------------------------------------------------ | --------------------------------------- |
+| [AGENTS.md](AGENTS.md)                                             | Claude ve Codex için bağlayıcı kurallar |
+| [CLAUDE.md](CLAUDE.md)                                             | Claude'un çalışma başlangıcı            |
+| [HANDOFF.md](HANDOFF.md)                                           | Aktif Phase, branch ve devir kaydı      |
+| [DECISIONS.md](DECISIONS.md)                                       | Kalıcı teknik kararlar (ADR)            |
+| [WORKFLOW.md](WORKFLOW.md)                                         | Phase çalışma düzeni                    |
+| [SESSION_LOG.md](SESSION_LOG.md)                                   | Oturum kayıtları (append-only)          |
+| [docs/PHASES.md](docs/PHASES.md)                                   | Phase 0–7 planı                         |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)                       | Mimari                                  |
+| [docs/PRODUCT_SCOPE.md](docs/PRODUCT_SCOPE.md)                     | Ürün kapsamı                            |
+| [docs/UI_GUIDE.md](docs/UI_GUIDE.md)                               | Arayüz rehberi                          |
+| [docs/FINAL_ACCEPTANCE_REPORT.md](docs/FINAL_ACCEPTANCE_REPORT.md) | Final review ve UAT kanıtları           |
+| [scripts/qa/README.md](scripts/qa/README.md)                       | Tekrarlanabilir final UAT yardımcıları  |

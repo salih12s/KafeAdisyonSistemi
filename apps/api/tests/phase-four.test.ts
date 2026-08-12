@@ -304,4 +304,28 @@ describe('Phase 4 Socket.IO authentication ve event hattı', () => {
     });
     await closeRealtime(running, socket);
   });
+
+  it('pasife alınan personelin açık socket oturumunu sonraki eventte sonlandırır', async () => {
+    const input = await orderFixture();
+    const running = await runRealtime(input);
+    const socket = connect(running.url, input.cookie);
+    await new Promise<void>((resolve) => socket.on('connect', resolve));
+    const backupOwner = input.store.seedUser({
+      fullName: 'Yedek İşletme Sahibi',
+      username: 'yedek-owner',
+      passwordHash,
+      role: 'OWNER',
+    });
+    await input.store.updateStaff({
+      actorUserId: backupOwner.id,
+      targetUserId: input.userId,
+      fullName: 'Hazırlık Personeli',
+      role: 'OWNER',
+      isActive: false,
+    });
+    const disconnected = new Promise<string>((resolve) => socket.once('disconnect', resolve));
+    input.events.publish({ type: 'CHECK_ADJUSTED', checkId: 'check-1' });
+    await expect(disconnected).resolves.toBe('io server disconnect');
+    await closeRealtime(running, socket);
+  });
 });

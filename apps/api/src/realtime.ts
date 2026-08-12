@@ -13,6 +13,7 @@ interface ServerToClientEvents {
 
 interface SocketData {
   userId: string;
+  sessionToken: string;
 }
 
 export interface RealtimeServer {
@@ -39,6 +40,7 @@ export function createRealtimeServer(
       const token = readCookie(socket.handshake.headers.cookie, SESSION_COOKIE_NAME);
       const auth = await identity.authenticate(token);
       socket.data.userId = auth.user.id;
+      socket.data.sessionToken = token ?? '';
       next();
     } catch {
       next(new Error('UNAUTHORIZED'));
@@ -50,7 +52,12 @@ export function createRealtimeServer(
   });
 
   const unsubscribe = events.subscribe((event) => {
-    io.emit(ORDER_REALTIME_EVENT, event);
+    for (const socket of io.sockets.sockets.values()) {
+      void identity
+        .authenticate(socket.data.sessionToken)
+        .then(() => socket.emit(ORDER_REALTIME_EVENT, event))
+        .catch(() => socket.disconnect(true));
+    }
   });
 
   return {

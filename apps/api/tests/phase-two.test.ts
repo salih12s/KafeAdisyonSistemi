@@ -40,11 +40,7 @@ async function createScenario(role: UserRole = 'OWNER'): Promise<Scenario> {
   return { store, app, cookie: cookies[0].split(';')[0] ?? '' };
 }
 
-async function createCategory(
-  scenario: Scenario,
-  name: string,
-  sortOrder = 0,
-): Promise<string> {
+async function createCategory(scenario: Scenario, name: string, sortOrder = 0): Promise<string> {
   const response = await request(scenario.app)
     .post('/api/menu/categories')
     .set('Cookie', scenario.cookie)
@@ -394,8 +390,8 @@ describe('Seçenek grupları ve ekstralar', () => {
     });
     expect(groups.body.optionGroups[0].values).toHaveLength(3);
     expect(
-      groups.body.optionGroups[0].values.map((value: { priceDeltaKurus: number }) =>
-        value.priceDeltaKurus,
+      groups.body.optionGroups[0].values.map(
+        (value: { priceDeltaKurus: number }) => value.priceDeltaKurus,
       ),
     ).toContain(-500);
   });

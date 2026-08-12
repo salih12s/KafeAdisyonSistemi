@@ -842,12 +842,19 @@ export async function previewPaymentSplit(
     }),
     'split',
   );
-  if (
-    !isRecord(split) ||
-    (split.mode !== 'AMOUNT' && split.mode !== 'ITEMS' && split.mode !== 'GUESTS') ||
-    typeof split.totalKurus !== 'number' ||
-    !Array.isArray(split.shares) ||
-    !split.shares.every(
+  if (!isPaymentSplitResponse(split)) {
+    throw new ApiError('Hesap bölme bilgisi okunamadı.');
+  }
+  return split;
+}
+
+function isPaymentSplitResponse(value: unknown): value is PaymentSplitResponse {
+  return (
+    isRecord(value) &&
+    (value.mode === 'AMOUNT' || value.mode === 'ITEMS' || value.mode === 'GUESTS') &&
+    typeof value.totalKurus === 'number' &&
+    Array.isArray(value.shares) &&
+    value.shares.every(
       (share) =>
         isRecord(share) &&
         typeof share.label === 'string' &&
@@ -855,10 +862,7 @@ export async function previewPaymentSplit(
         Array.isArray(share.itemIds) &&
         share.itemIds.every((id) => typeof id === 'string'),
     )
-  ) {
-    throw new ApiError('Hesap bölme bilgisi okunamadı.');
-  }
-  return split as unknown as PaymentSplitResponse;
+  );
 }
 
 export async function closeCheck(checkId: string): Promise<CheckResponse> {

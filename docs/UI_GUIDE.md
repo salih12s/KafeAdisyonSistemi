@@ -22,21 +22,21 @@ masaya bakıp iki saniyede durumu anlamalıdır. Buna göre:
 
 ## 2. Kesinlikle kaçınılacaklar
 
-| Yasak | Neden |
-| --- | --- |
-| Mor-mavi neon gradient | Jenerik AI şablonu izlenimi verir |
-| Glassmorphism / bulanık cam yüzey | Okunabilirliği düşürür, ucuz görünür |
-| Glow ve parlama efektleri | POS ekranında dikkat dağıtır |
-| Arka planda rastgele blob şekilleri | Anlamsız görsel gürültü |
-| Her şeyi dev kartlara bölmek | Ekran başına bilgi miktarını düşürür |
-| Gereksiz yuvarlak "pill" tasarımlar | Süs; hizalamayı bozar |
-| Büyük pazarlama başlıkları | Burası bir ürün sayfası değil |
-| Lorem ipsum / sahte veri | Gerçek durumu gizler, güven kırar |
-| İngilizce arayüz metni | Kullanıcı Türkçe konuşur |
-| Sahte "AI destekli" açıklamalar | Yanıltıcı |
-| Landing page görünümü | Yanlış ürün algısı |
-| Değiştirilmemiş hazır şablon görünümü | Ürüne ait değil |
-| Çalışmayan/disabled placeholder buton | Kullanıcıyı yanıltır |
+| Yasak                                 | Neden                                |
+| ------------------------------------- | ------------------------------------ |
+| Mor-mavi neon gradient                | Jenerik AI şablonu izlenimi verir    |
+| Glassmorphism / bulanık cam yüzey     | Okunabilirliği düşürür, ucuz görünür |
+| Glow ve parlama efektleri             | POS ekranında dikkat dağıtır         |
+| Arka planda rastgele blob şekilleri   | Anlamsız görsel gürültü              |
+| Her şeyi dev kartlara bölmek          | Ekran başına bilgi miktarını düşürür |
+| Gereksiz yuvarlak "pill" tasarımlar   | Süs; hizalamayı bozar                |
+| Büyük pazarlama başlıkları            | Burası bir ürün sayfası değil        |
+| Lorem ipsum / sahte veri              | Gerçek durumu gizler, güven kırar    |
+| İngilizce arayüz metni                | Kullanıcı Türkçe konuşur             |
+| Sahte "AI destekli" açıklamalar       | Yanıltıcı                            |
+| Landing page görünümü                 | Yanlış ürün algısı                   |
+| Değiştirilmemiş hazır şablon görünümü | Ürüne ait değil                      |
+| Çalışmayan/disabled placeholder buton | Kullanıcıyı yanıltır                 |
 
 **Boş bölüm kuralı:** Bir modül henüz çalışmıyorsa oraya devre dışı buton
 konmaz. Yalnızca durumu ve ileride ne olacağını anlatan **anlamlı bir boş
@@ -46,18 +46,18 @@ durum** gösterilir (`EmptyState` bileşeni).
 
 ## 3. Renk paleti
 
-| Rol | Değer | Kullanım |
-| --- | --- | --- |
-| Ana koyu | `#2B2118` | Kenar çubuğu, birincil düğme zemini |
-| Ana koyu (yumuşak) | `#3A2E22` | Kenar çubuğunda aktif/hover satır |
-| Arka plan | `#F6F2EA` | Sayfa zemini |
-| Yüzey | `#FFFFFF` | Paneller, listeler, tablolar |
-| Vurgu | `#C76B2A` | Aktif göstergesi, odak halkası, seçili durum |
-| Başarılı | `#2E7D4F` | Bağlı, ödendi, hazır |
-| Tehlike | `#B83A3A` | Bağlantı yok, iptal, hata |
-| Kenarlık | `#DED6CA` | Panel ve satır ayırıcıları |
-| Metin | `#241E19` | Birincil metin |
-| İkincil metin | `#71675E` | Etiket, açıklama, meta |
+| Rol                | Değer     | Kullanım                                     |
+| ------------------ | --------- | -------------------------------------------- |
+| Ana koyu           | `#2B2118` | Kenar çubuğu, birincil düğme zemini          |
+| Ana koyu (yumuşak) | `#3A2E22` | Kenar çubuğunda aktif/hover satır            |
+| Arka plan          | `#F6F2EA` | Sayfa zemini                                 |
+| Yüzey              | `#FFFFFF` | Paneller, listeler, tablolar                 |
+| Vurgu              | `#C76B2A` | Aktif göstergesi, odak halkası, seçili durum |
+| Başarılı           | `#2E7D4F` | Bağlı, ödendi, hazır                         |
+| Tehlike            | `#B83A3A` | Bağlantı yok, iptal, hata                    |
+| Kenarlık           | `#DED6CA` | Panel ve satır ayırıcıları                   |
+| Metin              | `#241E19` | Birincil metin                               |
+| İkincil metin      | `#71675E` | Etiket, açıklama, meta                       |
 
 Kurallar:
 
@@ -163,22 +163,22 @@ Kontrol genişlikleri: **390px** (telefon), **768px** (tablet), **1024px**
 
 ## 8. Bileşen sözlüğü
 
-| Bileşen | Görev |
-| --- | --- |
-| `AppLayout` | Kenar çubuğu + üst bar + içerik + alt gezinme kabuğu |
-| `Sidebar` | Masaüstü sol navigasyon |
-| `TopBar` | Sayfa başlığı, saat, sistem durumu |
-| `MobileNav` | Alt gezinme çubuğu ve tüm modüller çekmecesi |
-| `HealthIndicator` | Canlı sunucu/veritabanı durumu rozeti |
-| `Panel` | Kenarlıklı içerik yüzeyi; isteğe bağlı başlık ve meta |
-| `EmptyState` | Veri/işlev yokken durumu anlatan blok |
-| `Button` | Primary, secondary, outline, ghost, success ve danger eylemleri |
-| `TextField` / `SelectField` / `TextareaField` | Etiket, yardım ve hata bağını kuran form alanları |
-| `Badge` | Metinle desteklenen durum ve rol göstergesi |
-| `SegmentedControl` | Kısa, birbirini dışlayan görünüm/filtre seçimi |
-| `Dialog` | Mobilde bottom-sheet, geniş ekranda modal; focus trap ve Escape içerir |
-| `ToastProvider` | `aria-live` ile kısa işlem geri bildirimi |
-| `Skeleton` / `ErrorState` | Yükleme ve kurtarılabilir hata yüzeyleri |
+| Bileşen                                       | Görev                                                                  |
+| --------------------------------------------- | ---------------------------------------------------------------------- |
+| `AppLayout`                                   | Kenar çubuğu + üst bar + içerik + alt gezinme kabuğu                   |
+| `Sidebar`                                     | Masaüstü sol navigasyon                                                |
+| `TopBar`                                      | Sayfa başlığı, saat, sistem durumu                                     |
+| `MobileNav`                                   | Alt gezinme çubuğu ve tüm modüller çekmecesi                           |
+| `HealthIndicator`                             | Canlı sunucu/veritabanı durumu rozeti                                  |
+| `Panel`                                       | Kenarlıklı içerik yüzeyi; isteğe bağlı başlık ve meta                  |
+| `EmptyState`                                  | Veri/işlev yokken durumu anlatan blok                                  |
+| `Button`                                      | Primary, secondary, outline, ghost, success ve danger eylemleri        |
+| `TextField` / `SelectField` / `TextareaField` | Etiket, yardım ve hata bağını kuran form alanları                      |
+| `Badge`                                       | Metinle desteklenen durum ve rol göstergesi                            |
+| `SegmentedControl`                            | Kısa, birbirini dışlayan görünüm/filtre seçimi                         |
+| `Dialog`                                      | Mobilde bottom-sheet, geniş ekranda modal; focus trap ve Escape içerir |
+| `ToastProvider`                               | `aria-live` ile kısa işlem geri bildirimi                              |
+| `Skeleton` / `ErrorState`                     | Yükleme ve kurtarılabilir hata yüzeyleri                               |
 
 ### KDS istisnası
 
@@ -197,8 +197,8 @@ bileşen üretilmez.
 - Tüm arayüz metinleri **Türkçe**dir.
 - Metin dürüsttür: bir şey çalışmıyorsa "yakında" denmez, ne olduğu yazılır.
 - Hata mesajı kullanıcıya **ne yapacağını** söyler:
-  *"API sunucusuna ulaşılamıyor. Sunucunun çalıştığını ve bağlantı ayarlarını
-  doğrulayın."*
+  _"API sunucusuna ulaşılamıyor. Sunucunun çalıştığını ve bağlantı ayarlarını
+  doğrulayın."_
 - Teknik terim gerekiyorsa Türkçe karşılığıyla birlikte kullanılır.
 - Tarih, saat ve sayı biçimi `tr-TR`; saat dilimi `Europe/Istanbul`;
   para birimi `TRY`.
@@ -209,9 +209,9 @@ bileşen üretilmez.
 
 Bu eşleme Phase'ler boyunca korunur:
 
-| Durum | Renk | Örnek |
-| --- | --- | --- |
-| İyi / bağlı / ödendi / hazır | Başarılı `#2E7D4F` | Sistem bağlı, hesap kapandı |
-| Dikkat / seçili / aktif | Vurgu `#C76B2A` | Aktif menü, seçili masa |
-| Hata / kopuk / iptal | Tehlike `#B83A3A` | Veritabanı yok, adisyon iptal |
-| Nötr / boş / bekliyor | İkincil metin `#71675E` | Boş masa, kontrol ediliyor |
+| Durum                        | Renk                    | Örnek                         |
+| ---------------------------- | ----------------------- | ----------------------------- |
+| İyi / bağlı / ödendi / hazır | Başarılı `#2E7D4F`      | Sistem bağlı, hesap kapandı   |
+| Dikkat / seçili / aktif      | Vurgu `#C76B2A`         | Aktif menü, seçili masa       |
+| Hata / kopuk / iptal         | Tehlike `#B83A3A`       | Veritabanı yok, adisyon iptal |
+| Nötr / boş / bekliyor        | İkincil metin `#71675E` | Boş masa, kontrol ediliyor    |
