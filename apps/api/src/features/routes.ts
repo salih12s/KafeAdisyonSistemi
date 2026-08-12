@@ -23,6 +23,7 @@ import type { AppStore } from './store';
 import { createMenuRouter } from './menu-routes';
 import { createOrderRouter } from './order-routes';
 import type { OrderEventPublisher } from './order-events';
+import { createAccountRouter } from './account-routes';
 
 const usernameSchema = z
   .string()
@@ -310,6 +311,7 @@ export function createPhaseOneRouter(
   // Phase 2 menü uçları /api/menu altında toplanır.
   router.use('/menu', createMenuRouter(store, authenticate));
   router.use('/orders', createOrderRouter(store, authenticate, orderEvents));
+  router.use('/accounts', createAccountRouter(store, authenticate, orderEvents));
 
   return router;
 }

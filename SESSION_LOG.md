@@ -687,3 +687,30 @@ için authenticated browser E2E yerine 21 frontend kullanıcı akışı testi ya
 Kalan riskler: gerçek DB boş olduğundan authenticated Prisma ödeme mutation E2E
 yapılmadı; responsive UI jsdom ile doğrulandı fakat gerçek telefon/tablet görsel
 incelemesi yapılmadı.
+
+## 2026-08-12 — Codex — Phase 6 cari, ayarlamalar ve masa işlemleri
+
+**Branch:** `feat/phase-6-accounts-adjustments-tables`
+**Base:** `feat/phase-5-payments` (`336b98e`)
+**Sonuç:** Tamamlandı; merge yapılmadı, Phase 7 başlatılmadı.
+
+- `Customer`, `AccountEntry`, `CheckDiscount` modelleri; ledger/indirim enumları,
+  `ACCOUNT` ödeme yöntemi, `MERGED` adisyon durumu ve ikram alanları additive
+  `20260812150000_phase_6_accounts_adjustments_tables` migration'ıyla eklendi.
+- Müşteri CRUD, cari ekstre/tahsilat, kalan borcu cariye aktarma; yüzde/sabit
+  indirim ve gerekçeli ikram backend doğrulamasıyla tamamlandı.
+- Taşıma ve birleştirme serializable transaction/satır kilitleriyle korundu;
+  kaynak adisyon silinmez ve ilişkili mali kayıtlar kaybolmaz.
+- OWNER/CASHIER/WAITER/KITCHEN izinleri backend'de ayrıştırıldı. Tüm Phase 6
+  işlemleri audit'e yazılır; adisyon, masa planı ve cari ekranlar küçük Socket.IO
+  sinyallerinden sonra REST verisini yeniler.
+- `/cariler` ve adisyon aksiyonları gerçek, dokunmatik uyumlu operasyon
+  ekranlarına dönüştürüldü. Migration gerçek `CafeAdisyon` DB'ye uygulandı;
+  `SELECT 1` ve migration status başarılıdır.
+- `npm run verify` PASS: 19 dosyada 169/169 test (API 123, web 46). Phase 6'ya
+  9 test eklendi (6 backend, 3 frontend). Production runtime
+  `0.0.0.0:3106` üzerinde health `ok/connected` ve root 200.
+
+Kalan riskler: Gerçek DB'de müşteri/adisyon verisi olmadığı için authenticated
+Prisma mutation E2E yapılmadı. Responsive davranış kod ve jsdom ile doğrulandı;
+gerçek telefon/tablet üzerinde görsel inceleme yapılmadı.

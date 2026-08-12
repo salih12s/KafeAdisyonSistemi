@@ -310,3 +310,29 @@ adisyonlar oluşturmak masa ve sipariş yaşam döngüsünü gereksiz karmaşık
 transaction'larla yürür; fazla/çift ödeme ve çift kapanış engellenir. Adisyon
 yalnız kalan bakiye sıfırken `PAID` olur. Ödeme alınmışken kalem değişiklikleri
 toplamı ödenen tutarın altına indiremez.
+
+---
+
+## ADR-017 — Cari bakiye ledger'dan türetilecek, mali ayarlamalar immutable olacak
+
+- **Tarih:** 2026-08-12
+- **Durum:** Kabul edildi
+
+**Karar.** Cari bakiye müşteri üzerinde mutable bir toplam olarak tutulmaz;
+`DEBT`, `COLLECTION`, `REFUND` ve `CORRECTION` hareketlerinden türetilir. Cariye
+aktarım aynı serializable transaction içinde cari borç hareketi ve adisyonda
+`ACCOUNT` ödeme satırı üretir. İndirimler ayrı immutable satırlardır; ikram ise
+sipariş kaleminde iptalden ayrı gerekçe, aktör ve zaman alanlarıyla tutulur.
+
+Masa taşıma hedef masanın boşluğunu satır kilidi altında doğrular. Birleştirme
+kalem, ödeme, indirim ve cari bağlantılarını hedef adisyona taşır; kaynak adisyonu
+fiziksel olarak silmek yerine `MERGED` durumunda hedef kimliğiyle korur.
+
+**Gerekçe.** Türetilmiş bakiye ve immutable mali hareketler kasa/cari denetim izini
+korur. Aynı transaction içinde borç ve ödeme kaydı yazılması iki tarafın birbirinden
+kopmasını; satır kilitleri de iki cihazın aynı masayı eşzamanlı sahiplenmesini önler.
+
+**Sonuç.** İndirim veya ikram adisyon toplamını negatif ya da alınmış ödeme
+tutarının altına indiremez. Cari aktarım kalan bakiyeyi sıfırlar ve normal hesap
+kapatma akışı kullanılabilir. Tüm işlemler backend yetkisi, audit ve küçük realtime
+invalidation event'leriyle yürür.

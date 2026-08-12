@@ -90,6 +90,8 @@ export function stubAppFetch(
     check?: unknown;
     kitchenOrders?: unknown[];
     paymentSplit?: unknown;
+    customers?: unknown[];
+    customer?: unknown;
   } = {},
 ): void {
   let currentUser = options.user === undefined ? ownerUser : options.user;
@@ -109,6 +111,17 @@ export function stubAppFetch(
       }
       if (path.endsWith('/payment-split')) {
         return Promise.resolve(response({ split: options.paymentSplit ?? null }));
+      }
+      if (path.startsWith('/api/accounts')) {
+        if (path === '/api/accounts' || path.startsWith('/api/accounts?'))
+          {return Promise.resolve(
+            isWrite ? response({}, 201) : response({ customers: options.customers ?? [] }),
+          );}
+        return Promise.resolve(
+          isWrite
+            ? response({ customer: options.customer ?? null }, 201)
+            : response({ customer: options.customer ?? null }),
+        );
       }
       if (path.startsWith('/api/orders/checks') || path.startsWith('/api/orders/items')) {
         return Promise.resolve(response({ check: options.check ?? null }, isWrite ? 201 : 200));

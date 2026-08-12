@@ -22,6 +22,7 @@ import {
 } from './store';
 import { createPrismaMenuStore } from './prisma-menu-store';
 import { createPrismaOrderStore } from './prisma-order-store';
+import { createPrismaAccountStore } from './prisma-account-store';
 
 const BUSINESS_ID = 'business';
 
@@ -60,6 +61,7 @@ export function createPrismaStore(client: PrismaClient): AppStore {
     // Phase 2 menü işlemleri ayrı dosyada tutulur; sınır aynı AppStore'dur.
     ...createPrismaMenuStore(client),
     ...createPrismaOrderStore(client),
+    ...createPrismaAccountStore(client),
 
     async hasActiveOwner(): Promise<boolean> {
       return (await client.user.count({ where: { role: 'OWNER', isActive: true } })) > 0;
@@ -206,8 +208,9 @@ export function createPrismaStore(client: PrismaClient): AppStore {
           return toStaffMember(user);
         });
       } catch (error) {
-        if (isUniqueConstraint(error))
-          {throw new StoreError('CONFLICT', 'Bu kullanıcı adı zaten kullanılıyor.');}
+        if (isUniqueConstraint(error)) {
+          throw new StoreError('CONFLICT', 'Bu kullanıcı adı zaten kullanılıyor.');
+        }
         throw error;
       }
     },
@@ -243,8 +246,9 @@ export function createPrismaStore(client: PrismaClient): AppStore {
               where: { id: input.targetUserId },
               data: { fullName: input.fullName, role: input.role, isActive: input.isActive },
             });
-            if (!input.isActive)
-              {await transaction.session.deleteMany({ where: { userId: user.id } });}
+            if (!input.isActive) {
+              await transaction.session.deleteMany({ where: { userId: user.id } });
+            }
             await transaction.auditLog.create({
               data: {
                 actorUserId: input.actorUserId,
@@ -368,8 +372,9 @@ export function createPrismaStore(client: PrismaClient): AppStore {
         });
         return { id: area.id, name: area.name, sortOrder: area.sortOrder, isActive: area.isActive };
       } catch (error) {
-        if (isUniqueConstraint(error))
-          {throw new StoreError('CONFLICT', 'Bu salon adı zaten kullanılıyor.');}
+        if (isUniqueConstraint(error)) {
+          throw new StoreError('CONFLICT', 'Bu salon adı zaten kullanılıyor.');
+        }
         throw error;
       }
     },
@@ -399,8 +404,9 @@ export function createPrismaStore(client: PrismaClient): AppStore {
         });
         return { id: area.id, name: area.name, sortOrder: area.sortOrder, isActive: area.isActive };
       } catch (error) {
-        if (isUniqueConstraint(error))
-          {throw new StoreError('CONFLICT', 'Bu salon adı zaten kullanılıyor.');}
+        if (isUniqueConstraint(error)) {
+          throw new StoreError('CONFLICT', 'Bu salon adı zaten kullanılıyor.');
+        }
         if (isMissingRecord(error)) throw new StoreError('NOT_FOUND', 'Salon bulunamadı.');
         throw error;
       }
@@ -459,8 +465,9 @@ export function createPrismaStore(client: PrismaClient): AppStore {
           isActive: table.isActive,
         };
       } catch (error) {
-        if (isUniqueConstraint(error))
-          {throw new StoreError('CONFLICT', 'Bu salonda aynı masa adı zaten kullanılıyor.');}
+        if (isUniqueConstraint(error)) {
+          throw new StoreError('CONFLICT', 'Bu salonda aynı masa adı zaten kullanılıyor.');
+        }
         throw error;
       }
     },
@@ -501,8 +508,9 @@ export function createPrismaStore(client: PrismaClient): AppStore {
           isActive: table.isActive,
         };
       } catch (error) {
-        if (isUniqueConstraint(error))
-          {throw new StoreError('CONFLICT', 'Bu salonda aynı masa adı zaten kullanılıyor.');}
+        if (isUniqueConstraint(error)) {
+          throw new StoreError('CONFLICT', 'Bu salonda aynı masa adı zaten kullanılıyor.');
+        }
         if (isMissingRecord(error)) throw new StoreError('NOT_FOUND', 'Masa bulunamadı.');
         throw error;
       }

@@ -1,7 +1,8 @@
 import { Route, Routes } from 'react-router-dom';
 import { AppLayout } from './components/layout/app-layout';
 import { DashboardPage } from './pages/dashboard-page';
-import { AccountsPage, ReportsPage } from './pages/module-pages';
+import { ReportsPage } from './pages/module-pages';
+import { AccountsPage } from './pages/accounts-page';
 import { MenuPage } from './pages/menu-page';
 import { NotFoundPage } from './pages/not-found-page';
 import { LoginPage } from './pages/login-page';

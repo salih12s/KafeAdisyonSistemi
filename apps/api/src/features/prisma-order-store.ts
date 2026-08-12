@@ -13,6 +13,10 @@ import type {
   AddPaymentInput,
   CancelOrderItemInput,
   CloseCheckInput,
+  ApplyDiscountInput,
+  ComplimentaryItemInput,
+  MoveCheckInput,
+  MergeChecksInput,
   OpenCheckInput,
   OrderStore,
   SplitPaymentInput,
@@ -27,11 +31,13 @@ const CHECK_INCLUDE = {
   openedBy: true,
   closedBy: true,
   payments: { orderBy: { createdAt: 'asc' }, include: { receivedBy: true } },
+  discounts: { orderBy: { createdAt: 'asc' }, include: { appliedBy: true } },
   items: {
     orderBy: { createdAt: 'asc' },
     include: {
       createdBy: true,
       cancelledBy: true,
+      complimentaryBy: true,
       options: { orderBy: { id: 'asc' } },
     },
   },
@@ -57,6 +63,10 @@ function toOrderItem(row: FullCheck['items'][number]): OrderItemResponse {
     cancellationReason: row.cancellationReason,
     cancelledByUserId: row.cancelledByUserId,
     cancelledByName: row.cancelledBy?.fullName ?? null,
+    complimentaryAt: row.complimentaryAt?.toISOString() ?? null,
+    complimentaryReason: row.complimentaryReason,
+    complimentaryByUserId: row.complimentaryByUserId,
+    complimentaryByName: row.complimentaryBy?.fullName ?? null,
     options: row.options.map((option) => ({
       id: option.id,
       optionGroupId: option.optionGroupId,
@@ -92,6 +102,7 @@ function toCheck(row: FullCheck): CheckResponse {
     status: row.status,
     openedAt: row.openedAt.toISOString(),
     totalKurus: row.totalKurus,
+    discountTotalKurus: row.discounts.reduce((total, discount) => total + discount.amountKurus, 0),
     paidKurus,
     remainingKurus: row.totalKurus - paidKurus,
     closedAt: row.closedAt?.toISOString() ?? null,
@@ -105,6 +116,17 @@ function toCheck(row: FullCheck): CheckResponse {
       receivedByName: payment.receivedBy.fullName,
       createdAt: payment.createdAt.toISOString(),
     })),
+    discounts: row.discounts.map((discount) => ({
+      id: discount.id,
+      type: discount.type,
+      value: discount.value,
+      amountKurus: discount.amountKurus,
+      reason: discount.reason,
+      appliedByUserId: discount.appliedByUserId,
+      appliedByName: discount.appliedBy.fullName,
+      createdAt: discount.createdAt.toISOString(),
+    })),
+    mergedIntoCheckId: row.mergedIntoCheckId,
     items: row.items.map(toOrderItem),
   };
 }
@@ -133,12 +155,19 @@ async function requireOpenCheck(
 async function updateTotal(transaction: Prisma.TransactionClient, checkId: string): Promise<void> {
   const [result, payments] = await Promise.all([
     transaction.orderItem.aggregate({
-      where: { checkId, cancelledAt: null },
+      where: { checkId, cancelledAt: null, complimentaryAt: null },
       _sum: { lineTotalKurus: true },
     }),
     transaction.payment.aggregate({ where: { checkId }, _sum: { amountKurus: true } }),
   ]);
-  const totalKurus = result._sum.lineTotalKurus ?? 0;
+  const discounts = await transaction.checkDiscount.aggregate({
+    where: { checkId },
+    _sum: { amountKurus: true },
+  });
+  const totalKurus = Math.max(
+    0,
+    (result._sum.lineTotalKurus ?? 0) - (discounts._sum.amountKurus ?? 0),
+  );
   if (totalKurus < (payments._sum.amountKurus ?? 0)) {
     throw new StoreError(
       'CONFLICT',
@@ -398,6 +427,9 @@ export function createPrismaOrderStore(client: PrismaClient): OrderStore {
           if (item.cancelledAt !== null) {
             throw new StoreError('CONFLICT', 'İptal edilmiş kalem değiştirilemez.');
           }
+          if (item.complimentaryAt !== null) {
+            throw new StoreError('CONFLICT', 'İkram edilmiş kalem değiştirilemez.');
+          }
           const optionTotal = item.options.reduce(
             (total, option) => total + option.priceDeltaKurusSnapshot,
             0,
@@ -443,6 +475,9 @@ export function createPrismaOrderStore(client: PrismaClient): OrderStore {
           }
           if (item.cancelledAt !== null) {
             throw new StoreError('CONFLICT', 'Bu sipariş kalemi zaten iptal edilmiş.');
+          }
+          if (item.complimentaryAt !== null) {
+            throw new StoreError('CONFLICT', 'İkram edilmiş kalem iptal edilemez.');
           }
           const cancelledAt = new Date();
           await transaction.orderItem.update({
@@ -657,6 +692,206 @@ export function createPrismaOrderStore(client: PrismaClient): OrderStore {
       } catch (error) {
         if (isSerializationConflict(error)) {
           throw new StoreError('CONFLICT', 'Adisyon durumu değişti; yeniden deneyin.');
+        }
+        throw error;
+      }
+    },
+
+    async applyDiscount(input: ApplyDiscountInput): Promise<CheckResponse> {
+      try {
+        return await client.$transaction(async (tx) => {
+          await lockCheck(tx, input.checkId);
+          await requireOpenCheck(tx, input.checkId);
+          const check = await readCheck(tx, input.checkId);
+          const baseTotal = check.totalKurus + check.discountTotalKurus;
+          const amountKurus =
+            input.type === 'PERCENT' ? Math.floor((baseTotal * input.value) / 100) : input.value;
+          const nextTotal = Math.max(0, check.totalKurus - amountKurus);
+          if (nextTotal < check.paidKurus) {
+            throw new StoreError(
+              'CONFLICT',
+              'İndirim, adisyon toplamını alınmış ödemelerin altına indiremez.',
+            );
+          }
+          const discount = await tx.checkDiscount.create({
+            data: {
+              checkId: check.id,
+              type: input.type,
+              value: input.value,
+              amountKurus: Math.min(amountKurus, check.totalKurus),
+              reason: input.reason,
+              appliedByUserId: input.actorUserId,
+            },
+          });
+          await tx.check.update({ where: { id: check.id }, data: { totalKurus: nextTotal } });
+          await tx.auditLog.create({
+            data: {
+              actorUserId: input.actorUserId,
+              action: 'CHECK_DISCOUNT_APPLIED',
+              entityType: 'CheckDiscount',
+              entityId: discount.id,
+              metadata: { checkId: check.id, amountKurus: discount.amountKurus },
+            },
+          });
+          return readCheck(tx, check.id);
+        }, transactionOptions());
+      } catch (error) {
+        if (isSerializationConflict(error)) {
+          throw new StoreError('CONFLICT', 'Adisyon değişti; indirimi yeniden deneyin.');
+        }
+        throw error;
+      }
+    },
+
+    async makeOrderItemComplimentary(input: ComplimentaryItemInput): Promise<CheckResponse> {
+      return client.$transaction(async (tx) => {
+        const itemCheck = await tx.orderItem.findUnique({
+          where: { id: input.itemId },
+          select: { checkId: true },
+        });
+        if (itemCheck === null) throw new StoreError('NOT_FOUND', 'Sipariş kalemi bulunamadı.');
+        await lockCheck(tx, itemCheck.checkId);
+        const item = await tx.orderItem.findUnique({
+          where: { id: input.itemId },
+          include: { check: true },
+        });
+        if (item === null) throw new StoreError('NOT_FOUND', 'Sipariş kalemi bulunamadı.');
+        if (
+          item.check.status !== 'OPEN' ||
+          item.cancelledAt !== null ||
+          item.complimentaryAt !== null
+        ) {
+          throw new StoreError('CONFLICT', 'Bu kalem ikram yapılamaz.');
+        }
+        const payments = await tx.payment.aggregate({
+          where: { checkId: item.checkId },
+          _sum: { amountKurus: true },
+        });
+        if (
+          Math.max(0, item.check.totalKurus - item.lineTotalKurus) <
+          (payments._sum.amountKurus ?? 0)
+        ) {
+          throw new StoreError('CONFLICT', 'İkram, toplamı alınmış ödemelerin altına indiremez.');
+        }
+        await tx.orderItem.update({
+          where: { id: item.id },
+          data: {
+            complimentaryReason: input.reason,
+            complimentaryByUserId: input.actorUserId,
+            complimentaryAt: new Date(),
+          },
+        });
+        await updateTotal(tx, item.checkId);
+        await tx.auditLog.create({
+          data: {
+            actorUserId: input.actorUserId,
+            action: 'ORDER_ITEM_COMPLIMENTARY',
+            entityType: 'OrderItem',
+            entityId: item.id,
+            metadata: { checkId: item.checkId, reason: input.reason },
+          },
+        });
+        return readCheck(tx, item.checkId);
+      }, transactionOptions());
+    },
+
+    async moveCheck(input: MoveCheckInput): Promise<CheckResponse> {
+      try {
+        return await client.$transaction(async (tx) => {
+          await lockCheck(tx, input.checkId);
+          const check = await tx.check.findUnique({ where: { id: input.checkId } });
+          const table = await tx.cafeTable.findUnique({
+            where: { id: input.targetTableId },
+            include: { area: true },
+          });
+          if (check === null) throw new StoreError('NOT_FOUND', 'Adisyon bulunamadı.');
+          if (check.status !== 'OPEN') throw new StoreError('CONFLICT', 'Bu adisyon açık değil.');
+          if (table === null || !table.isActive || !table.area.isActive) {
+            throw new StoreError('CONFLICT', 'Hedef masa aktif değil.');
+          }
+          if (await tx.check.findFirst({ where: { tableId: table.id, status: 'OPEN' } })) {
+            throw new StoreError('CONFLICT', 'Hedef masada açık adisyon var.');
+          }
+          const sourceTableId = check.tableId;
+          await tx.check.update({ where: { id: check.id }, data: { tableId: table.id } });
+          await tx.auditLog.create({
+            data: {
+              actorUserId: input.actorUserId,
+              action: 'CHECK_TABLE_MOVED',
+              entityType: 'Check',
+              entityId: check.id,
+              metadata: { sourceTableId, targetTableId: table.id },
+            },
+          });
+          return readCheck(tx, check.id);
+        }, transactionOptions());
+      } catch (error) {
+        if (isUniqueConstraint(error) || isSerializationConflict(error)) {
+          throw new StoreError('CONFLICT', 'Masa durumu değişti; yeniden deneyin.');
+        }
+        throw error;
+      }
+    },
+
+    async mergeChecks(input: MergeChecksInput): Promise<CheckResponse> {
+      if (input.sourceCheckId === input.targetCheckId) {
+        throw new StoreError('VALIDATION', 'Adisyon kendisiyle birleştirilemez.');
+      }
+      try {
+        return await client.$transaction(async (tx) => {
+          for (const id of [input.sourceCheckId, input.targetCheckId].sort()) {
+            await lockCheck(tx, id);
+          }
+          const [source, target] = await Promise.all([
+            tx.check.findUnique({ where: { id: input.sourceCheckId } }),
+            tx.check.findUnique({ where: { id: input.targetCheckId } }),
+          ]);
+          if (source === null || target === null) {
+            throw new StoreError('NOT_FOUND', 'Adisyon bulunamadı.');
+          }
+          if (source.status !== 'OPEN' || target.status !== 'OPEN') {
+            throw new StoreError('CONFLICT', 'İki adisyon da açık olmalıdır.');
+          }
+          await Promise.all([
+            tx.orderItem.updateMany({
+              where: { checkId: source.id },
+              data: { checkId: target.id },
+            }),
+            tx.payment.updateMany({ where: { checkId: source.id }, data: { checkId: target.id } }),
+            tx.checkDiscount.updateMany({
+              where: { checkId: source.id },
+              data: { checkId: target.id },
+            }),
+            tx.accountEntry.updateMany({
+              where: { checkId: source.id },
+              data: { checkId: target.id },
+            }),
+          ]);
+          await tx.check.update({
+            where: { id: source.id },
+            data: {
+              status: 'MERGED',
+              mergedIntoCheckId: target.id,
+              closedAt: new Date(),
+              closedByUserId: input.actorUserId,
+              totalKurus: 0,
+            },
+          });
+          await updateTotal(tx, target.id);
+          await tx.auditLog.create({
+            data: {
+              actorUserId: input.actorUserId,
+              action: 'CHECKS_MERGED',
+              entityType: 'Check',
+              entityId: target.id,
+              metadata: { sourceCheckId: source.id },
+            },
+          });
+          return readCheck(tx, target.id);
+        }, transactionOptions());
+      } catch (error) {
+        if (isSerializationConflict(error)) {
+          throw new StoreError('CONFLICT', 'Adisyonlar değişti; yeniden deneyin.');
         }
         throw error;
       }

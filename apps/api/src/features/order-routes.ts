@@ -1,11 +1,6 @@
 import { Router, type RequestHandler } from 'express';
 import { z } from 'zod';
-import {
-  ORDER_ITEM_STATUSES,
-  PAYMENT_METHODS,
-  PERMISSIONS,
-  PREPARATION_AREAS,
-} from '@kafe/contracts';
+import { ORDER_ITEM_STATUSES, PERMISSIONS, PREPARATION_AREAS } from '@kafe/contracts';
 import { callStore, parse, requireAuth, requirePermission } from './http';
 import { silentOrderEventPublisher, type OrderEventPublisher } from './order-events';
 import type { AppStore } from './store';
@@ -30,6 +25,9 @@ export function createOrderRouter(
   const router = Router();
   const canView = [authenticate, requirePermission(PERMISSIONS.VIEW_ORDERS)];
   const canManage = [authenticate, requirePermission(PERMISSIONS.MANAGE_ORDERS)];
+  const canAdjust = [authenticate, requirePermission(PERMISSIONS.ADJUST_CHECKS)];
+  const canMove = [authenticate, requirePermission(PERMISSIONS.MOVE_TABLES)];
+  const canMerge = [authenticate, requirePermission(PERMISSIONS.MERGE_TABLES)];
 
   router.get('/floor-plan', ...canView, async (_req, res) => {
     res.json(await store.getOperationalFloorPlan());
@@ -61,7 +59,7 @@ export function createOrderRouter(
     const body = parse(
       z
         .object({
-          method: z.enum(PAYMENT_METHODS),
+          method: z.enum(['CASH', 'CARD']),
           amountKurus: z.number().int().min(1).max(2_147_483_647),
           cashReceivedKurus: z.number().int().min(1).max(2_147_483_647).nullable().default(null),
         })
@@ -113,6 +111,83 @@ export function createOrderRouter(
       store.closeCheck({ actorUserId: requireAuth(req).user.id, checkId: id }),
     );
     events.publish({ type: 'CHECK_CLOSED', checkId: id });
+    res.json({ check });
+  });
+
+  router.post(
+    '/checks/:id/account-transfer',
+    authenticate,
+    requirePermission(PERMISSIONS.MANAGE_ACCOUNTS),
+    async (req, res) => {
+      const { id } = parse(uuidParamsSchema, req.params);
+      const { customerId } = parse(z.object({ customerId: uuidSchema }), req.body);
+      const check = await callStore(() =>
+        store.transferCheckToAccount({
+          actorUserId: requireAuth(req).user.id,
+          checkId: id,
+          customerId,
+        }),
+      );
+      events.publish({ type: 'ACCOUNT_CHANGED', customerId, checkId: id });
+      res.json({ check });
+    },
+  );
+  router.post('/checks/:id/discounts', ...canAdjust, async (req, res) => {
+    const { id } = parse(uuidParamsSchema, req.params);
+    const body = parse(
+      z.discriminatedUnion('type', [
+        z.object({
+          type: z.literal('PERCENT'),
+          value: z.number().int().min(1).max(100),
+          reason: z.string().trim().min(3).max(250),
+        }),
+        z.object({
+          type: z.literal('FIXED'),
+          value: z.number().int().min(1).max(2_147_483_647),
+          reason: z.string().trim().min(3).max(250),
+        }),
+      ]),
+      req.body,
+    );
+    const check = await callStore(() =>
+      store.applyDiscount({ actorUserId: requireAuth(req).user.id, checkId: id, ...body }),
+    );
+    events.publish({ type: 'CHECK_ADJUSTED', checkId: id });
+    res.status(201).json({ check });
+  });
+  router.post('/items/:id/complimentary', ...canAdjust, async (req, res) => {
+    const { id } = parse(uuidParamsSchema, req.params);
+    const { reason } = parse(z.object({ reason: z.string().trim().min(3).max(250) }), req.body);
+    const check = await callStore(() =>
+      store.makeOrderItemComplimentary({
+        actorUserId: requireAuth(req).user.id,
+        itemId: id,
+        reason,
+      }),
+    );
+    events.publish({ type: 'CHECK_ADJUSTED', checkId: check.id });
+    res.json({ check });
+  });
+  router.post('/checks/:id/move', ...canMove, async (req, res) => {
+    const { id } = parse(uuidParamsSchema, req.params);
+    const { targetTableId } = parse(z.object({ targetTableId: uuidSchema }), req.body);
+    const check = await callStore(() =>
+      store.moveCheck({ actorUserId: requireAuth(req).user.id, checkId: id, targetTableId }),
+    );
+    events.publish({ type: 'TABLE_MOVED', checkId: id });
+    res.json({ check });
+  });
+  router.post('/checks/:id/merge', ...canMerge, async (req, res) => {
+    const { id } = parse(uuidParamsSchema, req.params);
+    const { sourceCheckId } = parse(z.object({ sourceCheckId: uuidSchema }), req.body);
+    const check = await callStore(() =>
+      store.mergeChecks({
+        actorUserId: requireAuth(req).user.id,
+        targetCheckId: id,
+        sourceCheckId,
+      }),
+    );
+    events.publish({ type: 'CHECK_MERGED', checkId: id, sourceCheckId });
     res.json({ check });
   });
 
