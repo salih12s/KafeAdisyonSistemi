@@ -268,3 +268,24 @@ değildir ve kasa tutarlılığını bozamamalıdır.
 bulunması hem serializable transaction hem koşullu unique PostgreSQL indeksiyle
 korunur. Sipariş kalemleri fiziksel olarak silinmez; gerekçe, aktör ve zaman ile
 iptal edilir ve iptal edilen kalem toplamdan çıkarılır.
+
+---
+
+## ADR-015 — Socket.IO değişiklik sinyali, REST kalıcı veri kaynağı olacak
+
+- **Tarih:** 2026-08-12
+- **Durum:** Kabul edildi
+
+**Karar.** Socket.IO Express ile aynı HTTP server ve aynı cookie session'ı
+üzerinde çalışır. Event payload'ı yalnız değişiklik türü, adisyon/kalem kimliği
+ve hazırlık alanını taşır. İstemci event veya reconnect sonrasında ilgili
+TanStack Query cache'lerini invalidate eder ve güncel veriyi REST'ten okur.
+
+**Gerekçe.** Socket payload'ında ikinci bir domain state tutmak iki cihazın
+zamanla farklı veri göstermesine yol açar. REST refetch, bağlantı kopukken kaçan
+event'lerin reconnect sonrasında telafi edilmesini sağlar.
+
+**Sonuç.** Sipariş anındaki `KITCHEN`/`BAR` alanı kaleme snapshot alınır ve ürün
+sonradan değişse bile eski sipariş başka istasyona taşınmaz. Hazırlık akışı yalnız
+`SENT → PREPARING → READY → SERVED` yönünde ilerler; iptal edilmiş kalemler
+değiştirilemez ve her geçiş actor ile audit'e yazılır.

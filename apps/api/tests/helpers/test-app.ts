@@ -4,6 +4,7 @@ import type { Env } from '../../src/config/env';
 import type { DatabaseProbe } from '../../src/lib/database';
 import { createSilentLogger } from '../../src/lib/logger';
 import type { AppStore } from '../../src/features/store';
+import type { OrderEventPublisher } from '../../src/features/order-events';
 
 export const testEnv: Env = {
   NODE_ENV: 'test',
@@ -25,11 +26,13 @@ export function createTestApp(options: {
   databaseConnected: boolean;
   store?: AppStore;
   env?: Env;
+  orderEvents?: OrderEventPublisher;
 }): Express {
   return createApp({
     env: options.env ?? testEnv,
     logger: createSilentLogger(),
     database: createStubProbe(options.databaseConnected),
     ...(options.store === undefined ? {} : { store: options.store }),
+    ...(options.orderEvents === undefined ? {} : { orderEvents: options.orderEvents }),
   });
 }

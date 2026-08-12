@@ -11,12 +11,14 @@ import { createErrorHandler } from './middleware/error-handler';
 import { createNotFoundHandler } from './middleware/not-found';
 import { createRequestLogger } from './middleware/request-logger';
 import type { AppStore } from './features/store';
+import type { OrderEventPublisher } from './features/order-events';
 
 export interface CreateAppOptions {
   env: Env;
   logger: Logger;
   database: DatabaseProbe;
   store?: AppStore;
+  orderEvents?: OrderEventPublisher;
   /** Üretimde sunulacak React derleme çıktısının klasörü. */
   webDistPath?: string;
 }
@@ -30,6 +32,7 @@ export function createApp({
   logger,
   database,
   store,
+  orderEvents,
   webDistPath,
 }: CreateAppOptions): Express {
   const app = express();
@@ -54,7 +57,12 @@ export function createApp({
 
   app.use(
     API_PREFIX,
-    createApiRouter({ database, env, ...(store === undefined ? {} : { store }) }),
+    createApiRouter({
+      database,
+      env,
+      ...(store === undefined ? {} : { store }),
+      ...(orderEvents === undefined ? {} : { orderEvents }),
+    }),
   );
 
   // /api altındaki bilinmeyen uçlar her zaman JSON hata döner, HTML değil.

@@ -1,4 +1,10 @@
-import type { CheckResponse, OperationalFloorPlanResponse } from '@kafe/contracts';
+import type {
+  CheckResponse,
+  KitchenOrderResponse,
+  OperationalFloorPlanResponse,
+  OrderItemStatus,
+  PreparationArea,
+} from '@kafe/contracts';
 
 export interface OpenCheckInput {
   actorUserId: string;
@@ -28,6 +34,12 @@ export interface CancelOrderItemInput {
   reason: string;
 }
 
+export interface UpdateOrderItemStatusInput {
+  actorUserId: string;
+  itemId: string;
+  status: OrderItemStatus;
+}
+
 export interface OrderStore {
   getOperationalFloorPlan(): Promise<OperationalFloorPlanResponse>;
   openCheck(input: OpenCheckInput): Promise<CheckResponse>;
@@ -36,4 +48,6 @@ export interface OrderStore {
   addOrderItem(input: AddOrderItemInput): Promise<CheckResponse>;
   updateOrderItem(input: UpdateOrderItemInput): Promise<CheckResponse>;
   cancelOrderItem(input: CancelOrderItemInput): Promise<CheckResponse>;
+  listKitchenOrders(preparationArea?: PreparationArea): Promise<KitchenOrderResponse[]>;
+  updateOrderItemStatus(input: UpdateOrderItemStatusInput): Promise<CheckResponse>;
 }

@@ -3,6 +3,7 @@
 // Phase 1: kimlik, işletme, salon, masa ve audit altyapısı.
 // Phase 2: kategori, ürün, ürün seçenek grupları ve seçenek değerleri.
 // Phase 3: masa adisyonları, sipariş kalemleri ve seçenek snapshot'ları.
+// Phase 4: istasyon snapshot'ı ve hazırlık durumu akışı.
 //
 // Kurallar:
 // - Para alanları her zaman tam sayı kuruş (Int) olarak tutulur, Float kullanılmaz.
@@ -182,6 +183,13 @@ enum CheckStatus {
   CANCELLED
 }
 
+enum OrderItemStatus {
+  SENT
+  PREPARING
+  READY
+  SERVED
+}
+
 model Check {
   id             String      @id @default(uuid()) @db.Uuid
   tableId        String      @db.Uuid
@@ -200,27 +208,30 @@ model Check {
 }
 
 model OrderItem {
-  id                     String            @id @default(uuid()) @db.Uuid
-  checkId                String            @db.Uuid
-  productId              String            @db.Uuid
-  productNameSnapshot    String
-  unitPriceKurusSnapshot Int
-  quantity               Int
-  note                   String?
-  lineTotalKurus         Int
-  createdByUserId        String            @db.Uuid
-  createdAt              DateTime          @default(now())
-  updatedAt              DateTime          @updatedAt
-  cancellationReason     String?
-  cancelledByUserId      String?           @db.Uuid
-  cancelledAt            DateTime?
-  check                  Check             @relation(fields: [checkId], references: [id], onDelete: Restrict)
-  product                Product           @relation(fields: [productId], references: [id], onDelete: Restrict)
-  createdBy              User              @relation("OrderItemCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict)
-  cancelledBy            User?             @relation("OrderItemCancelledBy", fields: [cancelledByUserId], references: [id], onDelete: Restrict)
-  options                OrderItemOption[]
+  id                      String            @id @default(uuid()) @db.Uuid
+  checkId                 String            @db.Uuid
+  productId               String            @db.Uuid
+  productNameSnapshot     String
+  unitPriceKurusSnapshot  Int
+  preparationAreaSnapshot PreparationArea
+  preparationStatus       OrderItemStatus   @default(SENT)
+  quantity                Int
+  note                    String?
+  lineTotalKurus          Int
+  createdByUserId         String            @db.Uuid
+  createdAt               DateTime          @default(now())
+  updatedAt               DateTime          @updatedAt
+  cancellationReason      String?
+  cancelledByUserId       String?           @db.Uuid
+  cancelledAt             DateTime?
+  check                   Check             @relation(fields: [checkId], references: [id], onDelete: Restrict)
+  product                 Product           @relation(fields: [productId], references: [id], onDelete: Restrict)
+  createdBy               User              @relation("OrderItemCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  cancelledBy             User?             @relation("OrderItemCancelledBy", fields: [cancelledByUserId], references: [id], onDelete: Restrict)
+  options                 OrderItemOption[]
 
   @@index([checkId, createdAt])
+  @@index([preparationAreaSnapshot, preparationStatus, createdAt], map: "OrderItem_preparationAreaSnapshot_preparationStatus_create_idx")
   @@index([productId])
 }
 

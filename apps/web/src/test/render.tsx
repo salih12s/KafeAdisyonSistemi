@@ -88,6 +88,7 @@ export function stubAppFetch(
     menuFails?: boolean;
     salesMenu?: unknown;
     check?: unknown;
+    kitchenOrders?: unknown[];
   } = {},
 ): void {
   let currentUser = options.user === undefined ? ownerUser : options.user;
@@ -101,6 +102,8 @@ export function stubAppFetch(
 
       if (path === '/api/orders/floor-plan')
         {return Promise.resolve(response(options.floorPlan ?? { areas: [] }));}
+      if (path.startsWith('/api/orders/kitchen'))
+        {return Promise.resolve(response({ orders: options.kitchenOrders ?? [] }));}
       if (path.startsWith('/api/orders/checks') || path.startsWith('/api/orders/items'))
         {return Promise.resolve(response({ check: options.check ?? null }, isWrite ? 201 : 200));}
 

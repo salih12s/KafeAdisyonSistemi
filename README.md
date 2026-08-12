@@ -6,9 +6,8 @@ Cafe için adisyon ve satış noktası (POS) uygulaması.
 uygulama bir custom domain üzerinden Railway'de çalışacak; Express hem API'yi
 hem React production build'ini aynı origin üzerinden sunacaktır.
 
-> **Phase durumu:** Phase 1 (kimlik, personel, işletme, salon ve masa yönetimi)
-> geliştirmesi tamamlandı, Claude review'u bekliyor. Masa açma, sipariş, ödeme
-> ve raporlama işlevleri henüz yoktur.
+> **Phase durumu:** Phase 4 (gerçek zamanlı mutfak/bar ve hazırlık akışı)
+> tamamlandı. Hesap kapatma ve ödeme Phase 5'te geliştirilecektir.
 > Plan: [docs/PHASES.md](docs/PHASES.md)
 
 ---
@@ -26,7 +25,7 @@ kapatmak ve gün sonunu görmek. Kapsamın tamamı:
 | Katman | Teknoloji |
 | --- | --- |
 | Frontend | React 18, TypeScript, Vite 6, React Router, TanStack Query, Tailwind CSS 4, Lucide React |
-| Backend | Node.js, Express 5, TypeScript, Prisma ORM, Zod, Helmet |
+| Backend | Node.js, Express 5, Socket.IO, TypeScript, Prisma ORM, Zod, Helmet |
 | Veritabanı | PostgreSQL |
 | Paylaşım | `packages/contracts` (ortak tipler ve sabitler) |
 | Test | Vitest, Supertest, React Testing Library |
@@ -180,7 +179,10 @@ npm run dev
 | `http://localhost:5173` | Arayüz (Vite, anlık yenileme) |
 | `http://localhost:3000/api/health` | API sağlık ucu |
 
-Vite, `/api` çağrılarını Express'e iletir; ek yapılandırma gerekmez.
+Vite, `/api` ve `/socket.io` çağrılarını Express'e iletir; ek yapılandırma gerekmez.
+Telefon/tabletten denemek için cihazı aynı yerel ağa bağlayıp bilgisayarın IPv4
+adresiyle `http://BILGISAYAR_IP:5173` adresini açın. Vite tüm arayüzlerde dinler;
+API ve Socket.IO trafiği geliştirme proxy'si üzerinden aynı adresten geçer.
 
 ---
 

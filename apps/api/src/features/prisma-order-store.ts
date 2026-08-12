@@ -1,8 +1,10 @@
 import { Prisma, type PrismaClient } from '@prisma/client';
 import type {
   CheckResponse,
+  KitchenOrderResponse,
   OperationalFloorPlanResponse,
   OrderItemResponse,
+  OrderItemStatus,
 } from '@kafe/contracts';
 import { StoreError } from './store';
 import type {
@@ -11,6 +13,7 @@ import type {
   OpenCheckInput,
   OrderStore,
   UpdateOrderItemInput,
+  UpdateOrderItemStatusInput,
 } from './order-store';
 
 const MAX_POSTGRES_INT = 2_147_483_647;
@@ -35,6 +38,8 @@ function toOrderItem(row: FullCheck['items'][number]): OrderItemResponse {
     productId: row.productId,
     productNameSnapshot: row.productNameSnapshot,
     unitPriceKurusSnapshot: row.unitPriceKurusSnapshot,
+    preparationAreaSnapshot: row.preparationAreaSnapshot,
+    preparationStatus: row.preparationStatus,
     quantity: row.quantity,
     note: row.note,
     lineTotalKurus: row.lineTotalKurus,
@@ -55,6 +60,18 @@ function toOrderItem(row: FullCheck['items'][number]): OrderItemResponse {
     })),
   };
 }
+
+const NEXT_STATUS: Partial<Record<OrderItemStatus, OrderItemStatus>> = {
+  SENT: 'PREPARING',
+  PREPARING: 'READY',
+  READY: 'SERVED',
+};
+
+const STATUS_AUDIT_ACTION: Record<Exclude<OrderItemStatus, 'SENT'>, string> = {
+  PREPARING: 'ORDER_ITEM_PREPARING',
+  READY: 'ORDER_ITEM_READY',
+  SERVED: 'ORDER_ITEM_SERVED',
+};
 
 function toCheck(row: FullCheck): CheckResponse {
   return {
@@ -296,6 +313,7 @@ export function createPrismaOrderStore(client: PrismaClient): OrderStore {
               productId: product.id,
               productNameSnapshot: product.name,
               unitPriceKurusSnapshot: product.priceKurus,
+              preparationAreaSnapshot: product.preparationArea,
               quantity: input.quantity,
               note: input.note,
               lineTotalKurus: lineTotal,
@@ -415,6 +433,82 @@ export function createPrismaOrderStore(client: PrismaClient): OrderStore {
       } catch (error) {
         if (isSerializationConflict(error)) {
           throw new StoreError('CONFLICT', 'Adisyon değişti; işlemi yeniden deneyin.');
+        }
+        throw error;
+      }
+    },
+
+    async listKitchenOrders(preparationArea): Promise<KitchenOrderResponse[]> {
+      const items = await client.orderItem.findMany({
+        where: {
+          check: { status: 'OPEN' },
+          cancelledAt: null,
+          preparationStatus: { not: 'SERVED' },
+          ...(preparationArea === undefined ? {} : { preparationAreaSnapshot: preparationArea }),
+        },
+        orderBy: { createdAt: 'asc' },
+        include: {
+          check: { include: { table: true } },
+          options: { orderBy: { id: 'asc' } },
+        },
+      });
+
+      return items.map((item) => ({
+        itemId: item.id,
+        checkId: item.checkId,
+        tableName: item.check.table.name,
+        productNameSnapshot: item.productNameSnapshot,
+        quantity: item.quantity,
+        note: item.note,
+        preparationArea: item.preparationAreaSnapshot,
+        preparationStatus: item.preparationStatus,
+        createdAt: item.createdAt.toISOString(),
+        options: item.options.map((option) => ({
+          groupNameSnapshot: option.groupNameSnapshot,
+          valueNameSnapshot: option.valueNameSnapshot,
+        })),
+      }));
+    },
+
+    async updateOrderItemStatus(input: UpdateOrderItemStatusInput): Promise<CheckResponse> {
+      try {
+        return await client.$transaction(async (transaction) => {
+          const item = await transaction.orderItem.findUnique({
+            where: { id: input.itemId },
+            include: { check: { select: { status: true } } },
+          });
+          if (item === null) throw new StoreError('NOT_FOUND', 'Sipariş kalemi bulunamadı.');
+          if (item.check.status !== 'OPEN') {
+            throw new StoreError('CONFLICT', 'Bu adisyon artık açık değil.');
+          }
+          if (item.cancelledAt !== null) {
+            throw new StoreError(
+              'CONFLICT',
+              'İptal edilmiş kalemin hazırlık durumu değiştirilemez.',
+            );
+          }
+          if (NEXT_STATUS[item.preparationStatus] !== input.status) {
+            throw new StoreError('CONFLICT', 'Geçersiz hazırlık durumu geçişi.');
+          }
+
+          await transaction.orderItem.update({
+            where: { id: item.id },
+            data: { preparationStatus: input.status },
+          });
+          await transaction.auditLog.create({
+            data: {
+              actorUserId: input.actorUserId,
+              action: STATUS_AUDIT_ACTION[input.status as Exclude<OrderItemStatus, 'SENT'>],
+              entityType: 'OrderItem',
+              entityId: item.id,
+              metadata: { checkId: item.checkId, preparationStatus: input.status },
+            },
+          });
+          return readCheck(transaction, item.checkId);
+        }, transactionOptions());
+      } catch (error) {
+        if (isSerializationConflict(error)) {
+          throw new StoreError('CONFLICT', 'Sipariş durumu değişti; işlemi yeniden deneyin.');
         }
         throw error;
       }

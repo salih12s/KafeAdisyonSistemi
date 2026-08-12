@@ -1,8 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import type {
   CheckResponse,
+  KitchenOrderResponse,
   OperationalFloorPlanResponse,
   OrderItemResponse,
+  OrderItemStatus,
 } from '@kafe/contracts';
 import {
   StoreError,
@@ -11,6 +13,7 @@ import {
   type OpenCheckInput,
   type OrderStore,
   type UpdateOrderItemInput,
+  type UpdateOrderItemStatusInput,
 } from '../../src/features/store';
 import { MemoryMenuStore } from './memory-menu-store';
 
@@ -97,8 +100,9 @@ export abstract class MemoryOrderStore extends MemoryMenuStore implements OrderS
   }
 
   async getOpenCheckByTable(tableId: string): Promise<CheckResponse | null> {
-    if (this.findOrderTable(tableId) === null)
-      {throw new StoreError('NOT_FOUND', 'Masa bulunamadı.');}
+    if (this.findOrderTable(tableId) === null) {
+      throw new StoreError('NOT_FOUND', 'Masa bulunamadı.');
+    }
     const check = this.checks.find((entry) => entry.tableId === tableId && entry.status === 'OPEN');
     return check === undefined ? null : cloneCheck(check);
   }
@@ -145,6 +149,8 @@ export abstract class MemoryOrderStore extends MemoryMenuStore implements OrderS
       productId: product.id,
       productNameSnapshot: product.name,
       unitPriceKurusSnapshot: product.priceKurus,
+      preparationAreaSnapshot: product.preparationArea,
+      preparationStatus: 'SENT',
       quantity: input.quantity,
       note: input.note,
       lineTotalKurus: lineTotal,
@@ -194,6 +200,57 @@ export abstract class MemoryOrderStore extends MemoryMenuStore implements OrderS
     item.cancelledAt = new Date().toISOString();
     this.recalculate(check);
     this.record(input.actorUserId, 'ORDER_ITEM_CANCELLED', 'OrderItem', item.id);
+    return cloneCheck(check);
+  }
+
+  async listKitchenOrders(preparationArea?: 'KITCHEN' | 'BAR'): Promise<KitchenOrderResponse[]> {
+    return this.checks.flatMap((check) =>
+      check.status === 'OPEN'
+        ? check.items
+            .filter(
+              (item) =>
+                item.cancelledAt === null &&
+                item.preparationStatus !== 'SERVED' &&
+                (preparationArea === undefined || item.preparationAreaSnapshot === preparationArea),
+            )
+            .map((item) => ({
+              itemId: item.id,
+              checkId: check.id,
+              tableName: check.tableName,
+              productNameSnapshot: item.productNameSnapshot,
+              quantity: item.quantity,
+              note: item.note,
+              preparationArea: item.preparationAreaSnapshot,
+              preparationStatus: item.preparationStatus,
+              createdAt: item.createdAt,
+              options: item.options.map((option) => ({
+                groupNameSnapshot: option.groupNameSnapshot,
+                valueNameSnapshot: option.valueNameSnapshot,
+              })),
+            }))
+        : [],
+    );
+  }
+
+  async updateOrderItemStatus(input: UpdateOrderItemStatusInput): Promise<CheckResponse> {
+    const { check, item } = this.requireItem(input.itemId);
+    this.ensureMutable(check, item);
+    const next: Partial<Record<OrderItemStatus, OrderItemStatus>> = {
+      SENT: 'PREPARING',
+      PREPARING: 'READY',
+      READY: 'SERVED',
+    };
+    if (next[item.preparationStatus] !== input.status) {
+      throw new StoreError('CONFLICT', 'Geçersiz hazırlık durumu geçişi.');
+    }
+    item.preparationStatus = input.status;
+    const auditActions: Partial<Record<OrderItemStatus, string>> = {
+      PREPARING: 'ORDER_ITEM_PREPARING',
+      READY: 'ORDER_ITEM_READY',
+      SERVED: 'ORDER_ITEM_SERVED',
+    };
+    const action = auditActions[input.status];
+    if (action !== undefined) this.record(input.actorUserId, action, 'OrderItem', item.id);
     return cloneCheck(check);
   }
 

@@ -612,3 +612,52 @@ için authenticated browser E2E yerine 21 frontend kullanıcı akışı testi ya
   tarayıcı görsel incelemesi yapılmadı.
 - Tüm adisyonu iptal etme/kapatma akışı minimum Phase 3 API kapsamına dahil
   edilmedi; ödeme ve kapanış Phase 5 kapsamındadır.
+
+## 2026-08-12 — Codex — Phase 4 gerçek zamanlı mutfak/bar
+
+**Branch:** `feat/phase-4-realtime-kitchen`
+**Base:** `feat/phase-3-orders` (`596305e`)
+**Görev:** Phase 4 ana geliştirme
+**Sonuç:** Tamamlandı; merge yapılmadı, Phase 5 başlatılmadı.
+
+### Uygulanan değişiklikler
+
+- `OrderItemStatus` (`SENT`, `PREPARING`, `READY`, `SERVED`),
+  `preparationAreaSnapshot` ve `preparationStatus` Prisma şemasına eklendi.
+- `20260812114500_phase_4_realtime_kitchen` additive migration'ı mevcut
+  kalemlerin istasyonunu üründen backfill edecek şekilde yazıldı, incelendi ve
+  gerçek `CafeAdisyon` veritabanına `migrate deploy` ile uygulandı.
+- Hazırlık listesi ve sıralı durum mutation API'leri eklendi. İptal edilen
+  kalemler korunur; geçersiz/atlanan durum geçişleri `409` döner. Üç hazırlık
+  geçişi actor ile audit'e yazılır.
+- Socket.IO Express ile aynı HTTP server üzerinde ve aynı HttpOnly cookie
+  session'ıyla çalışır. Oturumsuz socket reddedilir; loglarda ham token tutulmaz.
+- Kalem ekleme/değiştirme/iptal ve hazırlık durumu için küçük event payload'ları
+  yayınlanır. İstemci event ve reconnect sonrasında REST cache'lerini refetch eder.
+- `/mutfak` Mutfak/Bar/Tümü filtreleri, Yeni/Hazırlanıyor/Hazır grupları,
+  sipariş ayrıntıları, bekleme süresi ve dokunmatik durum aksiyonlarıyla gerçek
+  operasyon ekranına dönüştürüldü.
+- Vite geliştirme/preview sunucusu `0.0.0.0` üzerinde dinler; `/socket.io`
+  websocket proxy'si ve yerel ağ README talimatı eklendi. ADR-015 kaydedildi.
+
+### Doğrulama
+
+| Kontrol | Sonuç |
+| --- | --- |
+| `npm run lint` | PASS — 0 hata, 0 uyarı |
+| `npm run typecheck` | PASS |
+| `npm run test` | PASS — 16 dosya, 150/150 (API 110, web 40) |
+| `npm run build` | PASS — web JS 346.95 kB, gzip 103.98 kB |
+| `npm run verify` | PASS |
+| `npm run db:check` | PASS — `SELECT 1` |
+| `npm run db:migrate:status` | PASS — 4 migration, schema up to date |
+| Production runtime | PASS — health `ok/connected`, root 200, `0.0.0.0:3104` |
+
+**Phase 4'te eklenen test:** 11 (7 backend, 4 frontend).
+
+### Kalan riskler
+
+- Yerel veritabanında sipariş kalemi olmadığı için backfill dolu veri üzerinde
+  gözlenemedi; migration boş gerçek şemada uygulandı ve Phase 4 alan sorgusu geçti.
+- Mutfak düzeni responsive kod ve jsdom akış testleriyle doğrulandı; gerçek
+  telefon/tablet görsel incelemesi yapılmadı.
