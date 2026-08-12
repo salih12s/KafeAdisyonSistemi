@@ -908,3 +908,42 @@ değiştirilmedi, merge yapılmadı.
   dışına taşmıyor ve dialog içindeki hiçbir düğme 44px'in altında değil.
   390px'te konsol tamamen temiz. Ölçümde API cevapları tarayıcı seviyesinde
   karşılandı; `CafeAdisyon` veritabanına dokunulmadı.
+
+## 2026-08-12 — Claude — Üç kullanıcı hatası: masa birleştir, rapor tabloları, adet alanı
+
+**Branch:** `feat/final-ui-polish-joker-cafe` (üçüncü tur)
+**Sonuç:** Tamamlandı; draft PR #11 güncellendi, merge yapılmadı.
+
+- **Masa birleştir bozuk görünüyordu.** Kök neden: seçilecek kayıt yokken
+  `<select>` sıfır `<option>` ile render ediliyordu; kullanıcı tıklayınca Chrome
+  boş bir açılır liste (kaydırma çubuklu ince kutu) açıyordu. Ayrıca boş select
+  gönderildiğinde istek boş kimlikle gidip hata dönüyordu.
+  Aynı kusur dört yerdeydi: masa birleştir, masa taşı, ikram kalemi ve cari
+  müşteri. Dördü de artık kayıt yokken select yerine ne yapılması gerektiğini
+  anlatan bir açıklama gösteriyor ve gönder düğmesi `disabled` oluyor.
+  Birleştirmeye ayrıca "seçilen masanın adisyonu bu adisyona aktarılır ve o masa
+  boşalır" açıklaması eklendi.
+- **Ürün/kategori/personel satış tabloları kötü görünüyordu.** Kök neden:
+  `min-w-[28rem]` (448 px) tablo, `xl:grid-cols-3` ızgarasında ~440 px'lik
+  panele sığmıyor, her panelde ayrı yatay kaydırma çubuğu çıkıyor ve "Tutar"
+  sütunu görünmüyordu. Tablo `table-fixed` yapıldı: Ad sütunu `truncate` +
+  `title`, Adet 4rem sağa hizalı, Tutar 7rem `whitespace-nowrap` ve kalın.
+  Sabit genişlik kaldırıldı; artık yatay kaydırma yok.
+- **Adet alanı 0'da kilitleniyordu.** Kök neden: `value={quantity}` sayısal
+  state'e `Number(event.target.value)` ile yazıyordu; alan boşaltılınca
+  `Number('')` = 0 olup girdiye "0" geri basılıyor ve silinemiyordu. Adet artık
+  metin state'te tutuluyor: alan tamamen boşaltılabiliyor, odakta içerik
+  seçiliyor (`select()`), geçersizken "1 ile 100 arası" hatası çıkıyor ve
+  "Siparişe ekle" devre dışı kalıyor. Kalem toplamı geçersiz adette 1 varsayıyor.
+- Ek olarak "Satış özeti" ödeme dağılımında tek kalem varken kalan iki sütunun
+  boş gri blok bırakması düzeltildi; sütun sayısı kalem sayısına uyuyor.
+- Testler: `orders.test.tsx` 12'den 14 teste çıktı — adet alanının silinip
+  yeniden yazılabilmesi (ve gövdenin `quantity: 2` gitmesi) ile boş liste
+  durumunda select yerine açıklama + `disabled` düğme doğrulanıyor.
+- `npm run verify` PASS: lint 0 hata/0 uyarı, strict typecheck temiz, 23 dosyada
+  193/193 test (API 132, web 61), web JS 310,51 kB / gzip 97,37 kB.
+- Gerçek Chrome ile 390 ve 1440px doğrulama: üç satış tablosunda tutarlar
+  görünür ve panel içinde yatay kaydırma sayısı sıfır; masa birleştir formunda
+  select yok, açıklama var, düğme devre dışı; adet alanı boşaltılabiliyor,
+  boşken düğme devre dışı, "2" yazılınca kalem toplamı ₺500,00 oluyor.
+  İki genişlikte de konsol temiz. `CafeAdisyon` veritabanına dokunulmadı.

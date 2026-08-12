@@ -13,7 +13,17 @@ import {
 } from '../../lib/api';
 
 const input = 'min-h-touch w-full rounded-panel border border-line bg-white px-3 text-sm';
-const button = 'min-h-touch rounded-panel bg-espresso px-4 text-sm font-semibold text-white';
+const button =
+  'min-h-touch rounded-panel bg-espresso px-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50';
+
+/** Seçilecek kayıt yokken boş açılır liste yerine gösterilen açıklama. */
+function EmptyHint({ children }: { children: string }): JSX.Element {
+  return (
+    <p className="rounded-panel border border-dashed border-line bg-canvas px-3 py-2.5 text-[13px] leading-5 text-ink-secondary">
+      {children}
+    </p>
+  );
+}
 
 export function CheckActionsPanel({
   check,
@@ -74,6 +84,14 @@ export function CheckActionsPanel({
     onSuccess: apply,
   });
   const tables = floor.data?.areas.flatMap((area) => area.tables) ?? [];
+  const freeTables = tables.filter((t) => t.openCheck === null && t.id !== check.tableId);
+  const mergeableTables = tables.filter(
+    (t) => t.openCheck !== null && t.openCheck.id !== check.id,
+  );
+  const giftableItems = check.items.filter(
+    (i) => i.cancelledAt === null && i.complimentaryAt === null,
+  );
+  const activeCustomers = customers.data?.filter((c) => c.isActive) ?? [];
   return (
     <Panel title="Adisyon işlemleri">
       <div className="grid gap-4 p-4 md:grid-cols-2">
@@ -127,23 +145,32 @@ export function CheckActionsPanel({
               }}
             >
               <h3 className="font-semibold">İkram</h3>
-              <select aria-label="İkram kalemi" name="itemId" className={input}>
-                {check.items
-                  .filter((i) => i.cancelledAt === null && i.complimentaryAt === null)
-                  .map((i) => (
-                    <option key={i.id} value={i.id}>
-                      {i.quantity} × {i.productNameSnapshot}
-                    </option>
-                  ))}
-              </select>
-              <input
-                aria-label="İkram gerekçesi"
-                name="reason"
-                className={input}
-                minLength={3}
-                required
-              />
-              <button className={button}>İkram yap</button>
+              {giftableItems.length === 0 ? (
+                <EmptyHint>
+                  İkram edilebilecek kalem yok. Önce adisyona ürün ekleyin; iptal edilmiş ve zaten
+                  ikram edilmiş kalemler burada görünmez.
+                </EmptyHint>
+              ) : (
+                <>
+                  <select aria-label="İkram kalemi" name="itemId" className={input}>
+                    {giftableItems.map((i) => (
+                      <option key={i.id} value={i.id}>
+                        {i.quantity} × {i.productNameSnapshot}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    aria-label="İkram gerekçesi"
+                    name="reason"
+                    className={input}
+                    minLength={3}
+                    required
+                  />
+                </>
+              )}
+              <button className={button} disabled={giftableItems.length === 0}>
+                İkram yap
+              </button>
               {gift.isError ? (
                 <p role="alert" className="text-sm text-danger">
                   İkram kaydedilemedi.
@@ -159,16 +186,25 @@ export function CheckActionsPanel({
               }}
             >
               <h3 className="font-semibold">Cariye aktar</h3>
-              <select aria-label="Cari müşteri" name="customerId" className={input}>
-                {customers.data
-                  ?.filter((c) => c.isActive)
-                  .map((c) => (
+              {customers.isPending ? (
+                <EmptyHint>Müşteriler yükleniyor…</EmptyHint>
+              ) : activeCustomers.length === 0 ? (
+                <EmptyHint>
+                  Aktif cari müşteri yok. Kalanı cariye aktarmak için önce Cariler ekranından
+                  müşteri ekleyin.
+                </EmptyHint>
+              ) : (
+                <select aria-label="Cari müşteri" name="customerId" className={input}>
+                  {activeCustomers.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name}
                     </option>
                   ))}
-              </select>
-              <button className={button}>Kalanı cariye aktar</button>
+                </select>
+              )}
+              <button className={button} disabled={activeCustomers.length === 0}>
+                Kalanı cariye aktar
+              </button>
               {account.isError ? (
                 <p role="alert" className="text-sm text-danger">
                   Cariye aktarma tamamlanamadı.
@@ -187,16 +223,25 @@ export function CheckActionsPanel({
             }}
           >
             <h3 className="font-semibold">Masa taşı</h3>
-            <select aria-label="Hedef masa" name="targetTableId" className={input}>
-              {tables
-                .filter((t) => t.openCheck === null && t.id !== check.tableId)
-                .map((t) => (
+            {floor.isPending ? (
+              <EmptyHint>Masa planı yükleniyor…</EmptyHint>
+            ) : freeTables.length === 0 ? (
+              <EmptyHint>
+                Taşınabilecek boş masa yok. Adisyon yalnızca üzerinde açık adisyon bulunmayan bir
+                masaya taşınabilir.
+              </EmptyHint>
+            ) : (
+              <select aria-label="Hedef masa" name="targetTableId" className={input}>
+                {freeTables.map((t) => (
                   <option key={t.id} value={t.id}>
                     {t.name}
                   </option>
                 ))}
-            </select>
-            <button className={button}>Masayı taşı</button>
+              </select>
+            )}
+            <button className={button} disabled={freeTables.length === 0}>
+              Masayı taşı
+            </button>
             {move.isError ? (
               <p role="alert" className="text-sm text-danger">
                 Masa taşınamadı.
@@ -214,16 +259,28 @@ export function CheckActionsPanel({
             }}
           >
             <h3 className="font-semibold">Masa birleştir</h3>
-            <select aria-label="Birleştirilecek masa" name="sourceCheckId" className={input}>
-              {tables
-                .filter((t) => t.openCheck !== null && t.openCheck.id !== check.id)
-                .map((t) => (
+            {floor.isPending ? (
+              <EmptyHint>Masa planı yükleniyor…</EmptyHint>
+            ) : mergeableTables.length === 0 ? (
+              <EmptyHint>
+                Birleştirilecek başka açık adisyon yok. Birleştirme için en az iki masada açık
+                adisyon bulunmalıdır.
+              </EmptyHint>
+            ) : (
+              <select aria-label="Birleştirilecek masa" name="sourceCheckId" className={input}>
+                {mergeableTables.map((t) => (
                   <option key={t.openCheck?.id} value={t.openCheck?.id}>
                     {t.name}
                   </option>
                 ))}
-            </select>
-            <button className={button}>Adisyonları birleştir</button>
+              </select>
+            )}
+            <p className="text-[12px] leading-5 text-ink-secondary">
+              Seçilen masanın adisyonu bu adisyona aktarılır ve o masa boşalır.
+            </p>
+            <button className={button} disabled={mergeableTables.length === 0}>
+              Adisyonları birleştir
+            </button>
             {merge.isError ? (
               <p role="alert" className="text-sm text-danger">
                 Adisyonlar birleştirilemedi.

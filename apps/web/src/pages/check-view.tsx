@@ -248,12 +248,18 @@ function ProductSelection({
 }): JSX.Element {
   const queryClient = useQueryClient();
   const [selected, setSelected] = useState<Record<string, string[]>>({});
-  const [quantity, setQuantity] = useState(1);
+  // Adet metin olarak tutulur; alan tamamen boşaltılabilsin diye sayıya zorlanmaz.
+  const [quantityText, setQuantityText] = useState('1');
+  const parsedQuantity = Number.parseInt(quantityText, 10);
+  const quantity =
+    Number.isInteger(parsedQuantity) && parsedQuantity >= 1 && parsedQuantity <= 100
+      ? parsedQuantity
+      : null;
   const mutation = useMutation({
     mutationFn: (form: FormData) =>
       addOrderItem(checkId, {
         productId: product.id,
-        quantity: Number(form.get('quantity') ?? 1),
+        quantity: quantity ?? 1,
         note: String(form.get('note') ?? '').trim() || null,
         optionValueIds: Object.values(selected).flat(),
       }),
@@ -349,10 +355,13 @@ function ProductSelection({
           label="Adet"
           name="quantity"
           type="number"
+          inputMode="numeric"
           min="1"
           max="100"
-          value={quantity}
-          onChange={(event) => setQuantity(Number(event.target.value))}
+          value={quantityText}
+          onChange={(event) => setQuantityText(event.target.value)}
+          onFocus={(event) => event.target.select()}
+          error={quantityText.trim().length > 0 && quantity === null ? '1 ile 100 arası' : undefined}
           required
         />
         <TextField
@@ -377,14 +386,14 @@ function ProductSelection({
           <div className="text-right">
             <p className="text-xs text-ink-secondary">Kalem toplamı</p>
             <p className="tabular font-extrabold">
-              {formatKurus((product.priceKurus + deltaKurus) * Math.max(quantity, 1))}
+              {formatKurus((product.priceKurus + deltaKurus) * (quantity ?? 1))}
             </p>
           </div>
           <Button
             type="submit"
             icon={<ShoppingBag className="h-4 w-4" />}
             loading={mutation.isPending}
-            disabled={missingRequired}
+            disabled={missingRequired || quantity === null}
           >
             Siparişe ekle
           </Button>

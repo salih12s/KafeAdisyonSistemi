@@ -209,6 +209,58 @@ describe('Phase 3 masa ve adisyon ekranı', () => {
     });
   });
 
+  it('adet alanı tamamen silinebilir ve yeni adet yazılabilir', async () => {
+    stubAppFetch({ floorPlan: floor(), check, salesMenu });
+    const user = userEvent.setup();
+    renderWithProviders(<App />, '/masalar');
+    await user.click(await screen.findByRole('button', { name: /Masa 1/ }));
+    await screen.findByText('Masa 1 adisyonu');
+    const menuPanel = screen.getByRole('heading', { name: 'Menü' }).closest('section');
+    if (menuPanel === null) throw new Error('Menü paneli bulunamadı.');
+    await user.click(within(menuPanel).getByRole('button', { name: /Latte/ }));
+
+    const form = screen.getByRole('form', { name: 'Ürün ekleme formu' });
+    const adet = within(form).getByLabelText('Adet');
+    await user.clear(adet);
+    // Alan boş kalabilmeli; 0'a düşüp kilitlenmemeli.
+    expect(adet).toHaveValue(null);
+    expect(within(form).getByRole('button', { name: 'Siparişe ekle' })).toBeDisabled();
+
+    await user.type(adet, '2');
+    expect(adet).toHaveValue(2);
+
+    await user.click(within(form).getByLabelText(/Büyük/));
+    await user.click(within(form).getByRole('button', { name: 'Siparişe ekle' }));
+    await waitFor(() => {
+      expect(recordedRequests.some((entry) => entry.path.endsWith('/items'))).toBe(true);
+    });
+    expect(recordedRequests.find((entry) => entry.path.endsWith('/items'))?.body).toMatchObject({
+      quantity: 2,
+    });
+  });
+
+  it('taşınacak boş masa ve birleşecek adisyon yokken boş liste yerine açıklama gösterir', async () => {
+    stubAppFetch({ floorPlan: floor(), check, salesMenu, customers: [] });
+    const user = userEvent.setup();
+    renderWithProviders(<App />, '/masalar');
+    await user.click(await screen.findByRole('button', { name: /Masa 1/ }));
+    await screen.findByText('Masa 1 adisyonu');
+
+    const mergeForm = await screen.findByRole('form', { name: 'Masa birleştirme formu' });
+    expect(within(mergeForm).queryByLabelText('Birleştirilecek masa')).not.toBeInTheDocument();
+    expect(within(mergeForm).getByText(/Birleştirilecek başka açık adisyon yok/)).toBeInTheDocument();
+    expect(within(mergeForm).getByRole('button', { name: 'Adisyonları birleştir' })).toBeDisabled();
+
+    const moveForm = screen.getByRole('form', { name: 'Masa taşıma formu' });
+    expect(within(moveForm).queryByLabelText('Hedef masa')).not.toBeInTheDocument();
+    expect(within(moveForm).getByText(/Taşınabilecek boş masa yok/)).toBeInTheDocument();
+    expect(within(moveForm).getByRole('button', { name: 'Masayı taşı' })).toBeDisabled();
+
+    const accountForm = screen.getByRole('form', { name: 'Cariye aktarma formu' });
+    expect(within(accountForm).getByText(/Aktif cari müşteri yok/)).toBeInTheDocument();
+    expect(within(accountForm).getByRole('button', { name: 'Kalanı cariye aktar' })).toBeDisabled();
+  });
+
   it('zorunlu seçenek tamamlanmadan eklemeyi engeller ve dialog Escape ile kapanır', async () => {
     stubAppFetch({ floorPlan: floor(), check, salesMenu });
     const user = userEvent.setup();

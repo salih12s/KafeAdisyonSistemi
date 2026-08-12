@@ -25,29 +25,38 @@ function Metric({ label, value }: { label: string; value: string }): JSX.Element
   );
 }
 
+/** Ödeme dağılımı sütun sayısını kalem sayısına göre seçer. */
+function paymentColumnClass(count: number): string {
+  if (count >= 3) return 'sm:grid-cols-3';
+  if (count === 2) return 'sm:grid-cols-2';
+  return '';
+}
+
 function SalesTable({ rows }: { rows: NamedSalesTotal[] }): JSX.Element {
   if (rows.length === 0) return <p className="p-4 text-sm text-ink-muted">Bu aralıkta veri yok.</p>;
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-[28rem] text-left text-sm">
-        <thead className="border-b border-line bg-canvas text-xs uppercase text-ink-muted">
-          <tr>
-            <th className="px-3 py-2">Ad</th>
-            <th className="px-3 py-2">Adet</th>
-            <th className="px-3 py-2 text-right">Tutar</th>
+    <table className="w-full table-fixed text-left text-sm">
+      <thead className="border-b border-line bg-canvas text-xs uppercase text-ink-muted">
+        <tr>
+          <th className="px-3 py-2 font-semibold">Ad</th>
+          <th className="w-16 px-2 py-2 text-right font-semibold">Adet</th>
+          <th className="w-28 px-3 py-2 text-right font-semibold">Tutar</th>
+        </tr>
+      </thead>
+      <tbody className="divide-y divide-line">
+        {rows.map((row) => (
+          <tr key={row.id}>
+            <td className="truncate px-3 py-2 font-medium" title={row.name}>
+              {row.name}
+            </td>
+            <td className="tabular px-2 py-2 text-right">{row.quantity}</td>
+            <td className="tabular whitespace-nowrap px-3 py-2 text-right font-semibold">
+              {formatKurus(row.totalKurus)}
+            </td>
           </tr>
-        </thead>
-        <tbody className="divide-y divide-line">
-          {rows.map((row) => (
-            <tr key={row.id}>
-              <td className="px-3 py-2 font-medium">{row.name}</td>
-              <td className="px-3 py-2 tabular-nums">{row.quantity}</td>
-              <td className="px-3 py-2 text-right tabular-nums">{formatKurus(row.totalKurus)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+        ))}
+      </tbody>
+    </table>
   );
 }
 
@@ -126,15 +135,22 @@ export function ReportsPage(): JSX.Element {
               <Metric label="Adisyon sayısı" value={String(report.data.paidCheckCount)} />
               <Metric label="Ortalama adisyon" value={formatKurus(report.data.averageCheckKurus)} />
             </dl>
-            <dl className="grid gap-px border-t border-line bg-line sm:grid-cols-3">
-              {report.data.paymentDistribution.map((row) => (
-                <Metric
-                  key={row.method}
-                  label={PAYMENT_METHOD_LABELS[row.method]}
-                  value={formatKurus(row.amountKurus)}
-                />
-              ))}
-            </dl>
+            {report.data.paymentDistribution.length === 0 ? null : (
+              // Sütun sayısı kalem sayısına uyar; eksik sütun boş gri blok bırakmaz.
+              <dl
+                className={`grid gap-px border-t border-line bg-line ${
+                  paymentColumnClass(report.data.paymentDistribution.length)
+                }`}
+              >
+                {report.data.paymentDistribution.map((row) => (
+                  <Metric
+                    key={row.method}
+                    label={PAYMENT_METHOD_LABELS[row.method]}
+                    value={formatKurus(row.amountKurus)}
+                  />
+                ))}
+              </dl>
+            )}
           </Panel>
           <div className="grid gap-4 xl:grid-cols-3">
             <Panel title="Ürün satışları">
