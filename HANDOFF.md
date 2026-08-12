@@ -8,38 +8,45 @@ sonraki geliştiriciye devredilir.
 
 ## Aktif durum
 
-Frontend redesign complete — comprehensive final review pending
+**Comprehensive final review and UAT complete — user approval pending**
 
-- Branch: `feat/frontend-experience-redesign`
-- Base: `feat/phase-7-reports-deployment` (`2f7066d`)
-- Frontend-only kapsam: backend, contracts, Prisma schema ve migration değişmedi.
-- `npm run verify`: PASS — 182/182 test (API 131, web 51).
-- Chrome: Özet, Masalar, KDS ve Raporlar 390/768/1024/1440px genişliklerde
-  yatay taşma olmadan doğrulandı.
-- Security scan çalıştırılmadı; merge yapılmadı.
+| Alan                  | Değer                                                                  |
+| --------------------- | ---------------------------------------------------------------------- |
+| **Branch**            | `review/final-comprehensive-uat`                                       |
+| **Base branch / SHA** | `feat/frontend-experience-redesign` / `ee8f373`                        |
+| **Ana geliştirici**   | Codex                                                                  |
+| **Durum**             | **PASSED — draft PR açık, merge edilmedi**                             |
+| **Son fix commit**    | `45f5623` — `fix: harden application after comprehensive final review` |
+| **Son commit**        | `docs: record final application acceptance results`                    |
+| **Son güncelleme**    | 2026-08-12                                                             |
 
-| Alan                  | Değer                                              |
-| --------------------- | -------------------------------------------------- |
-| **Tamamlanan Phase**  | Phase 7 — Raporlar ve production hazırlığı          |
-| **Branch**            | `feat/phase-7-reports-deployment`                   |
-| **Ana geliştirici**   | Codex                                              |
-| **Durum**             | **Tamamlandı — draft PR açık, merge edilmedi** |
-| **Base branch / SHA** | `feat/phase-6-accounts-adjustments-tables` / `6a698f0` |
-| **Phase commit**      | `feat: complete phase 7 reports and production readiness` |
-| **Son güncelleme**    | 2026-08-12                                         |
+- `npm ci`, dependency ağacı, lint, strict typecheck, build ve `npm run verify`
+  PASS; 23 dosyada 186/186 test (API 132, web 54).
+- Kullanıcının `CafeAdisyon` DB'si değiştirilmedi. İzole UAT/fresh/restore DB'lerde
+  yedi migration, gerçek API/browser/Socket.IO, concurrency, finansal oracle ve
+  backup/restore doğrulandı.
+- CORE-ORACLE-1: 2 paid check; ciro 75.000, kart 45.000, nakit 20.000, cari 10.000,
+  indirim 2.500, ikram 8.000 ve açık cari 10.000 kuruş — tamamı beklenenle aynı.
+- Chrome'da 48 route/viewport ölçümü taşmasız; üç bağımsız session, realtime KDS,
+  focus/touch/reduced motion geçti; console ve failed response sayısı sıfır.
+- Yerel production smoke ve restore raporu geçti. Railway deployment yapılmadı.
+- Ayrı security scan çalıştırılmadı; normal baseline kontrolleri geçti.
+- Ayrıntılı kanıt ve kalan kabul sınırları: `docs/FINAL_ACCEPTANCE_REPORT.md`.
+- Sonraki geliştiricinin işi: yeni kod yazmadan kullanıcı manuel kabulü ve PR/merge
+  kararını beklemek; merge ve Railway deployment yalnız kullanıcı onayıyla yapılır.
 
 ### Phase durumu
 
-| Phase | Branch                         | Ana geliştirici | Durum                          |
-| ----- | ------------------------------ | --------------- | ------------------------------ |
-| 0     | `feat/phase-0-foundation`      | Claude          | Tamamlandı · draft PR açık     |
-| 1     | `feat/phase-1-identity-tables` | Codex           | Tamamlandı · draft PR açık     |
-| 2     | `feat/phase-2-menu-products`   | Claude          | Tamamlandı · draft PR açık     |
-| 3     | `feat/phase-3-orders`          | Codex           | Tamamlandı · draft PR açık     |
-| 4     | `feat/phase-4-realtime-kitchen` | Codex          | Tamamlandı · draft PR açık     |
-| 5     | `feat/phase-5-payments`          | Codex          | Tamamlandı · draft PR açık     |
-| 6     | `feat/phase-6-accounts-adjustments-tables` | Codex | Tamamlandı · draft PR açık |
-| 7     | `feat/phase-7-reports-deployment` | Codex | Tamamlandı · draft PR açık |
+| Phase | Branch                                     | Ana geliştirici | Durum                      |
+| ----- | ------------------------------------------ | --------------- | -------------------------- |
+| 0     | `feat/phase-0-foundation`                  | Claude          | Tamamlandı · draft PR açık |
+| 1     | `feat/phase-1-identity-tables`             | Codex           | Tamamlandı · draft PR açık |
+| 2     | `feat/phase-2-menu-products`               | Claude          | Tamamlandı · draft PR açık |
+| 3     | `feat/phase-3-orders`                      | Codex           | Tamamlandı · draft PR açık |
+| 4     | `feat/phase-4-realtime-kitchen`            | Codex           | Tamamlandı · draft PR açık |
+| 5     | `feat/phase-5-payments`                    | Codex           | Tamamlandı · draft PR açık |
+| 6     | `feat/phase-6-accounts-adjustments-tables` | Codex           | Tamamlandı · draft PR açık |
+| 7     | `feat/phase-7-reports-deployment`          | Codex           | Tamamlandı · draft PR açık |
 
 ---
 
@@ -163,16 +170,16 @@ testleri doğrulandı. Gerçek telefon/tablet görsel incelemesi yapılmadı.
 
 ### Kalite kanıtı
 
-| Komut                       | Sonuç                                      |
-| --------------------------- | ------------------------------------------ |
-| `npm run lint`              | PASS — 0 hata, 0 uyarı                     |
-| `npm run typecheck`         | PASS — contracts + api + web               |
-| `npm run test`              | PASS — 150/150 (API 110, web 40)           |
-| `npm run build`             | PASS — web JS 346.95 kB, gzip 103.98 kB    |
-| `npm run verify`            | PASS — lint → typecheck → test → build     |
-| `npm run db:check`          | PASS — PostgreSQL `SELECT 1`               |
-| `npm run db:migrate:status` | PASS — 4 migration, schema up to date      |
-| Production runtime         | PASS — health/DB/root 200, `0.0.0.0:3104` |
+| Komut                       | Sonuç                                     |
+| --------------------------- | ----------------------------------------- |
+| `npm run lint`              | PASS — 0 hata, 0 uyarı                    |
+| `npm run typecheck`         | PASS — contracts + api + web              |
+| `npm run test`              | PASS — 150/150 (API 110, web 40)          |
+| `npm run build`             | PASS — web JS 346.95 kB, gzip 103.98 kB   |
+| `npm run verify`            | PASS — lint → typecheck → test → build    |
+| `npm run db:check`          | PASS — PostgreSQL `SELECT 1`              |
+| `npm run db:migrate:status` | PASS — 4 migration, schema up to date     |
+| Production runtime          | PASS — health/DB/root 200, `0.0.0.0:3104` |
 
 Phase 4 için 7 backend ve 4 frontend testi eklendi; Socket auth, event, filtre,
 geçiş, iptal koruması, audit ve reconnect/refetch davranışları kapsandı.
@@ -265,13 +272,13 @@ akışlarını kapsayan tek kapsamlı final review olmalıdır.
 
 ## Devir geçmişi
 
-| Tarih      | Phase   | Devreden | Devralan | Not                                                       |
-| ---------- | ------- | -------- | -------- | --------------------------------------------------------- |
-| 2026-08-12 | Phase 0 | Claude   | Codex    | Proje temeli tamamlandı.                                  |
-| 2026-08-12 | Phase 1 | Codex    | Claude   | Kimlik, personel, salon ve masa tamamlandı.               |
-| 2026-08-12 | Phase 2 | Claude   | Codex    | Menü, ürün, seçenek ve ekstra yönetimi tamamlandı.        |
-| 2026-08-12 | Phase 3 | Codex    | Codex    | Masa açma, adisyon ve sipariş tamamlandı; Phase 4 sırada. |
-| 2026-08-12 | Phase 4 | Codex    | Codex    | Realtime mutfak/bar tamamlandı; Phase 5 sırada.           |
-| 2026-08-12 | Phase 5 | Codex    | Codex    | Ödeme ve hesap kapatma tamamlandı; Phase 6 sırada.         |
-| 2026-08-12 | Phase 6 | Codex    | Codex    | Cari, indirim/ikram ve masa işlemleri tamamlandı; Phase 7 sırada. |
+| Tarih      | Phase   | Devreden | Devralan       | Not                                                                            |
+| ---------- | ------- | -------- | -------------- | ------------------------------------------------------------------------------ |
+| 2026-08-12 | Phase 0 | Claude   | Codex          | Proje temeli tamamlandı.                                                       |
+| 2026-08-12 | Phase 1 | Codex    | Claude         | Kimlik, personel, salon ve masa tamamlandı.                                    |
+| 2026-08-12 | Phase 2 | Claude   | Codex          | Menü, ürün, seçenek ve ekstra yönetimi tamamlandı.                             |
+| 2026-08-12 | Phase 3 | Codex    | Codex          | Masa açma, adisyon ve sipariş tamamlandı; Phase 4 sırada.                      |
+| 2026-08-12 | Phase 4 | Codex    | Codex          | Realtime mutfak/bar tamamlandı; Phase 5 sırada.                                |
+| 2026-08-12 | Phase 5 | Codex    | Codex          | Ödeme ve hesap kapatma tamamlandı; Phase 6 sırada.                             |
+| 2026-08-12 | Phase 6 | Codex    | Codex          | Cari, indirim/ikram ve masa işlemleri tamamlandı; Phase 7 sırada.              |
 | 2026-08-12 | Phase 7 | Codex    | Final reviewer | Raporlar ve production hazırlığı tamamlandı; kapsamlı final review bekleniyor. |

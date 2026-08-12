@@ -11,15 +11,15 @@ Mevcut `CafeAdisyon` veritabanına karşı çalıştırılmamalıdır. Parola, c
 
 ## Ortak ortam değişkenleri
 
-| Değişken | Amaç |
-| --- | --- |
-| `UAT_BASE_URL` | Çalışan UAT API adresi |
-| `UAT_WEB_URL` | Vite üzerinden çalışan UAT arayüz adresi |
-| `UAT_PRODUCTION_URL` | Yerel production smoke adresi |
-| `UAT_OWNER_PASSWORD` | Runtime'da sağlanan UAT owner parolası |
-| `UAT_STAFF_PASSWORD` | Runtime'da sağlanan UAT personel parolası |
-| `UAT_OUTPUT_DIR` | Repository dışında veya ignore edilen çıktı dizini |
-| `UAT_CHROME_PATH` | İsteğe bağlı Chrome executable yolu |
+| Değişken             | Amaç                                               |
+| -------------------- | -------------------------------------------------- |
+| `UAT_BASE_URL`       | Çalışan UAT API adresi                             |
+| `UAT_WEB_URL`        | Vite üzerinden çalışan UAT arayüz adresi           |
+| `UAT_PRODUCTION_URL` | Yerel production smoke adresi                      |
+| `UAT_OWNER_PASSWORD` | Runtime'da sağlanan UAT owner parolası             |
+| `UAT_STAFF_PASSWORD` | Runtime'da sağlanan UAT personel parolası          |
+| `UAT_OUTPUT_DIR`     | Repository dışında veya ignore edilen çıktı dizini |
+| `UAT_CHROME_PATH`    | İsteğe bağlı Chrome executable yolu                |
 
 ## Scriptler
 

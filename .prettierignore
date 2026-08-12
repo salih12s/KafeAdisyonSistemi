@@ -8,3 +8,5 @@ package-lock.json
 .env.*
 apps/api/prisma/migrations/
 apps/web/public/*.svg
+# Bu kayıt append-only'dir; eski oturumların biçimi topluca değiştirilemez.
+SESSION_LOG.md
