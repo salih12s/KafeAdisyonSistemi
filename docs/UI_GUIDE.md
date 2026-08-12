@@ -182,7 +182,7 @@ bileşen üretilmez.
 - Tüm arayüz metinleri **Türkçe**dir.
 - Metin dürüsttür: bir şey çalışmıyorsa "yakında" denmez, ne olduğu yazılır.
 - Hata mesajı kullanıcıya **ne yapacağını** söyler:
-  *"API sunucusuna ulaşılamıyor. Kasa bilgisayarında sunucunun çalıştığını
+  *"API sunucusuna ulaşılamıyor. Sunucunun çalıştığını ve bağlantı ayarlarını
   doğrulayın."*
 - Teknik terim gerekiyorsa Türkçe karşılığıyla birlikte kullanılır.
 - Tarih, saat ve sayı biçimi `tr-TR`; saat dilimi `Europe/Istanbul`;

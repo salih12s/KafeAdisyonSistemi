@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
-import { MOBILE_PRIMARY_PATHS, NAV_ITEMS } from '../../config/navigation';
+import { MOBILE_PRIMARY_PATHS, navigationForRole } from '../../config/navigation';
 import { cn } from '../../lib/cn';
-
-const PRIMARY_ITEMS = NAV_ITEMS.filter((item) => MOBILE_PRIMARY_PATHS.includes(item.to));
+import { useCurrentUser } from '../../hooks/use-auth';
 
 /**
  * Telefon ve tablet için alt gezinme çubuğu.
@@ -14,6 +13,9 @@ const PRIMARY_ITEMS = NAV_ITEMS.filter((item) => MOBILE_PRIMARY_PATHS.includes(i
 export function MobileNav(): JSX.Element {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { pathname } = useLocation();
+  const auth = useCurrentUser();
+  const items = auth.isSuccess ? navigationForRole(auth.data.role) : [];
+  const primaryItems = items.filter((item) => MOBILE_PRIMARY_PATHS.includes(item.to));
 
   useEffect(() => {
     setDrawerOpen(false);
@@ -72,7 +74,7 @@ export function MobileNav(): JSX.Element {
 
             <nav aria-label="Tüm modüller listesi" className="p-2">
               <ul className="flex flex-col">
-                {NAV_ITEMS.map((item) => (
+                {items.map((item) => (
                   <li key={item.to}>
                     <NavLink
                       to={item.to}
@@ -104,7 +106,7 @@ export function MobileNav(): JSX.Element {
         aria-label="Alt gezinme"
         className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] lg:hidden"
       >
-        {PRIMARY_ITEMS.map((item) => (
+        {primaryItems.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}

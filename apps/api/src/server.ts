@@ -4,6 +4,7 @@ import { ENV_FILE_PATH, WEB_DIST_PATH } from './config/paths';
 import { EnvValidationError, parseEnv, type Env } from './config/env';
 import { createPrismaLifecycle } from './lib/database';
 import { createLogger } from './lib/logger';
+import { createPrismaStore } from './features/prisma-store';
 
 dotenv.config({ path: ENV_FILE_PATH });
 
@@ -38,6 +39,7 @@ function start(): void {
     env,
     logger,
     database: database.probe,
+    store: createPrismaStore(database.client),
     ...(env.NODE_ENV === 'production' ? { webDistPath: WEB_DIST_PATH } : {}),
   });
 
@@ -63,7 +65,9 @@ function start(): void {
 
   server.on('error', (error: NodeJS.ErrnoException) => {
     if (error.code === 'EADDRINUSE') {
-      logger.error(`${env.PORT} portu kullanımda. Başka bir uygulamayı kapatın veya PORT değiştirin.`);
+      logger.error(
+        `${env.PORT} portu kullanımda. Başka bir uygulamayı kapatın veya PORT değiştirin.`,
+      );
       process.exit(1);
     }
 

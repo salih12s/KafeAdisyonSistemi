@@ -1,11 +1,8 @@
 import { QueryClient } from '@tanstack/react-query';
 
-/**
- * Yerel ağda çalışıldığı için istekler ucuzdur; yine de gereksiz
- * yeniden isteklerin kasa bilgisayarını meşgul etmemesi için ölçülü ayarlar.
- */
+/** Sağlık sorgusunun gereksiz yere tekrarlanmasını sınırlayan ortak istemci ayarları. */
 export function createQueryClient(): QueryClient {
-  return new QueryClient({
+  const client = new QueryClient({
     defaultOptions: {
       queries: {
         retry: 1,
@@ -14,4 +11,10 @@ export function createQueryClient(): QueryClient {
       },
     },
   });
+
+  window.addEventListener('kafe:unauthorized', () => {
+    client.removeQueries({ queryKey: ['auth'] });
+  });
+
+  return client;
 }

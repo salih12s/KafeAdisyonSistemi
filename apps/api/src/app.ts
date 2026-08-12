@@ -10,11 +10,13 @@ import { createApiRouter } from './routes';
 import { createErrorHandler } from './middleware/error-handler';
 import { createNotFoundHandler } from './middleware/not-found';
 import { createRequestLogger } from './middleware/request-logger';
+import type { AppStore } from './features/store';
 
 export interface CreateAppOptions {
   env: Env;
   logger: Logger;
   database: DatabaseProbe;
+  store?: AppStore;
   /** Üretimde sunulacak React derleme çıktısının klasörü. */
   webDistPath?: string;
 }
@@ -23,13 +25,19 @@ export interface CreateAppOptions {
  * Express uygulamasını kurar ancak dinlemeye başlamaz.
  * Böylece testler gerçek bir port açmadan uygulamayı çalıştırabilir.
  */
-export function createApp({ env, logger, database, webDistPath }: CreateAppOptions): Express {
+export function createApp({
+  env,
+  logger,
+  database,
+  store,
+  webDistPath,
+}: CreateAppOptions): Express {
   const app = express();
 
   app.disable('x-powered-by');
-  app.set('trust proxy', false);
+  app.set('trust proxy', env.NODE_ENV === 'production' ? 1 : false);
 
-  // Yerel ağda tek origin üzerinden çalışıldığı için CSP dışındaki varsayılanlar yeterli.
+  // Web ve API production'da aynı origin üzerinden sunulur; geliştirmede CSP kapalıdır.
   app.use(
     helmet({
       contentSecurityPolicy: env.NODE_ENV === 'production' ? undefined : false,
@@ -44,7 +52,10 @@ export function createApp({ env, logger, database, webDistPath }: CreateAppOptio
     app.use(createRequestLogger(logger));
   }
 
-  app.use(API_PREFIX, createApiRouter({ database }));
+  app.use(
+    API_PREFIX,
+    createApiRouter({ database, env, ...(store === undefined ? {} : { store }) }),
+  );
 
   // /api altındaki bilinmeyen uçlar her zaman JSON hata döner, HTML değil.
   app.use(API_PREFIX, createNotFoundHandler());

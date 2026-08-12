@@ -224,3 +224,26 @@ içe aktarımlarda `.js` uzantısı zorunludur.
 **Sonuç.** Node/Express `dist/cjs`, Vite/Rollup `dist/esm` çıktısını kullanır.
 Uzantı unutulursa ESM derlemesi kırılır — bu kural
 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) içinde de yazılıdır.
+
+---
+
+## ADR-013 — Kimlik doğrulama veritabanı session'ı ve sabit rollerle yapılacak
+
+- **Tarih:** 2026-08-12
+- **Durum:** Kabul edildi
+
+**Karar.** Kullanıcılar normalize edilmiş kullanıcı adı ve bcrypt (cost 12) ile
+hashlenen şifreyle giriş yapar. Tarayıcıda 12 saatlik HttpOnly, SameSite=Strict
+`kafe_session` cookie bulunur; veritabanında yalnız ham token'ın SHA-256 hash'i
+tutulur. Roller `OWNER`, `CASHIER`, `WAITER`, `KITCHEN` olarak sabittir ve
+permission matrisi sunucu tarafında uygulanır.
+
+**Gerekçe.** İlk sürüm tek işletme ve sınırlı rol kümesine sahiptir. Veritabanı
+session'ı; çıkış, personeli pasife alma ve şifre değişiminde oturumların anında
+iptal edilmesini sağlar. Generic rol/permission tabloları gereksiz karmaşıklık
+ekler.
+
+**Sonuç.** Web üzerinden açık owner oluşturma endpoint'i yoktur; ilk owner
+yalnız `npm run setup:owner` interaktif komutuyla oluşturulur. Son aktif owner
+kuralı serializable transaction ile korunur. Audit kayıtları parola, hash,
+cookie veya session token içermez.

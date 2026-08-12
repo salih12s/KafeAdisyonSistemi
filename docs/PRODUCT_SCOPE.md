@@ -10,8 +10,8 @@ Kafe Adisyon Sistemi'nin **ilk sürüm** kapsamı. Buradaki maddeler ürünün
 
 ### 1.1 Personel ve roller
 
-- Personel kaydı (ad, kullanıcı adı, PIN ile giriş)
-- Roller: yönetici, kasiyer, garson, mutfak
+- Personel kaydı (ad, kullanıcı adı, bcrypt ile korunan şifreyle giriş)
+- Roller: işletme sahibi, kasiyer, garson, mutfak
 - Rol bazlı yetki: iskonto verme, adisyon iptali, gün sonu alma gibi
   hassas işlemler yalnızca yetkili rollere açıktır
 - Her işlemin hangi personel tarafından yapıldığının kaydı

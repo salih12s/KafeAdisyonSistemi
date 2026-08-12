@@ -56,7 +56,7 @@ export function HealthIndicator(): JSX.Element {
     >
       <span aria-hidden="true" className={cn('h-2 w-2 rounded-full', classes.dot)} />
       <span className="sr-only">Sistem durumu:</span>
-      {label}
+      <span className="hidden sm:inline">{label}</span>
     </span>
   );
 }

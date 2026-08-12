@@ -1,10 +1,11 @@
 import { Link } from 'react-router-dom';
 import { ChevronRight } from 'lucide-react';
 import { Panel } from '../components/ui/panel';
-import { NAV_ITEMS } from '../config/navigation';
+import { navigationForRole } from '../config/navigation';
 import { useHealth } from '../hooks/use-health';
 import { formatTimestamp } from '../lib/datetime';
 import { cn } from '../lib/cn';
+import { useCurrentUser } from '../hooks/use-auth';
 
 interface StatusRow {
   label: string;
@@ -57,8 +58,11 @@ const TONE_TEXT: Record<StatusRow['tone'], string> = {
 
 export function DashboardPage(): JSX.Element {
   const health = useHealth();
+  const auth = useCurrentUser();
   const rows = buildStatusRows(health);
-  const modules = NAV_ITEMS.filter((item) => item.to !== '/');
+  const modules = auth.isSuccess
+    ? navigationForRole(auth.data.role).filter((item) => item.to !== '/')
+    : [];
 
   return (
     <div className="flex flex-col gap-4">
@@ -67,14 +71,17 @@ export function DashboardPage(): JSX.Element {
           {rows.map((row) => (
             <div key={row.label} className="border-b border-line px-3.5 py-3 md:border-b-0">
               <dt className="text-[12px] uppercase tracking-wide text-ink-muted">{row.label}</dt>
-              <dd className={cn('mt-0.5 text-sm font-semibold', TONE_TEXT[row.tone])}>{row.value}</dd>
+              <dd className={cn('mt-0.5 text-sm font-semibold', TONE_TEXT[row.tone])}>
+                {row.value}
+              </dd>
             </div>
           ))}
         </dl>
 
         {health.isError ? (
           <p className="border-t border-line bg-danger-soft px-3.5 py-2.5 text-[13px] text-danger">
-            API sunucusuna ulaşılamıyor. Sunucunun çalıştığını doğrulayın, ardından sayfayı yenileyin.
+            API sunucusuna ulaşılamıyor. Sunucunun çalıştığını doğrulayın, ardından sayfayı
+            yenileyin.
           </p>
         ) : null}
 
@@ -110,9 +117,8 @@ export function DashboardPage(): JSX.Element {
 
       <Panel title="Bu sürüm hakkında">
         <p className="px-3.5 py-3 text-sm leading-relaxed text-ink-muted">
-          Proje temeli tamamlandı: uygulama kabuğu, gezinme, API sunucusu ve veritabanı bağlantısı
-          hazır. Masa açma, sipariş alma, hesap kapatma ve raporlama işlevleri sonraki aşamalarda
-          bu modüllere eklenecektir.
+          Kimlik doğrulama, personel, işletme, salon ve masa yönetimi hazır. Masa açma, sipariş
+          alma, hesap kapatma ve raporlama işlevleri sonraki aşamalarda bu modüllere eklenecektir.
         </p>
       </Panel>
     </div>

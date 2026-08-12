@@ -1,156 +1,143 @@
 # HANDOFF.md — Ajanlar arası devir kaydı
 
-Bu dosya **her zaman tek bir aktif görevi** gösterir ve her ajan tarafından
-görev sonunda güncellenir (bkz. [AGENTS.md](AGENTS.md) §7).
+Bu dosya **her zaman tek bir aktif görevi** gösterir ve görev sonunda güncellenir
+(bkz. [AGENTS.md](AGENTS.md) §7).
 
 ---
 
 ## Aktif durum
 
-| Alan | Değer |
-| --- | --- |
-| **Aktif Phase** | Phase 0 — Proje Temeli ve Arayüz Altyapısı |
-| **Aktif branch** | `feat/phase-0-foundation` |
-| **Ana geliştirici** | Claude |
-| **Reviewer** | Codex |
-| **Durum** | **Codex review bekliyor** |
-| **Son commit** | `chore: establish phase 0 application foundation` (bu belgeyi içeren commit) |
-| **Önceki commit'ler** | `365a907` (Phase 0 ilk kurulum) · `f4ed982` (`main` bootstrap) |
-| **Son güncelleme** | 2026-08-12 |
+| Alan                  | Değer                                                                  |
+| --------------------- | ---------------------------------------------------------------------- |
+| **Aktif Phase**       | Phase 1 — Authentication, Personel, İşletme, Salon ve Masa             |
+| **Aktif branch**      | `feat/phase-1-identity-tables`                                         |
+| **Ana geliştirici**   | Codex                                                                  |
+| **Reviewer**          | Claude                                                                 |
+| **Durum**             | **Claude review bekliyor**                                             |
+| **Base branch / SHA** | `feat/phase-0-foundation` / `6aaa1169ddd417984821d068befdc52fb90a17fe` |
+| **Phase commit**      | `feat: complete phase 1 identity and table management`                 |
+| **Son güncelleme**    | 2026-08-12                                                             |
 
 ---
 
-## Yapılan işler
+## Phase 1 teslimi
 
-### Depo ve iş akışı
-- `main` üzerinde bootstrap commit'i (`chore: initialize repository`), ardından
-  `feat/phase-0-foundation` branch'i. `main`'e Phase kodu yazılmadı.
-- Ortak ajan belgeleri: `AGENTS.md`, `CLAUDE.md`, `HANDOFF.md`, `DECISIONS.md`,
-  ek olarak `WORKFLOW.md` ve append-only `SESSION_LOG.md`.
-- `docs/PHASES.md` (Phase 0–7) ve destek belgeleri (`ARCHITECTURE`,
-  `PRODUCT_SCOPE`, `UI_GUIDE`).
+### Veri ve backend
 
-### Workspace
-- npm workspaces: `apps/web`, `apps/api`, `packages/contracts`.
-- TypeScript `strict` + `noUncheckedIndexedAccess`, `noUnusedLocals/Parameters`.
-- ESLint 9 flat config: `no-explicit-any`, `ban-ts-comment`, `no-console`
-  istisnasız hata seviyesinde. Prettier + `.editorconfig` + `.prettierignore`.
-- Kök komutlar: `dev`, `lint`, `typecheck`, `test`, `build`, `start`, `verify`
-  (+ `db:check`, `setup:env`).
+- İlk additive Prisma migration: `20260812074504_phase_1_identity_tables`.
+- Yalnız `User`, `Session`, `BusinessSettings`, `DiningArea`, `CafeTable`,
+  `AuditLog` ve sabit `UserRole` enum'u eklendi; destructive SQL yok.
+- `npm run setup:owner` işletme ve ilk OWNER kaydını tek serializable transaction
+  içinde, maskeli şifreyle oluşturur; açık web bootstrap endpoint'i yoktur.
+- bcryptjs cost 12, 8–72 karakter şifre; 12 saatlik HttpOnly,
+  SameSite=Strict `kafe_session`; production'da Secure.
+- Ham session token yalnız cookie'dedir; veritabanında SHA-256 hash bulunur.
+- Login rate limit'i yalnız `/api/auth/login` üzerinde, 15 dakikada 10
+  başarısız denemedir.
+- Sabit roller/permission matrisi ve Express tarafında 401/403 guard'ları.
+- Personel, işletme, salon ve masa endpoint'leri; DELETE endpoint'i yoktur.
+- Son aktif OWNER ve eşzamanlı güncelleme riski serializable transaction ile
+  korunur. Pasife alma ve şifre sıfırlama session'ları iptal eder.
+- Yönetim işlemleri audit kaydı üretir; parola/session/secret metadata'ya girmez.
 
-### Backend (`apps/api`)
-- Express 5 + TypeScript; `createApp(deps)` / `server.ts` ayrımı.
-- `zod` ile environment doğrulaması; hata hâlinde stack trace yerine hangi
-  değişkenin neden geçersiz olduğu yazılır.
-- Merkezî hata yönetimi (sabit `{ error: { code, message, details? } }`),
-  JSON 404, Helmet, JSON body limiti, geliştirme loglaması,
-  graceful shutdown, Prisma client yönetimi.
-- `GET /api/health` → bağlıyken 200/`ok`, kopukken 503/`degraded`.
-- Production'da `apps/web/dist` sunumu + SPA fallback.
+### Frontend
 
-### Frontend (`apps/web`)
-- React 18 + Vite 6 + React Router + TanStack Query + Tailwind 4 + lucide.
-- Rotalar: `/`, `/masalar`, `/menu`, `/mutfak`, `/cariler`, `/raporlar`,
-  `/ayarlar` + 404. API adresi hardcode edilmedi (göreli `/api`).
-- Masaüstünde sabit sol menü + kompakt üst bar; mobilde alt navigasyon ve
-  tüm modülleri listeleyen çekmece.
-- Sistem durumu görünür: "Sistem hazır" / "Veritabanı bağlantısı aktif";
-  bağlantı yoksa Türkçe, stack trace içermeyen açıklama.
-- Boş modüllerde çalışmayan buton yok; yalnızca anlamlı boş durumlar.
+- `/login`, setup durumu, cookie tabanlı session yenileme, protected route,
+  logout ve 401 sonrası güvenli login yönlendirmesi.
+- Top bar'da personel adı, Türkçe rol ve çıkış; OWNER olmayan kullanıcı Ayarlar
+  navigasyonunu göremez ve `/ayarlar` route'una erişemez.
+- İşletme, personel, salon ve masa yönetim formları; personel son giriş bilgisi
+  ve ekran içi maskeli şifre sıfırlama formu.
+- `/masalar` gerçek `/api/floor-plan` verisini gösterir; doluluk, tutar, süre,
+  sipariş veya çalışmayan aksiyon uydurmaz.
+- Menünün Phase 2, mutfağın Phase 4, carilerin Phase 6 ve raporların Phase 7
+  olduğu boş durumlarda açıkça belirtilir.
 
----
+### Belgeler ve önceki çalışma ağacı
 
-## Değiştirilen önemli dosyalar
-
-| Yol | Not |
-| --- | --- |
-| `apps/api/src/app.ts` | Middleware sırası; `/api` 404 statikten önce |
-| `apps/api/src/server.ts` | Dinleme, graceful shutdown, başlangıç doğrulaması |
-| `apps/api/src/config/env.ts` | `zod` doğrulama; HOST dev'de `127.0.0.1`, prod'da `0.0.0.0` |
-| `apps/api/src/middleware/error-handler.ts` | Merkezî hata yönetimi |
-| `apps/api/src/routes/health.ts` | `GET /api/health` |
-| `apps/api/src/lib/database.ts` | Prisma yaşam döngüsü + `DatabaseProbe` |
-| `apps/api/prisma/schema.prisma` | Yalnızca datasource + generator; domain tablosu yok |
-| `apps/web/vite.config.ts` | `/api` proxy → `localhost:3000`; vitest ayarları |
-| `apps/web/src/lib/api.ts` | Göreli `/api` çağrısı, tip koruyucu ile doğrulama |
-| `apps/web/src/pages/dashboard-page.tsx` | Sistem durumu ve modül listesi |
-| `apps/web/src/components/layout/*` | Masaüstü/mobil uygulama kabuğu |
-| `packages/contracts/src/health.ts` | `HealthResponse` + `isHealthResponse` |
-| `apps/api/.env.example` | `CHANGE_ME` şablonu; gerçek parola yok |
+- Başlangıçtaki kirli Phase 0 değişiklikleri silinmeden şu stash'te korundu ve
+  Phase 1'e uygulanmadı: `backup: failed Codex security review before phase 1`.
+- `docs/PHASES.md` Phase 0–7 kapsam dağılımına göre düzeltildi.
+- README, ARCHITECTURE, PRODUCT_SCOPE, UI_GUIDE ve aktif kod yorumları local
+  geliştirme + gelecekte Railway/custom domain kararına uyumlu hale getirildi.
+- ADR-013 kimlik/session/sabit rol kararını kaydeder.
+- Codex Security veya başka bir security scan workflow'u çalıştırılmadı.
 
 ---
 
-## Çalıştırılan testler ve sonuçları
+## Doğrulama sonuçları
 
-| Komut | Sonuç |
-| --- | --- |
-| `npm run lint` | **PASS** — çıktı yok (0 hata, 0 uyarı) |
-| `npm run typecheck` | **PASS** — contracts + api + web |
-| `npm run test` | **PASS** — 35/35 |
-| `npm run build` | **PASS** — `index.js 243.79 kB (gzip 77.81)` |
-| `npm run verify` | **PASS** — lint → typecheck → test → build |
-| `npm run db:check` | **PASS** — `PostgreSQL bağlantısı başarılı (SELECT 1).` |
+| Kontrol                                | Sonuç                                       |
+| -------------------------------------- | ------------------------------------------- |
+| `npm ci`                               | **PASS** — 549 paket, audit 0 vulnerability |
+| `npm ls`                               | **PASS** — invalid/extraneous/missing yok   |
+| `npm ls react-router-dom react-router` | **PASS** — ikisi de 7.18.2                  |
+| `npm run lint`                         | **PASS**                                    |
+| `npm run typecheck`                    | **PASS** — contracts + api + web strict     |
+| `npm run test`                         | **PASS** — 10 dosya, 77/77 (API 56, web 21) |
+| `npm run build`                        | **PASS**                                    |
+| `npm run verify`                       | **PASS** — lint → typecheck → test → build  |
+| Prisma validate                        | **PASS**                                    |
+| Prisma migrate status                  | **PASS** — database schema up to date       |
+| `npm run db:check`                     | **PASS** — `SELECT 1`                       |
 
-```
-@kafe/api (vitest 3.2.7)          @kafe/web (vitest 3.2.7)
- ✓ env.test.ts           (10)      ✓ app.test.tsx        (6)
- ✓ error-handler.test.ts  (8)      ✓ mobile-nav.test.tsx (4)
- ✓ health.test.ts         (4)     Test Files 2 passed (2)
- ✓ not-found.test.ts      (3)          Tests 10 passed (10)
-Test Files 4 passed (4)
-     Tests 25 passed (25)
-```
+Gerçek PostgreSQL'de yalnız Phase 1'in altı domain tablosu ve
+`_prisma_migrations` vardır. Owner/işletme/salon/masa/session/audit kayıt
+sayıları sıfırdır; kullanıcıya ait veri uydurulmadı.
 
-Çalışan uygulama üzerinde doğrulananlar (production build):
+Production build canlı HTTP sonuçları:
 
-| İstek | Sonuç |
-| --- | --- |
-| `GET /api/health` | **200** `{"status":"ok","database":"connected","timestamp":"2026-08-12T06:35:16.229Z"}` |
-| `GET /` | **200**, `index.html` |
-| `GET /masalar` | **200** → SPA fallback çalışıyor |
-| `GET /assets/index-*.css` | **200**, 14 197 bayt → statik sunum çalışıyor |
-| `GET /api/yok` | **404** → `/api` altında JSON, HTML değil |
+| İstek                               | Sonuç                         |
+| ----------------------------------- | ----------------------------- |
+| `GET /api/health`                   | **200**, connected            |
+| `GET /api/setup/status`             | **200**, `initialized: false` |
+| `GET /api/auth/me` (session yok)    | **401** JSON                  |
+| `GET /api/floor-plan` (session yok) | **401** JSON                  |
+| `GET /api/bilinmeyen`               | **404** JSON                  |
+| `GET /`                             | **200** HTML                  |
+| `GET /login`                        | **200** HTML                  |
+| `GET /masalar`                      | **200** HTML, SPA fallback    |
+| Production listen                   | `0.0.0.0:3101` ile doğrulandı |
 
-Geliştirme proxy'si: `http://localhost:5173/api/health` → **200**.
+Gerçek Microsoft Edge ile login ekranı 390/768/1440 CSS px genişliklerde
+incelendi. Üçünde de `scrollWidth === innerWidth`; input ve butonlar 44px.
+Tab tuşuyla kullanıcı adı alanı `:focus-visible` oldu ve 2px turuncu outline
+aldı. Gerçek owner oluşturulmadığı için authenticated yönetim ekranlarının
+görsel kontrolü DOM/kullanıcı akışı testleriyle sınırlıdır.
 
 ---
 
-## Bilinen eksikler
+## Bilinen riskler ve Claude review odağı
 
-| # | Konu | Etki |
-| --- | --- | --- |
-| 1 | Arayüz 390/768/1440px kurallarına göre yazıldı ve davranışı testlerle doğrulandı; **gerçek tarayıcıda görsel inceleme yapılmadı** | Orta — Codex doğrulamalı |
-| 2 | Testler veritabanına bağlanmıyor (bilinçli, deterministik); gerçek Prisma sorgu davranışı kapsam dışı | Orta — Phase 1'de test veritabanı kararı gerekecek |
-| 3 | `packages/contracts` içinde göreli içe aktarımlarda `.js` uzantısı zorunlu; unutulursa build kırılır | Düşük — ARCHITECTURE §5'te yazılı |
-| 4 | `.env` her makinede elle gerekir (`npm run setup:env` ile azaltıldı) | Düşük |
-| 5 | Windows konsolunda Türkçe karakterler bozuk görünebilir (çıktı UTF-8, sorun terminalde; `chcp 65001`) | Düşük |
-| 6 | `365a907` push edilmiş olduğu için düzeltmeler ayrı bir commit olarak geldi; geçmiş yeniden yazılmadı (force push yasak) | Düşük |
-| 7 | Railway deployment yapılandırması bilinçli olarak yazılmadı (ADR-002) | Yok — planlı |
-| 8 | `react-router-dom` v7'ye yükseltildi; v6'ya özel `future` bayrakları kaldırıldı. Bundle 229 kB → 244 kB | Düşük — verify ve çalışan uygulama ile doğrulandı |
+1. Varsayılan test paketi bilinçli olarak gerçek local DB'de mutation yapmaz;
+   Prisma store üretimde canlı runtime/read kontrolleriyle, iş kuralları bellek
+   store'uyla test edildi. Ayrı izole integration DB testi yoktur.
+2. Kullanıcıya ait gerçek işletme bilgisi bilinmediği için owner oluşturulmadı;
+   login sonrası gerçek tarayıcı uçtan uca akışı çalıştırılmadı.
+3. Railway deployment ve custom domain Phase 7 kapsamındadır; deploy edilmedi.
+4. Claude migration SQL'ini, Prisma store transaction sınırlarını, auth cookie
+   davranışını ve OWNER permission matrisini bağımsız olarak yeniden incelemeli.
 
 ---
 
 ## Sonraki ajanın yapması gereken iş
 
-**Codex (reviewer), `feat/phase-0-foundation` branch'i üzerinde:**
+**Claude reviewer olarak bu Phase 1 branch'i üzerinde:**
 
-1. Diff'i baştan sona oku.
-2. [AGENTS.md](AGENTS.md) uyumunu doğrula — özellikle §8 (gizli bilgi),
-   §9 (destructive DB), §11 (kod kalitesi: `any`, `@ts-ignore`, placeholder yok).
-3. `npm run verify` ve `npm run db:check` çıktısını **kendi ortamında yeniden üret.**
-4. Arayüzü **390px, 768px ve 1440px** genişlikte görsel olarak incele
-   ([docs/UI_GUIDE.md](docs/UI_GUIDE.md) ölçütleriyle) — bilinen eksik #1.
-5. Yalnızca **gerçek hata** bulursan düzelt (AGENTS.md §5); üslup tercihi için
-   çalışan kodu değiştirme.
-6. Bulguları bu dosyaya ve [SESSION_LOG.md](SESSION_LOG.md) içine **yeni kayıt**
-   olarak ekle.
+1. `feat/phase-0-foundation...feat/phase-1-identity-tables` diff'ini ve migration
+   SQL'ini baştan sona incele.
+2. `npm run verify`, Prisma status ve `npm run db:check` sonuçlarını yeniden üret.
+3. Authentication, server-side authorization, son OWNER, audit ve Phase 2 kapsam
+   sızıntısı kontrollerini yap.
+4. Gerçek sorun varsa aynı branch'te minimal repair commit'i oluştur; merge yapma.
 
-> **Merge yapma. Phase 1'e başlama.** Merge kararı kullanıcıya aittir.
+**Merge yapılmadı. Phase 2 başlatılmadı.**
 
 ---
 
 ## Devir geçmişi
 
-| Tarih | Phase | Devreden | Devralan | Not |
-| --- | --- | --- | --- | --- |
-| 2026-08-12 | Phase 0 | Claude | Codex | Phase 0 uygulandı, `npm run verify` yeşil, review bekliyor. |
+| Tarih      | Phase   | Devreden | Devralan | Not                                                                              |
+| ---------- | ------- | -------- | -------- | -------------------------------------------------------------------------------- |
+| 2026-08-12 | Phase 0 | Claude   | Codex    | Phase 0 uygulandı ve review'a devredildi.                                        |
+| 2026-08-12 | Phase 1 | Codex    | Claude   | Identity, personel, işletme, salon ve masa yönetimi tamamlandı; review bekliyor. |

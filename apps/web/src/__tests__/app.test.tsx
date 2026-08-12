@@ -10,8 +10,8 @@ import {
   stubHealthFetch,
 } from '../test/render';
 
-function mainNav(): HTMLElement {
-  return screen.getByRole('navigation', { name: 'Ana menü' });
+function mainNav(): Promise<HTMLElement> {
+  return screen.findByRole('navigation', { name: 'Ana menü' });
 }
 
 describe('Uygulama kabuğu', () => {
@@ -20,9 +20,9 @@ describe('Uygulama kabuğu', () => {
 
     renderWithProviders(<App />);
 
-    expect(screen.getByRole('heading', { level: 1, name: 'Özet' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 1, name: 'Özet' })).toBeInTheDocument();
 
-    const nav = mainNav();
+    const nav = await mainNav();
 
     for (const label of ['Özet', 'Masalar', 'Menü', 'Mutfak', 'Cariler', 'Raporlar', 'Ayarlar']) {
       expect(within(nav).getByRole('link', { name: label })).toBeInTheDocument();
@@ -35,12 +35,12 @@ describe('Uygulama kabuğu', () => {
 
     renderWithProviders(<App />);
 
-    await user.click(within(mainNav()).getByRole('link', { name: 'Masalar' }));
+    await user.click(within(await mainNav()).getByRole('link', { name: 'Masalar' }));
 
     expect(screen.getByRole('heading', { level: 1, name: 'Masalar' })).toBeInTheDocument();
-    expect(screen.getByText('Henüz salon veya masa tanımlanmadı')).toBeInTheDocument();
+    expect(await screen.findByText('Henüz salon veya masa tanımlanmadı.')).toBeInTheDocument();
 
-    await user.click(within(mainNav()).getByRole('link', { name: 'Raporlar' }));
+    await user.click(within(await mainNav()).getByRole('link', { name: 'Raporlar' }));
 
     expect(screen.getByRole('heading', { level: 1, name: 'Raporlar' })).toBeInTheDocument();
     expect(screen.getByText('Raporlanacak satış verisi yok')).toBeInTheDocument();
@@ -89,11 +89,13 @@ describe('Uygulama kabuğu', () => {
     expect(warning.textContent).not.toContain('at ');
   });
 
-  it('tanımsız adres için bulunamadı sayfası gösterilir', () => {
+  it('tanımsız adres için bulunamadı sayfası gösterilir', async () => {
     stubHealthFetch(healthyResponse);
 
     renderWithProviders(<App />, '/olmayan-sayfa');
 
-    expect(screen.getByRole('heading', { level: 2, name: 'Sayfa bulunamadı' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { level: 2, name: 'Sayfa bulunamadı' }),
+    ).toBeInTheDocument();
   });
 });

@@ -8,6 +8,7 @@ import {
   UtensilsCrossed,
   type LucideIcon,
 } from 'lucide-react';
+import type { UserRole } from '@kafe/contracts';
 
 export interface NavItem {
   /** React Router yolu. */
@@ -19,6 +20,7 @@ export interface NavItem {
   /** Modülün ne işe yaradığını anlatan tek cümle. */
   description: string;
   icon: LucideIcon;
+  ownerOnly?: boolean;
 }
 
 export const NAV_ITEMS: readonly NavItem[] = [
@@ -33,7 +35,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     to: '/masalar',
     label: 'Masalar',
     shortLabel: 'Masalar',
-    description: 'Salon planı, masa açma ve açık adisyonların takibi.',
+    description: 'Salonlara göre tanımlı masaların görünümü.',
     icon: UtensilsCrossed,
   },
   {
@@ -68,8 +70,9 @@ export const NAV_ITEMS: readonly NavItem[] = [
     to: '/ayarlar',
     label: 'Ayarlar',
     shortLabel: 'Ayarlar',
-    description: 'Personel, salon tanımları ve uygulama seçenekleri.',
+    description: 'İşletme, personel, salon ve masa yönetimi.',
     icon: Settings,
+    ownerOnly: true,
   },
 ];
 
@@ -78,4 +81,8 @@ export const MOBILE_PRIMARY_PATHS: readonly string[] = ['/', '/masalar', '/menu'
 
 export function findNavItem(pathname: string): NavItem | undefined {
   return NAV_ITEMS.find((item) => item.to === pathname);
+}
+
+export function navigationForRole(role: UserRole): readonly NavItem[] {
+  return NAV_ITEMS.filter((item) => item.ownerOnly !== true || role === 'OWNER');
 }

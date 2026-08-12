@@ -331,3 +331,95 @@ Yeni/güncel riskler:
 [HANDOFF.md](HANDOFF.md) içindedir.
 
 **Merge yapılmadı. Phase 1'e başlanmadı.**
+
+---
+
+## 2026-08-12 — Codex — Phase 1 identity ve masa yönetimi geliştirmesi
+
+### Başlangıç ve koruma
+
+- Başlangıç: `feat/phase-0-foundation` / `6aaa1169ddd417984821d068befdc52fb90a17fe`.
+- Önceki başarısız review'un kirli çalışma ağacı silinmeden
+  `stash@{0}: backup: failed Codex security review before phase 1` altında
+  korundu; stash Phase 1'e uygulanmadı veya silinmedi.
+- Branch: `feat/phase-1-identity-tables`; base: `feat/phase-0-foundation`.
+- Zorunlu belgeler, package manifestleri, backend/frontend kaynakları ve
+  testleri belirtilen sırayla tamamen okundu.
+- Codex Security, security scan, threat model veya ayrı güvenlik artefact
+  workflow'u çalıştırılmadı.
+
+### Plan, veri modeli ve migration
+
+- Yerel ağ/kasa sunucusu anlatımları local geliştirme + gelecekte
+  Railway/custom domain kararıyla uyumlu hale getirildi. Vite dev/preview
+  `127.0.0.1`; production Express `0.0.0.0` ve aynı-origin olarak kaldı.
+- Phase 1 auth/personel/işletme/salon/masa ile sınırlandı; sonraki Phase kapsamı
+  PHASES belgesinde düzeltildi.
+- Prisma'ya yalnız `UserRole`, `User`, `Session`, `BusinessSettings`,
+  `DiningArea`, `CafeTable`, `AuditLog` eklendi; Phase 2 modeli veya sahte masa
+  durumu eklenmedi.
+- Migration: `20260812074504_phase_1_identity_tables`. SQL baştan sona okundu;
+  yalnız enum, altı domain tablosu, index ve foreign key oluşturuyor. DROP,
+  TRUNCATE, DELETE veya reset yok.
+- Migration öncesi beklenmeyen tablo/drift yoktu. Deploy sonrası schema
+  up-to-date ve `SELECT 1` başarılıdır. Gerçek DB'de altı Phase 1 tablosu ile
+  `_prisma_migrations` var; tüm domain sayaçları sıfırdır.
+
+### Authentication, authorization ve özellikler
+
+- bcryptjs cost 12; 8–72 karakter şifre; normalize unique username.
+- Ham 32-byte session token yalnız 12 saatlik HttpOnly, SameSite=Strict
+  `kafe_session` cookie'ye gider; DB'de SHA-256 hash bulunur. Secure yalnız
+  production'dır.
+- Login üzerinde 15 dakika/IP başına 10 başarısız deneme limiti vardır;
+  bulunmayan kullanıcı ve yanlış şifre aynı 401 mesajını döndürür.
+- OWNER/CASHIER/WAITER/KITCHEN ve merkezi permission matrisi Express
+  guard'larında 401/403 ile uygulanır.
+- Son owner/eşzamanlı owner güncellemeleri serializable transaction ile
+  korunur. Pasife alma ve şifre reset'i session'ları iptal eder.
+- Backend'e auth/session, staff, business, area, table, floor-plan, audit ve
+  Zod validation eklendi. DELETE veya açık owner bootstrap web endpoint'i yok.
+- `npm run setup:owner` işletme adı prompt'una kadar interaktif açıldı; gerçek
+  bilgi bilinmediğinden kapatıldı ve DB sayaçları sıfır kaldı.
+- Frontend'e login/setup, protected/owner routes, logout, top bar kimliği,
+  owner-only ayarlar, işletme/personel/salon/masa formları ve gerçek floor plan
+  eklendi. Şifre reset'i maskeli ekran içi formdur; son giriş görünür.
+- `/masalar` sahte doluluk, tutar, süre veya çalışmayan aksiyon göstermez.
+- ADR-013 kimlik/session/sabit rol kararını kaydeder.
+
+### Kalite, runtime ve UI kanıtı
+
+| Komut | Gerçek sonuç |
+| --- | --- |
+| `npm ci` | PASS — 549 paket, audit 0 vulnerability |
+| `npm ls` | PASS — invalid/extraneous/missing yok |
+| `npm ls react-router-dom react-router` | PASS — 7.18.2 / 7.18.2 |
+| `npm run lint` | PASS |
+| `npm run typecheck` | PASS — contracts, api, web |
+| `npm run test` | PASS — 10 dosya, 77/77 (API 56, web 21) |
+| `npm run build` | PASS — web JS 269.07 kB, gzip 83.37 kB |
+| `npm run verify` | PASS — lint → typecheck → test → build |
+| Prisma validate / migrate status | PASS — valid ve up to date |
+| `npm run db:check` | PASS — PostgreSQL `SELECT 1` |
+
+Production build gerçek PostgreSQL ile `0.0.0.0:3101` üzerinde çalıştırıldı:
+health 200/connected, setup 200/false, session olmadan auth/me ve floor-plan
+401 JSON, bilinmeyen API 404 JSON; `/`, `/login`, `/masalar` 200 HTML ve SPA
+fallback başarılıdır.
+
+Microsoft Edge/CDP ile login 390/768/1440 CSS px'de incelendi. Üçünde de
+`scrollWidth === innerWidth`; input/buton 44px. Tab ile kullanıcı adı
+`:focus-visible` oldu ve 2px solid turuncu outline aldı. Gerçek owner olmadığı
+için authenticated browser E2E yerine 21 frontend kullanıcı akışı testi yapıldı.
+
+### Commit öncesi kontrol, risk ve devir
+
+- Tracked gerçek `.env`, gerçek secret, destructive SQL/komut, scan artefact,
+  node_modules, dist veya coverage commit kapsamında yoktur. Manuel eşleşmeler
+  yalnız test placeholder'ları ve dinamik env setup scriptidir. Diff check temiz.
+- Kalan riskler: ayrı izole gerçek-DB mutation integration paketi yok; owner
+  olmadığı için login sonrası browser E2E yapılmadı; Railway/custom domain
+  Phase 7'ye bırakıldı.
+- Phase 1 `feat: complete phase 1 identity and table management` commit'i ve
+  draft PR ile Claude review'una devrediliyor. Merge yapılmadı, Phase 2
+  başlatılmadı.

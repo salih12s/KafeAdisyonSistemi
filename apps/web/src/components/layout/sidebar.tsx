@@ -1,10 +1,13 @@
 import { NavLink } from 'react-router-dom';
 import { APP_NAME, APP_PHASE_LABEL, APP_SUBTITLE } from '../../config/app-info';
-import { NAV_ITEMS } from '../../config/navigation';
+import { navigationForRole } from '../../config/navigation';
 import { cn } from '../../lib/cn';
+import { useCurrentUser } from '../../hooks/use-auth';
 
 /** Masaüstünde sabit duran sol gezinme sütunu. Telefonda gizlidir. */
 export function Sidebar(): JSX.Element {
+  const auth = useCurrentUser();
+  const items = auth.isSuccess ? navigationForRole(auth.data.role) : [];
   return (
     <aside className="sticky top-0 hidden h-dvh w-56 shrink-0 flex-col bg-espresso lg:flex">
       <div className="flex h-16 items-center gap-2.5 border-b border-espresso-line px-4">
@@ -22,7 +25,7 @@ export function Sidebar(): JSX.Element {
 
       <nav aria-label="Ana menü" className="flex-1 overflow-y-auto px-2 py-3">
         <ul className="flex flex-col gap-0.5">
-          {NAV_ITEMS.map((item) => (
+          {items.map((item) => (
             <li key={item.to}>
               <NavLink
                 to={item.to}
