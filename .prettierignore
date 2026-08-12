@@ -1,0 +1,12 @@
+node_modules/
+dist/
+build/
+coverage/
+package-lock.json
+*.tsbuildinfo
+.env
+.env.*
+apps/api/prisma/migrations/
+apps/web/public/*.svg
+# Bu kayıt append-only'dir; eski oturumların biçimi topluca değiştirilemez.
+SESSION_LOG.md

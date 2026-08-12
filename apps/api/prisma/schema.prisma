@@ -1,0 +1,366 @@
+// Kafe Adisyon Sistemi — Prisma şeması
+//
+// Phase 1: kimlik, işletme, salon, masa ve audit altyapısı.
+// Phase 2: kategori, ürün, ürün seçenek grupları ve seçenek değerleri.
+// Phase 3: masa adisyonları, sipariş kalemleri ve seçenek snapshot'ları.
+// Phase 4: istasyon snapshot'ı ve hazırlık durumu akışı.
+//
+// Kurallar:
+// - Para alanları her zaman tam sayı kuruş (Int) olarak tutulur, Float kullanılmaz.
+// - Zaman alanları UTC saklanır, arayüzde Europe/Istanbul'a çevrilir.
+// - Domain kayıtları fiziksel olarak silinmez; ileride iptal/pasif alanları kullanılır.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  OWNER
+  CASHIER
+  WAITER
+  KITCHEN
+}
+
+model User {
+  id                  String          @id @default(uuid()) @db.Uuid
+  fullName            String
+  username            String          @unique
+  passwordHash        String
+  role                UserRole
+  isActive            Boolean         @default(true)
+  lastLoginAt         DateTime?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  sessions            Session[]
+  auditLogs           AuditLog[]
+  openedChecks        Check[]         @relation("CheckOpenedBy")
+  closedChecks        Check[]         @relation("CheckClosedBy")
+  receivedPayments    Payment[]       @relation("PaymentReceivedBy")
+  createdOrderItems   OrderItem[]     @relation("OrderItemCreatedBy")
+  cancelledOrderItems OrderItem[]     @relation("OrderItemCancelledBy")
+  complimentaryItems  OrderItem[]     @relation("OrderItemComplimentaryBy")
+  appliedDiscounts    CheckDiscount[]
+  accountEntries      AccountEntry[]
+
+  @@index([role, isActive])
+}
+
+model Session {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @db.Uuid
+  tokenHash  String   @unique
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  lastSeenAt DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model BusinessSettings {
+  id           String   @id @default("business")
+  businessName String
+  phone        String?
+  address      String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model DiningArea {
+  id        String      @id @default(uuid()) @db.Uuid
+  name      String
+  nameKey   String      @unique
+  sortOrder Int         @default(0)
+  isActive  Boolean     @default(true)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  tables    CafeTable[]
+
+  @@index([isActive, sortOrder])
+}
+
+model CafeTable {
+  id        String     @id @default(uuid()) @db.Uuid
+  areaId    String     @db.Uuid
+  name      String
+  nameKey   String
+  capacity  Int?
+  sortOrder Int        @default(0)
+  isActive  Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  area      DiningArea @relation(fields: [areaId], references: [id], onDelete: Restrict)
+  checks    Check[]
+
+  @@unique([areaId, nameKey])
+  @@index([areaId, isActive, sortOrder])
+}
+
+enum PreparationArea {
+  KITCHEN
+  BAR
+}
+
+enum OptionSelectionType {
+  SINGLE
+  MULTIPLE
+}
+
+model Category {
+  id        String    @id @default(uuid()) @db.Uuid
+  name      String
+  // nameKey: tr-TR küçük harfe indirgenmiş ad; aynı isim tekrarını engeller.
+  nameKey   String    @unique
+  sortOrder Int       @default(0)
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  products  Product[]
+
+  @@index([isActive, sortOrder])
+}
+
+model Product {
+  id              String               @id @default(uuid()) @db.Uuid
+  categoryId      String               @db.Uuid
+  name            String
+  nameKey         String
+  // Fiyat her zaman tam sayı kuruş; Float kullanılmaz.
+  priceKurus      Int
+  preparationArea PreparationArea
+  sortOrder       Int                  @default(0)
+  isActive        Boolean              @default(true)
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  category        Category             @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  optionGroups    ProductOptionGroup[]
+  orderItems      OrderItem[]
+
+  @@unique([categoryId, nameKey])
+  @@index([categoryId, isActive, sortOrder])
+}
+
+model ProductOptionGroup {
+  id               String               @id @default(uuid()) @db.Uuid
+  productId        String               @db.Uuid
+  name             String
+  nameKey          String
+  selectionType    OptionSelectionType
+  isRequired       Boolean              @default(false)
+  sortOrder        Int                  @default(0)
+  isActive         Boolean              @default(true)
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  product          Product              @relation(fields: [productId], references: [id], onDelete: Restrict)
+  values           ProductOptionValue[]
+  orderItemOptions OrderItemOption[]
+
+  @@unique([productId, nameKey])
+  @@index([productId, isActive, sortOrder])
+}
+
+model ProductOptionValue {
+  id               String             @id @default(uuid()) @db.Uuid
+  groupId          String             @db.Uuid
+  name             String
+  nameKey          String
+  // Ürün fiyatına eklenen fark; indirim için negatif olabilir.
+  priceDeltaKurus  Int                @default(0)
+  sortOrder        Int                @default(0)
+  isActive         Boolean            @default(true)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  group            ProductOptionGroup @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  orderItemOptions OrderItemOption[]
+
+  @@unique([groupId, nameKey])
+  @@index([groupId, isActive, sortOrder])
+}
+
+enum CheckStatus {
+  OPEN
+  CANCELLED
+  PAID
+  MERGED
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  ACCOUNT
+}
+
+enum DiscountType {
+  PERCENT
+  FIXED
+}
+
+enum AccountEntryType {
+  DEBT
+  COLLECTION
+  REFUND
+  CORRECTION
+}
+
+enum OrderItemStatus {
+  SENT
+  PREPARING
+  READY
+  SERVED
+}
+
+model Check {
+  id                String          @id @default(uuid()) @db.Uuid
+  tableId           String          @db.Uuid
+  openedByUserId    String          @db.Uuid
+  guestCount        Int
+  status            CheckStatus     @default(OPEN)
+  openedAt          DateTime        @default(now())
+  closedAt          DateTime?
+  closedByUserId    String?         @db.Uuid
+  mergedIntoCheckId String?         @db.Uuid
+  totalKurus        Int             @default(0)
+  updatedAt         DateTime        @updatedAt
+  table             CafeTable       @relation(fields: [tableId], references: [id], onDelete: Restrict)
+  openedBy          User            @relation("CheckOpenedBy", fields: [openedByUserId], references: [id], onDelete: Restrict)
+  closedBy          User?           @relation("CheckClosedBy", fields: [closedByUserId], references: [id], onDelete: Restrict)
+  items             OrderItem[]
+  payments          Payment[]
+  discounts         CheckDiscount[]
+  accountEntries    AccountEntry[]
+  mergedInto        Check?          @relation("CheckMerge", fields: [mergedIntoCheckId], references: [id], onDelete: Restrict)
+  mergedSources     Check[]         @relation("CheckMerge")
+
+  @@index([tableId, status])
+  @@index([status, openedAt])
+}
+
+model Payment {
+  id               String        @id @default(uuid()) @db.Uuid
+  checkId          String        @db.Uuid
+  method           PaymentMethod
+  amountKurus      Int
+  receivedByUserId String        @db.Uuid
+  createdAt        DateTime      @default(now())
+  check            Check         @relation(fields: [checkId], references: [id], onDelete: Restrict)
+  receivedBy       User          @relation("PaymentReceivedBy", fields: [receivedByUserId], references: [id], onDelete: Restrict)
+
+  @@index([checkId, createdAt])
+  @@index([receivedByUserId, createdAt])
+}
+
+model CheckDiscount {
+  id              String       @id @default(uuid()) @db.Uuid
+  checkId         String       @db.Uuid
+  type            DiscountType
+  value           Int
+  amountKurus     Int
+  reason          String
+  appliedByUserId String       @db.Uuid
+  createdAt       DateTime     @default(now())
+  check           Check        @relation(fields: [checkId], references: [id], onDelete: Restrict)
+  appliedBy       User         @relation(fields: [appliedByUserId], references: [id], onDelete: Restrict)
+
+  @@index([checkId, createdAt])
+}
+
+model Customer {
+  id        String         @id @default(uuid()) @db.Uuid
+  name      String
+  phone     String?
+  note      String?
+  isActive  Boolean        @default(true)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  entries   AccountEntry[]
+
+  @@index([isActive, name])
+}
+
+model AccountEntry {
+  id          String           @id @default(uuid()) @db.Uuid
+  customerId  String           @db.Uuid
+  type        AccountEntryType
+  amountKurus Int
+  description String
+  checkId     String?          @db.Uuid
+  actorUserId String           @db.Uuid
+  createdAt   DateTime         @default(now())
+  customer    Customer         @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  check       Check?           @relation(fields: [checkId], references: [id], onDelete: Restrict)
+  actor       User             @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@index([customerId, createdAt])
+  @@index([checkId])
+}
+
+model OrderItem {
+  id                      String            @id @default(uuid()) @db.Uuid
+  checkId                 String            @db.Uuid
+  productId               String            @db.Uuid
+  productNameSnapshot     String
+  categoryIdSnapshot      String            @db.Uuid
+  categoryNameSnapshot    String
+  unitPriceKurusSnapshot  Int
+  preparationAreaSnapshot PreparationArea
+  preparationStatus       OrderItemStatus   @default(SENT)
+  quantity                Int
+  note                    String?
+  lineTotalKurus          Int
+  createdByUserId         String            @db.Uuid
+  createdAt               DateTime          @default(now())
+  updatedAt               DateTime          @updatedAt
+  cancellationReason      String?
+  cancelledByUserId       String?           @db.Uuid
+  cancelledAt             DateTime?
+  complimentaryReason     String?
+  complimentaryByUserId   String?           @db.Uuid
+  complimentaryAt         DateTime?
+  check                   Check             @relation(fields: [checkId], references: [id], onDelete: Restrict)
+  product                 Product           @relation(fields: [productId], references: [id], onDelete: Restrict)
+  createdBy               User              @relation("OrderItemCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  cancelledBy             User?             @relation("OrderItemCancelledBy", fields: [cancelledByUserId], references: [id], onDelete: Restrict)
+  complimentaryBy         User?             @relation("OrderItemComplimentaryBy", fields: [complimentaryByUserId], references: [id], onDelete: Restrict)
+  options                 OrderItemOption[]
+
+  @@index([checkId, createdAt])
+  @@index([preparationAreaSnapshot, preparationStatus, createdAt], map: "OrderItem_preparationAreaSnapshot_preparationStatus_create_idx")
+  @@index([productId])
+}
+
+model OrderItemOption {
+  id                      String             @id @default(uuid()) @db.Uuid
+  orderItemId             String             @db.Uuid
+  optionGroupId           String             @db.Uuid
+  optionValueId           String             @db.Uuid
+  groupNameSnapshot       String
+  valueNameSnapshot       String
+  priceDeltaKurusSnapshot Int
+  orderItem               OrderItem          @relation(fields: [orderItemId], references: [id], onDelete: Restrict)
+  optionGroup             ProductOptionGroup @relation(fields: [optionGroupId], references: [id], onDelete: Restrict)
+  optionValue             ProductOptionValue @relation(fields: [optionValueId], references: [id], onDelete: Restrict)
+
+  @@unique([orderItemId, optionValueId])
+  @@index([optionGroupId])
+  @@index([optionValueId])
+}
+
+model AuditLog {
+  id          String   @id @default(uuid()) @db.Uuid
+  actorUserId String   @db.Uuid
+  action      String
+  entityType  String
+  entityId    String
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  actor       User     @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@index([actorUserId, createdAt])
+  @@index([entityType, entityId])
+}

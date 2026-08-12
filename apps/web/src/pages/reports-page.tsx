@@ -1,0 +1,217 @@
+import { useState, type FormEvent } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { PAYMENT_METHOD_LABELS, formatKurus, type NamedSalesTotal } from '@kafe/contracts';
+import { Panel } from '../components/ui/panel';
+import { fetchDayEnd, fetchSalesReport } from '../lib/api';
+import { Button } from '../components/ui/button';
+
+const input = 'min-h-touch rounded-panel border border-line bg-white px-3 text-sm';
+
+function todayIstanbul(): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Istanbul',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date());
+}
+
+function Metric({ label, value }: { label: string; value: string }): JSX.Element {
+  return (
+    <div className="bg-surface px-4 py-4">
+      <dt className="text-xs font-bold uppercase tracking-wide text-ink-secondary">{label}</dt>
+      <dd className="tabular mt-1 text-xl font-extrabold">{value}</dd>
+    </div>
+  );
+}
+
+/** Ödeme dağılımı sütun sayısını kalem sayısına göre seçer. */
+function paymentColumnClass(count: number): string {
+  if (count >= 3) return 'sm:grid-cols-3';
+  if (count === 2) return 'sm:grid-cols-2';
+  return '';
+}
+
+function SalesTable({ rows }: { rows: NamedSalesTotal[] }): JSX.Element {
+  if (rows.length === 0) return <p className="p-4 text-sm text-ink-muted">Bu aralıkta veri yok.</p>;
+  return (
+    <table className="w-full table-fixed text-left text-sm">
+      <thead className="border-b border-line bg-canvas text-xs uppercase text-ink-muted">
+        <tr>
+          <th className="px-3 py-2 font-semibold">Ad</th>
+          <th className="w-16 px-2 py-2 text-right font-semibold">Adet</th>
+          <th className="w-28 px-3 py-2 text-right font-semibold">Tutar</th>
+        </tr>
+      </thead>
+      <tbody className="divide-y divide-line">
+        {rows.map((row) => (
+          <tr key={row.id}>
+            <td className="truncate px-3 py-2 font-medium" title={row.name}>
+              {row.name}
+            </td>
+            <td className="tabular px-2 py-2 text-right">{row.quantity}</td>
+            <td className="tabular whitespace-nowrap px-3 py-2 text-right font-semibold">
+              {formatKurus(row.totalKurus)}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+export function ReportsPage(): JSX.Element {
+  const today = todayIstanbul();
+  const [range, setRange] = useState({ from: today, to: today });
+  const report = useQuery({
+    queryKey: ['sales-report', range],
+    queryFn: () => fetchSalesReport(range.from, range.to),
+  });
+  const dayEnd = useQuery({ queryKey: ['day-end', today], queryFn: () => fetchDayEnd(today) });
+  const maxHour = Math.max(1, ...(report.data?.hourlySales.map((row) => row.totalKurus) ?? [0]));
+  return (
+    <div className="space-y-5">
+      <Panel title="Tarih aralığı" variant="elevated">
+        <form
+          aria-label="Rapor tarih filtresi"
+          className="flex flex-wrap items-end gap-3 p-4"
+          onSubmit={(event: FormEvent<HTMLFormElement>) => {
+            event.preventDefault();
+            const form = new FormData(event.currentTarget);
+            setRange({ from: String(form.get('from')), to: String(form.get('to')) });
+          }}
+        >
+          <label className="grid gap-1 text-sm">
+            Başlangıç
+            <input className={input} type="date" name="from" defaultValue={range.from} required />
+          </label>
+          <label className="grid gap-1 text-sm">
+            Bitiş
+            <input className={input} type="date" name="to" defaultValue={range.to} required />
+          </label>
+          <Button>Raporu getir</Button>
+        </form>
+      </Panel>
+
+      <Panel title="Gün sonu" meta="Muhasebe/fiskal Z raporu değildir" variant="elevated">
+        {dayEnd.isError ? (
+          <p className="p-4 text-sm text-danger">
+            Gün sonu özeti yüklenemedi. Bağlantıyı kontrol edip yeniden deneyin.
+          </p>
+        ) : dayEnd.data ? (
+          <dl className="grid gap-px bg-line sm:grid-cols-4">
+            <Metric label="Toplam ciro" value={formatKurus(dayEnd.data.revenueKurus)} />
+            <Metric label="Nakit" value={formatKurus(dayEnd.data.cashKurus)} />
+            <Metric label="Kart" value={formatKurus(dayEnd.data.cardKurus)} />
+            <Metric label="Cari" value={formatKurus(dayEnd.data.accountKurus)} />
+            <Metric label="Açık adisyon" value={String(dayEnd.data.openCheckCount)} />
+            <Metric
+              label="Açık cari bakiye"
+              value={formatKurus(dayEnd.data.openAccountBalanceKurus)}
+            />
+            <Metric label="İndirim" value={formatKurus(dayEnd.data.discountTotalKurus)} />
+            <Metric label="İkram" value={formatKurus(dayEnd.data.complimentaryTotalKurus)} />
+          </dl>
+        ) : (
+          <p className="p-4 text-sm text-ink-muted">Gün sonu yükleniyor…</p>
+        )}
+      </Panel>
+
+      {report.isError ? (
+        <Panel>
+          <p className="p-4 text-sm text-danger">
+            Satış raporu yüklenemedi. Tarih aralığını ve bağlantıyı kontrol edin.
+          </p>
+        </Panel>
+      ) : report.data ? (
+        <>
+          <Panel
+            title="Satış özeti"
+            meta={`${report.data.range.from} — ${report.data.range.to}`}
+            variant="elevated"
+          >
+            <dl className="grid gap-px bg-line sm:grid-cols-3">
+              <Metric label="Ciro" value={formatKurus(report.data.revenueKurus)} />
+              <Metric label="Adisyon sayısı" value={String(report.data.paidCheckCount)} />
+              <Metric label="Ortalama adisyon" value={formatKurus(report.data.averageCheckKurus)} />
+            </dl>
+            {report.data.paymentDistribution.length === 0 ? null : (
+              // Sütun sayısı kalem sayısına uyar; eksik sütun boş gri blok bırakmaz.
+              <dl
+                className={`grid gap-px border-t border-line bg-line ${
+                  paymentColumnClass(report.data.paymentDistribution.length)
+                }`}
+              >
+                {report.data.paymentDistribution.map((row) => (
+                  <Metric
+                    key={row.method}
+                    label={PAYMENT_METHOD_LABELS[row.method]}
+                    value={formatKurus(row.amountKurus)}
+                  />
+                ))}
+              </dl>
+            )}
+          </Panel>
+          <div className="grid gap-4 xl:grid-cols-3">
+            <Panel title="Ürün satışları">
+              <SalesTable rows={report.data.productSales} />
+            </Panel>
+            <Panel title="Kategori satışları">
+              <SalesTable rows={report.data.categorySales} />
+            </Panel>
+            <Panel title="Personel satışları">
+              <SalesTable rows={report.data.staffSales} />
+            </Panel>
+          </div>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <Panel title="Ayarlamalar ve iptaller">
+              <dl className="grid sm:grid-cols-2">
+                <Metric
+                  label="İndirim toplamı"
+                  value={formatKurus(report.data.discountTotalKurus)}
+                />
+                <Metric
+                  label="İkram toplamı"
+                  value={formatKurus(report.data.complimentaryTotalKurus)}
+                />
+                <Metric label="İptal edilen kalem" value={String(report.data.cancelledItemCount)} />
+                <Metric
+                  label="İptal kalem tutarı"
+                  value={formatKurus(report.data.cancelledItemTotalKurus)}
+                />
+              </dl>
+            </Panel>
+            <Panel title="Saatlik satış dağılımı" meta="Saat bazında ciro">
+              <ul aria-label="Saatlik satışlar" className="space-y-2 p-3">
+                {report.data.hourlySales
+                  .filter((row) => row.totalKurus > 0)
+                  .map((row) => (
+                    <li
+                      key={row.hour}
+                      className="grid grid-cols-[3rem_1fr_auto] items-center gap-2 text-sm"
+                    >
+                      <span className="tabular-nums">{String(row.hour).padStart(2, '0')}:00</span>
+                      <span className="h-3 overflow-hidden rounded-full bg-surface-muted">
+                        <span
+                          className="chart-reveal block h-full rounded-full bg-primary"
+                          style={{ width: `${Math.max(2, (row.totalKurus / maxHour) * 100)}%` }}
+                        />
+                      </span>
+                      <strong className="tabular-nums">{formatKurus(row.totalKurus)}</strong>
+                    </li>
+                  ))}
+                {report.data.hourlySales.every((row) => row.totalKurus === 0) ? (
+                  <li className="text-sm text-ink-muted">Bu aralıkta satış yok.</li>
+                ) : null}
+              </ul>
+            </Panel>
+          </div>
+        </>
+      ) : (
+        <Panel>
+          <p className="p-4 text-sm text-ink-muted">Rapor yükleniyor…</p>
+        </Panel>
+      )}
+    </div>
+  );
+}
