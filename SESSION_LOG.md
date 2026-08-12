@@ -752,3 +752,27 @@ gözlenmedi; hesaplar HTTP bellek-store testleriyle doğrulandı. Responsive ara
 jsdom ile test edildi, gerçek mobil cihazda görsel inceleme yapılmadı.
 
 **Development phases complete — comprehensive final review pending**
+
+## 2026-08-12 — Codex — Kapsamlı frontend experience redesign
+
+**Branch:** `feat/frontend-experience-redesign`
+**Base:** `feat/phase-7-reports-deployment` (`2f7066d`)
+**Sonuç:** Frontend yeniden tasarımı tamamlandı; backend/schema/contracts
+değiştirilmedi, merge yapılmadı.
+
+- Warm Modern Hospitality POS token sistemi, ortak Button/Field/Badge/Panel,
+  segmented control, dialog/bottom-sheet, toast, skeleton, empty/error state ve
+  marka işareti eklendi.
+- Giriş, gerçek verili operasyon özeti, masa/adisyon ve modifier, ödeme, menü,
+  yüksek kontrastlı KDS, cari, rapor, ayarlar/audit, 403 ve 404 ekranları telefon,
+  tablet ve masaüstü hiyerarşisiyle yenilendi.
+- Rol bazlı navigasyon korunup yetkisiz doğrudan URL erişimi açıklayıcı 403
+  ekranına taşındı. Mevcut TanStack Query, REST ve Socket.IO refetch sözleşmeleri
+  değiştirilmedi.
+- UI_GUIDE güncellendi ve ADR-019 kaydedildi. Security scan çalıştırılmadı.
+- `npm run verify` PASS: 23 dosyada 182/182 test (API 131, web 51); production
+  web paketi 407.56 kB, gzip 118.82 kB. `db:check` ve yedi migration için
+  `db:migrate:status` PASS.
+- Headless Chrome ile Özet, Masalar, KDS ve Raporlar 390/768/1024/1440px
+  genişliklerde kontrol edildi; 16 görünümün hiçbirinde belge yatay taşmadı.
+  Görsel kanıtlar yalnız yerel temp klasöründe tutuldu ve commit edilmedi.

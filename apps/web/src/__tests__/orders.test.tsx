@@ -203,6 +203,22 @@ describe('Phase 3 masa ve adisyon ekranı', () => {
     });
   });
 
+  it('zorunlu seçenek tamamlanmadan eklemeyi engeller ve dialog Escape ile kapanır', async () => {
+    stubAppFetch({ floorPlan: floor(), check, salesMenu });
+    const user = userEvent.setup();
+    renderWithProviders(<App />, '/masalar');
+    await user.click(await screen.findByRole('button', { name: /Masa 1/ }));
+    await screen.findByText('Masa 1 adisyonu');
+    const menuPanel = screen.getByRole('heading', { name: 'Menü' }).closest('section');
+    if (menuPanel === null) throw new Error('Menü paneli bulunamadı.');
+    await user.click(within(menuPanel).getByRole('button', { name: /Latte/ }));
+    const dialog = screen.getByRole('dialog', { name: 'Latte' });
+    expect(within(dialog).getByRole('button', { name: 'Siparişe ekle' })).toBeDisabled();
+    expect(within(dialog).getByText(/zorunlu seçenekleri tamamlayın/)).toBeInTheDocument();
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog', { name: 'Latte' })).not.toBeInTheDocument();
+  });
+
   it('kalemin adet/not güncelleme ve gerekçeli iptal akışlarını sunar', async () => {
     stubAppFetch({ floorPlan: floor(), check, salesMenu });
     const user = userEvent.setup();

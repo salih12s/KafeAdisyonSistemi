@@ -38,7 +38,7 @@ describe('Uygulama kabuğu', () => {
     await user.click(within(await mainNav()).getByRole('link', { name: 'Masalar' }));
 
     expect(screen.getByRole('heading', { level: 1, name: 'Masalar' })).toBeInTheDocument();
-    expect(await screen.findByText('Henüz salon veya masa tanımlanmadı.')).toBeInTheDocument();
+    expect(await screen.findByText('Henüz salon veya masa tanımlanmadı')).toBeInTheDocument();
 
     await user.click(within(await mainNav()).getByRole('link', { name: 'Raporlar' }));
 
@@ -55,7 +55,7 @@ describe('Uygulama kabuğu', () => {
       expect(screen.getByTestId('health-indicator')).toHaveTextContent('Sistem hazır');
     });
 
-    expect(screen.getByText('Veritabanı bağlantısı aktif')).toBeInTheDocument();
+    expect(screen.getByText('Sistem çevrimiçi')).toBeInTheDocument();
   });
 
   it('veritabanı bağlantısı yokken anlaşılır Türkçe uyarı gösterir', async () => {
@@ -67,9 +67,8 @@ describe('Uygulama kabuğu', () => {
       expect(screen.getByTestId('health-indicator')).toHaveTextContent('Veritabanı yok');
     });
 
-    expect(screen.getByText('Bağlantı yok')).toBeInTheDocument();
     expect(
-      screen.getByText(/Sunucu çalışıyor ancak veritabanına bağlanılamıyor/),
+      screen.getByText(/Sunucu açık ancak PostgreSQL bağlantısı kurulamıyor/),
     ).toBeInTheDocument();
   });
 

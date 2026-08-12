@@ -6,26 +6,33 @@ import {
   type OrderItemStatus,
   type PreparationArea,
 } from '@kafe/contracts';
-import { ChefHat } from 'lucide-react';
+import { ChefHat, Clock3, Flame, Martini, Wifi } from 'lucide-react';
 import { useState } from 'react';
 import { EmptyState } from '../components/ui/empty-state';
-import { Panel } from '../components/ui/panel';
 import { ApiError, fetchKitchenOrders, updateOrderItemStatus } from '../lib/api';
+import { SegmentedControl } from '../components/ui/segmented-control';
+import { Button } from '../components/ui/button';
+import { Badge } from '../components/ui/badge';
+import { ErrorState } from '../components/ui/error-state';
+import { Skeleton } from '../components/ui/skeleton';
 
 type StationFilter = 'ALL' | PreparationArea;
 const ACTIVE_STATUSES = ['SENT', 'PREPARING', 'READY'] as const;
-
 const NEXT_STATUS: Record<(typeof ACTIVE_STATUSES)[number], OrderItemStatus> = {
   SENT: 'PREPARING',
   PREPARING: 'READY',
   READY: 'SERVED',
 };
-
 const ACTION_LABEL: Record<(typeof ACTIVE_STATUSES)[number], string> = {
   SENT: 'Hazırlamaya başla',
   PREPARING: 'Hazır',
   READY: 'Servis edildi',
 };
+const STATUS_ACCENT = {
+  SENT: 'border-t-kds-new',
+  PREPARING: 'border-t-kds-preparing',
+  READY: 'border-t-kds-ready',
+} as const;
 
 export function KitchenPage(): JSX.Element {
   const [filter, setFilter] = useState<StationFilter>('ALL');
@@ -36,63 +43,81 @@ export function KitchenPage(): JSX.Element {
   });
 
   return (
-    <div className="space-y-4">
-      <header>
-        <h1 className="text-xl font-semibold">Mutfak ve bar</h1>
-        <p className="mt-1 text-sm text-ink-muted">
-          Aktif siparişleri istasyona ve hazırlık durumuna göre yönetin.
-        </p>
+    <div className="min-h-dvh bg-kds-bg text-kds-ink">
+      <header className="sticky top-0 z-20 border-b border-kds-line bg-kds-bg/95 px-3 py-3 backdrop-blur sm:px-5 lg:px-7">
+        <div className="mx-auto flex max-w-[112rem] flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center gap-3">
+            <span className="flex h-11 w-11 items-center justify-center rounded-card bg-kds-elevated text-kds-new">
+              <ChefHat className="h-6 w-6" />
+            </span>
+            <div>
+              <h1 className="text-xl font-extrabold tracking-tight">Mutfak ve bar</h1>
+              <p className="text-xs text-kds-muted">Canlı hazırlık ekranı</p>
+            </div>
+            <Badge
+              tone={orders.isError ? 'danger' : 'success'}
+              icon={<Wifi className="h-3.5 w-3.5" />}
+            >
+              {orders.isError ? 'Bağlantı sorunu' : 'Canlı'}
+            </Badge>
+          </div>
+          <SegmentedControl
+            dark
+            label="Hazırlık alanı filtresi"
+            value={filter}
+            options={[
+              {
+                value: 'KITCHEN',
+                label: 'Mutfak',
+                count: orders.data?.filter((order) => order.preparationArea === 'KITCHEN').length,
+              },
+              {
+                value: 'BAR',
+                label: 'Bar',
+                count: orders.data?.filter((order) => order.preparationArea === 'BAR').length,
+              },
+              { value: 'ALL', label: 'Tümü', count: orders.data?.length },
+            ]}
+            onChange={setFilter}
+          />
+        </div>
       </header>
 
-      <div className="flex gap-2 overflow-x-auto" aria-label="Hazırlık alanı filtresi">
-        {(
-          [
-            ['KITCHEN', 'Mutfak'],
-            ['BAR', 'Bar'],
-            ['ALL', 'Tümü'],
-          ] as const
-        ).map(([value, label]) => (
-          <button
-            key={value}
-            type="button"
-            onClick={() => setFilter(value)}
-            aria-pressed={filter === value}
-            className={`${filter === value ? 'border-accent bg-accent-soft text-ink' : 'border-line bg-white text-ink-muted'} min-h-touch shrink-0 rounded-panel border px-5 text-sm font-semibold`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-
-      {orders.isPending ? (
-        <Panel>
-          <p className="p-4 text-sm text-ink-muted">Siparişler yükleniyor…</p>
-        </Panel>
-      ) : orders.isError ? (
-        <Panel>
-          <p role="alert" className="p-4 text-sm text-danger">
-            Hazırlık siparişleri yüklenemedi.
-          </p>
-        </Panel>
-      ) : orders.data.length === 0 ? (
-        <Panel>
-          <EmptyState
-            icon={ChefHat}
-            title="Bekleyen sipariş yok"
-            description="Bu filtrede hazırlanmayı veya servis edilmeyi bekleyen sipariş bulunmuyor."
-          />
-        </Panel>
-      ) : (
-        <div className="grid min-w-0 gap-4 xl:grid-cols-3">
-          {ACTIVE_STATUSES.map((status) => (
-            <OrderColumn
-              key={status}
-              status={status}
-              orders={orders.data.filter((order) => order.preparationStatus === status)}
+      <main className="mx-auto max-w-[112rem] p-3 sm:p-5 lg:p-7">
+        {orders.isPending ? (
+          <div className="grid gap-4 lg:grid-cols-3">
+            {ACTIVE_STATUSES.map((status) => (
+              <Skeleton key={status} className="h-72 bg-kds-surface" />
+            ))}
+          </div>
+        ) : orders.isError ? (
+          <div className="rounded-panel bg-surface p-3 text-ink">
+            <ErrorState
+              title="Siparişler alınamadı"
+              description="Bağlantıyı kontrol edip tekrar deneyin."
+              onRetry={() => void orders.refetch()}
             />
-          ))}
-        </div>
-      )}
+          </div>
+        ) : orders.data.length === 0 ? (
+          <div className="rounded-panel border border-kds-line bg-kds-surface text-kds-ink">
+            <EmptyState
+              icon={ChefHat}
+              title="Bekleyen sipariş yok"
+              description="Bu istasyonda hazırlanmayı veya servis edilmeyi bekleyen sipariş bulunmuyor."
+            />
+          </div>
+        ) : (
+          <div className="grid min-w-0 gap-4 lg:grid-cols-3">
+            {ACTIVE_STATUSES.map((status) => (
+              <OrderColumn
+                key={status}
+                status={status}
+                orders={orders.data.filter((order) => order.preparationStatus === status)}
+              />
+            ))}
+          </div>
+        )}
+      </main>
     </div>
   );
 }
@@ -105,17 +130,27 @@ function OrderColumn({
   orders: KitchenOrderResponse[];
 }): JSX.Element {
   return (
-    <Panel title={ORDER_ITEM_STATUS_LABELS[status]} meta={`${orders.length} sipariş`}>
+    <section aria-labelledby={`kds-${status}`}>
+      <header className="mb-3 flex items-center justify-between px-1">
+        <h2 id={`kds-${status}`} className="text-sm font-extrabold uppercase tracking-[0.12em]">
+          {ORDER_ITEM_STATUS_LABELS[status]}
+        </h2>
+        <span className="tabular rounded-full bg-kds-elevated px-2.5 py-1 text-xs font-bold text-kds-muted">
+          {orders.length}
+        </span>
+      </header>
       {orders.length === 0 ? (
-        <p className="p-4 text-sm text-ink-muted">Bu durumda sipariş yok.</p>
+        <div className="rounded-card border border-dashed border-kds-line p-8 text-center text-sm text-kds-muted">
+          Bu durumda sipariş yok.
+        </div>
       ) : (
-        <ul className="divide-y divide-line">
+        <ul className="grid gap-3">
           {orders.map((order) => (
             <KitchenOrderCard key={order.itemId} order={order} />
           ))}
         </ul>
       )}
-    </Panel>
+    </section>
   );
 }
 
@@ -129,46 +164,75 @@ function KitchenOrderCard({ order }: { order: KitchenOrderResponse }): JSX.Eleme
       void queryClient.invalidateQueries({ queryKey: ['kitchen-orders'] });
     },
   });
+  const waitMinutes = Math.max(
+    0,
+    Math.floor((Date.now() - new Date(order.createdAt).getTime()) / 60_000),
+  );
+  const urgency = waitMinutes >= 20 ? 'danger' : waitMinutes >= 10 ? 'warning' : 'neutral';
 
   return (
-    <li className="p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-base font-semibold">
-            {order.quantity} × {order.productNameSnapshot}
-          </p>
-          <p className="text-[13px] font-medium text-accent">{order.tableName}</p>
+    <li
+      className={`ticket-enter overflow-hidden rounded-card border border-kds-line border-t-4 ${STATUS_ACCENT[status]} bg-kds-surface shadow-kds`}
+    >
+      <div className="p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-lg font-black leading-tight">
+              {order.quantity} × {order.productNameSnapshot}
+            </p>
+            <p className="mt-1 text-sm font-bold text-kds-muted">{order.tableName}</p>
+          </div>
+          <span
+            title={PREPARATION_AREA_LABELS[order.preparationArea]}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-control bg-kds-elevated text-kds-muted"
+          >
+            {order.preparationArea === 'BAR' ? (
+              <Martini className="h-5 w-5" />
+            ) : (
+              <Flame className="h-5 w-5" />
+            )}
+          </span>
         </div>
-        <span className="shrink-0 rounded-panel bg-canvas px-2 py-1 text-[12px] font-semibold">
-          {PREPARATION_AREA_LABELS[order.preparationArea]}
-        </span>
+        {order.options.length > 0 ? (
+          <ul className="mt-3 space-y-1 border-l-2 border-kds-line pl-3 text-sm text-kds-muted">
+            {order.options.map((option) => (
+              <li key={`${option.groupNameSnapshot}-${option.valueNameSnapshot}`}>
+                {option.groupNameSnapshot}: {option.valueNameSnapshot}
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        {order.note === null ? null : (
+          <p className="mt-3 rounded-control bg-kds-elevated px-3 py-2 text-sm">
+            <span className="font-bold text-kds-new">Not:</span> {order.note}
+          </p>
+        )}
+        <div className="mt-3 flex items-center justify-between">
+          <Badge tone={urgency} icon={<Clock3 className="h-3.5 w-3.5" />}>
+            Bekleme: {formatWaitTime(order.createdAt)}
+          </Badge>
+          <span className="text-xs text-kds-muted">
+            {PREPARATION_AREA_LABELS[order.preparationArea]}
+          </span>
+        </div>
       </div>
-      {order.options.length > 0 ? (
-        <p className="mt-2 text-[13px] text-ink-muted">
-          {order.options
-            .map((option) => `${option.groupNameSnapshot}: ${option.valueNameSnapshot}`)
-            .join(' · ')}
-        </p>
-      ) : null}
-      {order.note === null ? null : (
-        <p className="mt-2 text-sm">
-          <span className="font-semibold">Not:</span> {order.note}
-        </p>
-      )}
-      <p className="mt-2 text-[12px] text-ink-muted">Bekleme: {formatWaitTime(order.createdAt)}</p>
-      <button
-        type="button"
-        className="mt-3 min-h-touch w-full rounded-panel bg-espresso px-4 text-sm font-semibold text-white hover:bg-espresso-soft disabled:opacity-50"
-        disabled={mutation.isPending}
-        onClick={() => mutation.mutate()}
-      >
-        {ACTION_LABEL[status]}
-      </button>
-      {mutation.isError ? (
-        <p role="alert" className="mt-2 text-sm text-danger">
-          {mutation.error instanceof ApiError ? mutation.error.message : 'Durum değiştirilemedi.'}
-        </p>
-      ) : null}
+      <div className="border-t border-kds-line p-3">
+        <Button
+          type="button"
+          variant={status === 'READY' ? 'success' : 'primary'}
+          size="touch"
+          className="w-full"
+          loading={mutation.isPending}
+          onClick={() => mutation.mutate()}
+        >
+          {ACTION_LABEL[status]}
+        </Button>
+        {mutation.isError ? (
+          <p role="alert" className="mt-2 text-sm text-danger">
+            {mutation.error instanceof ApiError ? mutation.error.message : 'Durum değiştirilemedi.'}
+          </p>
+        ) : null}
+      </div>
     </li>
   );
 }

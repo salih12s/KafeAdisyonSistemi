@@ -1,20 +1,22 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { Clock3, UsersRound, UtensilsCrossed } from 'lucide-react';
+import { Clock3, ReceiptText, UsersRound, UtensilsCrossed } from 'lucide-react';
 import { formatKurus, type OperationalFloorPlanResponse } from '@kafe/contracts';
 import { Panel } from '../components/ui/panel';
 import { useCurrentUser } from '../hooks/use-auth';
 import { ApiError, fetchOperationalFloorPlan, openTableCheck } from '../lib/api';
 import { cn } from '../lib/cn';
 import { CheckView } from './check-view';
+import { SegmentedControl } from '../components/ui/segmented-control';
+import { Dialog } from '../components/ui/dialog';
+import { Button } from '../components/ui/button';
+import { TextField } from '../components/ui/field';
+import { Badge } from '../components/ui/badge';
+import { ErrorState } from '../components/ui/error-state';
+import { PanelSkeleton } from '../components/ui/skeleton';
 
 type OperationalTable = OperationalFloorPlanResponse['areas'][number]['tables'][number];
-
-const buttonClass =
-  'min-h-touch rounded-panel bg-espresso px-4 text-sm font-semibold text-white hover:bg-espresso-soft disabled:opacity-50';
-const secondaryButton =
-  'min-h-touch rounded-panel border border-line bg-white px-3 text-sm font-medium hover:bg-canvas';
 
 function elapsed(openedAt: string): string {
   const minutes = Math.max(0, Math.floor((Date.now() - new Date(openedAt).getTime()) / 60_000));
@@ -42,41 +44,35 @@ export function TablesPage(): JSX.Element {
   if (selectedCheckId.length > 0) {
     return <CheckView checkId={selectedCheckId} onBack={() => setSelectedCheckId('')} />;
   }
-  if (floor.isPending) {
-    return (
-      <Panel>
-        <p className="p-4 text-sm text-ink-muted">Masa durumları yükleniyor…</p>
-      </Panel>
-    );
-  }
+  if (floor.isPending) return <PanelSkeleton rows={4} />;
   if (floor.isError) {
     return (
-      <Panel>
-        <p role="alert" className="p-4 text-sm text-danger">
-          Masa durumları yüklenemedi.
-        </p>
-      </Panel>
+      <ErrorState
+        title="Masa durumları yüklenemedi"
+        description="Bağlantıyı kontrol edip yeniden deneyin."
+        onRetry={() => void floor.refetch()}
+      />
     );
   }
 
   if (floor.data.areas.length === 0) {
     return (
       <Panel>
-        <div className="p-6 text-center">
-          <UtensilsCrossed aria-hidden="true" className="mx-auto h-8 w-8 text-ink-muted" />
-          <h2 className="mt-3 text-base font-semibold">Henüz salon veya masa tanımlanmadı.</h2>
-          {auth.data?.role === 'OWNER' ? (
-            <p className="mt-1 text-sm text-ink-muted">
-              <Link className="font-medium text-accent underline" to="/ayarlar">
-                Ayarlar
-              </Link>{' '}
-              bölümünden salon ve masa oluşturabilirsiniz.
-            </p>
-          ) : (
-            <p className="mt-1 text-sm text-ink-muted">
-              İşletme sahibinden masa düzenini oluşturmasını isteyin.
-            </p>
-          )}
+        <div className="p-8 text-center">
+          <UtensilsCrossed aria-hidden="true" className="mx-auto h-9 w-9 text-ink-subtle" />
+          <h2 className="mt-3 text-lg font-bold">Henüz salon veya masa tanımlanmadı</h2>
+          <p className="mx-auto mt-1 max-w-md text-sm text-ink-secondary">
+            {auth.data?.role === 'OWNER' ? (
+              <>
+                <Link className="font-bold text-primary underline" to="/ayarlar">
+                  Ayarlar
+                </Link>{' '}
+                bölümünden salon ve masa oluşturabilirsiniz.
+              </>
+            ) : (
+              'İşletme sahibinden masa düzenini oluşturmasını isteyin.'
+            )}
+          </p>
         </div>
       </Panel>
     );
@@ -85,37 +81,53 @@ export function TablesPage(): JSX.Element {
   const selectedArea =
     floor.data.areas.find((area) => area.id === selectedAreaId) ?? floor.data.areas[0];
   const canOpen = auth.isSuccess && auth.data.role !== 'KITCHEN';
+  const openCount = selectedArea?.tables.filter((table) => table.openCheck !== null).length ?? 0;
 
   return (
-    <div className="space-y-4">
-      <Panel title="Salonlar">
-        <div className="flex gap-2 overflow-x-auto p-2">
-          {floor.data.areas.map((area) => (
-            <button
-              key={area.id}
-              type="button"
-              onClick={() => setSelectedAreaId(area.id)}
-              className={cn(
-                'min-h-touch shrink-0 rounded-panel border px-4 text-sm font-medium',
-                area.id === selectedArea?.id
-                  ? 'border-accent bg-accent-soft text-ink'
-                  : 'border-line bg-surface text-ink-muted hover:bg-canvas',
-              )}
-            >
-              {area.name}
-            </button>
-          ))}
+    <div className="space-y-5">
+      <section className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <p className="text-sm font-bold uppercase tracking-[0.14em] text-primary">
+            Canlı salon planı
+          </p>
+          <h2 className="mt-1 text-2xl font-extrabold tracking-tight">Masalar</h2>
+          <p className="mt-1 text-sm text-ink-secondary">
+            Boş masayı açın veya aktif adisyona devam edin.
+          </p>
         </div>
-      </Panel>
+        <SegmentedControl
+          label="Salon seçimi"
+          value={selectedArea?.id ?? ''}
+          options={floor.data.areas.map((area) => ({
+            value: area.id,
+            label: area.name,
+            count: area.tables.length,
+          }))}
+          onChange={setSelectedAreaId}
+        />
+      </section>
+      <h3 className="sr-only">Salonlar</h3>
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <Summary label="Toplam masa" value={selectedArea?.tables.length ?? 0} />
+        <Summary label="Açık" value={openCount} tone="warning" />
+        <Summary
+          label="Boş"
+          value={(selectedArea?.tables.length ?? 0) - openCount}
+          tone="success"
+          className="col-span-2 sm:col-span-1"
+        />
+      </div>
 
       <Panel
         title={selectedArea?.name ?? 'Masalar'}
         meta={`${selectedArea?.tables.length ?? 0} masa`}
+        variant="elevated"
       >
         {selectedArea === undefined || selectedArea.tables.length === 0 ? (
-          <p className="p-5 text-sm text-ink-muted">Bu salonda aktif masa bulunmuyor.</p>
+          <p className="p-6 text-sm text-ink-secondary">Bu salonda aktif masa bulunmuyor.</p>
         ) : (
-          <ul className="grid grid-cols-2 gap-2 p-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6">
+          <ul className="grid grid-cols-2 gap-3 p-3 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
             {selectedArea.tables.map((table) => {
               const isOpen = table.openCheck !== null;
               return (
@@ -123,19 +135,21 @@ export function TablesPage(): JSX.Element {
                   <button
                     type="button"
                     disabled={!isOpen && !canOpen}
-                    onClick={() => {
-                      if (table.openCheck === null) setTableToOpen(table);
-                      else setSelectedCheckId(table.openCheck.id);
-                    }}
-                    className={`${isOpen ? 'border-accent bg-accent-soft' : 'border-line bg-surface'} min-h-32 w-full rounded-panel border p-3 text-left disabled:cursor-default`}
+                    onClick={() =>
+                      isOpen ? setSelectedCheckId(table.openCheck?.id ?? '') : setTableToOpen(table)
+                    }
+                    className={cn(
+                      'interactive-card min-h-40 w-full border-l-4 p-4 text-left disabled:cursor-default disabled:opacity-60',
+                      isOpen
+                        ? 'border-l-warning bg-warning-soft/40'
+                        : 'border-l-success bg-surface',
+                    )}
                   >
                     <span className="flex items-center justify-between gap-2">
-                      <span className="font-semibold">{table.name}</span>
-                      <span className={isOpen ? 'text-accent' : 'text-success'}>
-                        {isOpen ? 'Açık' : 'Boş'}
-                      </span>
+                      <span className="text-base font-extrabold">{table.name}</span>
+                      <Badge tone={isOpen ? 'warning' : 'success'}>{isOpen ? 'Açık' : 'Boş'}</Badge>
                     </span>
-                    <span className="mt-2 flex items-center gap-1.5 text-[13px] text-ink-muted">
+                    <span className="mt-3 flex items-center gap-1.5 text-[13px] text-ink-secondary">
                       <UsersRound aria-hidden="true" className="h-4 w-4" />
                       {isOpen
                         ? `${table.openCheck?.guestCount ?? 0} kişi`
@@ -143,13 +157,18 @@ export function TablesPage(): JSX.Element {
                           ? 'Kapasite belirtilmedi'
                           : `${table.capacity} kişi`}
                     </span>
-                    {table.openCheck === null ? null : (
+                    {table.openCheck === null ? (
+                      <span className="mt-5 block text-xs font-semibold text-success">
+                        Yeni adisyon aç
+                      </span>
+                    ) : (
                       <>
-                        <span className="tabular mt-1 block font-semibold">
+                        <span className="tabular mt-3 flex items-center gap-1.5 text-lg font-extrabold">
+                          <ReceiptText className="h-4 w-4 text-ink-subtle" />
                           {formatKurus(table.openCheck.totalKurus)}
                         </span>
-                        <span className="mt-1 flex items-center gap-1.5 text-[13px] text-ink-muted">
-                          <Clock3 aria-hidden="true" className="h-4 w-4" />{' '}
+                        <span className="mt-1 flex items-center gap-1.5 text-[13px] text-ink-secondary">
+                          <Clock3 aria-hidden="true" className="h-4 w-4" />
                           {elapsed(table.openCheck.openedAt)}
                         </span>
                       </>
@@ -162,18 +181,26 @@ export function TablesPage(): JSX.Element {
         )}
       </Panel>
 
-      {tableToOpen === null ? null : (
-        <OpenTablePanel
-          table={tableToOpen}
-          onOpened={setSelectedCheckId}
-          onClose={() => setTableToOpen(null)}
-        />
-      )}
+      <Dialog
+        open={tableToOpen !== null}
+        title={tableToOpen === null ? 'Masayı aç' : `${tableToOpen.name} masasını aç`}
+        description="Kişi sayısını girerek yeni adisyonu başlatın."
+        onClose={() => setTableToOpen(null)}
+        className="sm:max-w-md"
+      >
+        {tableToOpen === null ? null : (
+          <OpenTableForm
+            table={tableToOpen}
+            onOpened={setSelectedCheckId}
+            onClose={() => setTableToOpen(null)}
+          />
+        )}
+      </Dialog>
     </div>
   );
 }
 
-function OpenTablePanel({
+function OpenTableForm({
   table,
   onOpened,
   onClose,
@@ -192,39 +219,56 @@ function OpenTablePanel({
     },
   });
   return (
-    <Panel title={`Masayı aç — ${table.name}`}>
-      <form
-        aria-label="Masa açma formu"
-        className="flex flex-col gap-3 p-4 sm:flex-row sm:items-end"
-        onSubmit={(event: FormEvent<HTMLFormElement>) => {
-          event.preventDefault();
-          mutation.mutate(Number(new FormData(event.currentTarget).get('guestCount') ?? 1));
-        }}
-      >
-        <label className="text-sm font-medium">
-          Kişi sayısı
-          <input
-            className="mt-1 min-h-touch w-full rounded-panel border border-line bg-white px-3 sm:w-32"
-            name="guestCount"
-            type="number"
-            min="1"
-            max="50"
-            defaultValue="1"
-            required
-          />
-        </label>
-        <button type="submit" className={buttonClass} disabled={mutation.isPending}>
-          Masayı aç
-        </button>
-        <button type="button" className={secondaryButton} onClick={onClose}>
+    <form
+      aria-label="Masa açma formu"
+      className="grid gap-4 p-5"
+      onSubmit={(event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        mutation.mutate(Number(new FormData(event.currentTarget).get('guestCount') ?? 1));
+      }}
+    >
+      <TextField
+        id="guest-count"
+        label="Kişi sayısı"
+        name="guestCount"
+        type="number"
+        min="1"
+        max="50"
+        defaultValue="1"
+        required
+      />
+      <div className="grid grid-cols-2 gap-3">
+        <Button type="button" variant="secondary" onClick={onClose}>
           Vazgeç
-        </button>
-        {mutation.error === null ? null : (
-          <p role="alert" className="text-sm text-danger sm:basis-full">
-            {mutation.error instanceof ApiError ? mutation.error.message : 'Masa açılamadı.'}
-          </p>
-        )}
-      </form>
-    </Panel>
+        </Button>
+        <Button type="submit" loading={mutation.isPending}>
+          Masayı aç
+        </Button>
+      </div>
+      {mutation.error === null ? null : (
+        <p role="alert" className="text-sm text-danger">
+          {mutation.error instanceof ApiError ? mutation.error.message : 'Masa açılamadı.'}
+        </p>
+      )}
+    </form>
+  );
+}
+
+function Summary({
+  label,
+  value,
+  tone = 'neutral',
+  className,
+}: {
+  label: string;
+  value: number;
+  tone?: 'neutral' | 'success' | 'warning';
+  className?: string;
+}): JSX.Element {
+  return (
+    <div className={cn('surface-card flex items-center justify-between px-4 py-3', className)}>
+      <span className="text-sm font-semibold text-ink-secondary">{label}</span>
+      <Badge tone={tone}>{value}</Badge>
+    </div>
   );
 }

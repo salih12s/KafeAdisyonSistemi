@@ -38,6 +38,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     shortLabel: 'Masalar',
     description: 'Salonlara göre tanımlı masaların görünümü.',
     icon: UtensilsCrossed,
+    roles: ['OWNER', 'CASHIER', 'WAITER'],
   },
   {
     to: '/menu',
@@ -45,6 +46,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     shortLabel: 'Menü',
     description: 'Kategoriler, ürünler, seçenekler ve fiyatlar.',
     icon: NotebookText,
+    roles: ['OWNER', 'CASHIER', 'WAITER'],
   },
   {
     to: '/mutfak',
@@ -59,6 +61,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     shortLabel: 'Cari',
     description: 'Müşteri cari hesapları, borç ve tahsilat kayıtları.',
     icon: UsersRound,
+    roles: ['OWNER', 'CASHIER'],
   },
   {
     to: '/raporlar',

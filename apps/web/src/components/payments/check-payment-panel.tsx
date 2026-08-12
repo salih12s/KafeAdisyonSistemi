@@ -12,10 +12,12 @@ import {
 import { ApiError, addPayment, closeCheck, previewPaymentSplit } from '../../lib/api';
 import { formatTimestamp } from '../../lib/datetime';
 import { Panel } from '../ui/panel';
+import { Banknote, CreditCard, ReceiptText } from 'lucide-react';
+import { Button } from '../ui/button';
+import { buttonStyles } from '../ui/button-styles';
+import { SegmentedControl } from '../ui/segmented-control';
 
 const inputClass = 'min-h-touch w-full rounded-panel border border-line bg-white px-3 text-sm';
-const primaryButton =
-  'min-h-touch rounded-panel bg-espresso px-4 text-sm font-semibold text-white disabled:opacity-50';
 const secondaryButton =
   'min-h-touch rounded-panel border border-line bg-white px-3 text-sm font-medium disabled:opacity-50';
 
@@ -103,20 +105,28 @@ export function CheckPaymentPanel({
   const open = check.status === 'OPEN';
 
   return (
-    <Panel title="Ödeme ve hesap kapatma" meta={`${check.payments.length} ödeme`}>
-      <div className="space-y-4 p-4">
-        <dl className="grid grid-cols-3 gap-2 rounded-panel bg-canvas p-3 text-sm">
+    <Panel
+      title="Ödeme ve hesap kapatma"
+      meta={`${check.payments.length} ödeme`}
+      variant="elevated"
+    >
+      <div className="space-y-5 p-4 sm:p-5">
+        <dl className="grid grid-cols-3 gap-px overflow-hidden rounded-card border border-line bg-line text-sm">
           <div>
-            <dt className="text-ink-muted">Toplam</dt>
-            <dd className="tabular font-semibold">{formatKurus(check.totalKurus)}</dd>
+            <dt className="bg-surface p-3 text-xs text-ink-secondary">Toplam</dt>
+            <dd className="tabular bg-surface px-3 pb-3 text-lg font-extrabold">
+              {formatKurus(check.totalKurus)}
+            </dd>
           </div>
           <div>
-            <dt className="text-ink-muted">Ödenen</dt>
-            <dd className="tabular font-semibold text-success">{formatKurus(check.paidKurus)}</dd>
+            <dt className="bg-surface p-3 text-xs text-ink-secondary">Ödenen</dt>
+            <dd className="tabular bg-surface px-3 pb-3 text-lg font-extrabold text-success">
+              {formatKurus(check.paidKurus)}
+            </dd>
           </div>
           <div>
-            <dt className="text-ink-muted">Kalan</dt>
-            <dd className="tabular font-semibold text-danger">
+            <dt className="bg-surface p-3 text-xs text-ink-secondary">Kalan</dt>
+            <dd className="tabular bg-surface px-3 pb-3 text-lg font-extrabold text-danger">
               {formatKurus(check.remainingKurus)}
             </dd>
           </div>
@@ -152,41 +162,33 @@ export function CheckPaymentPanel({
         ) : check.remainingKurus === 0 ? (
           <div className="space-y-2">
             <p className="text-sm text-success">Bakiye tamamlandı. Hesabı kapatabilirsiniz.</p>
-            <button
+            <Button
               type="button"
-              className={primaryButton}
-              disabled={closeMutation.isPending}
+              variant="success"
+              loading={closeMutation.isPending}
               onClick={() => closeMutation.mutate()}
             >
               Hesabı kapat
-            </button>
+            </Button>
             <ErrorText error={closeMutation.error} />
           </div>
         ) : (
           <>
             <div className="space-y-2">
               <p className="text-sm font-semibold">Hesap böl</p>
-              <div className="flex flex-wrap gap-2" aria-label="Hesap bölme yöntemi">
-                {(
-                  [
-                    ['AMOUNT', 'Tutara göre'],
-                    ['ITEMS', 'Kaleme göre'],
-                    ['GUESTS', 'Kişiye göre'],
-                  ] as const
-                ).map(([value, label]) => (
-                  <button
-                    key={value}
-                    type="button"
-                    className={value === splitMode ? primaryButton : secondaryButton}
-                    onClick={() => {
-                      setSplitMode(value);
-                      setSplit(null);
-                    }}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
+              <SegmentedControl
+                label="Hesap bölme yöntemi"
+                value={splitMode}
+                options={[
+                  { value: 'AMOUNT', label: 'Tutara göre' },
+                  { value: 'ITEMS', label: 'Kaleme göre' },
+                  { value: 'GUESTS', label: 'Kişiye göre' },
+                ]}
+                onChange={(value) => {
+                  setSplitMode(value);
+                  setSplit(null);
+                }}
+              />
               {splitMode === 'ITEMS' ? (
                 <div className="grid gap-1 sm:grid-cols-2">
                   {check.items
@@ -253,14 +255,19 @@ export function CheckPaymentPanel({
                 payment.mutate();
               }}
             >
-              <div className="flex gap-2" aria-label="Ödeme türü">
+              <div className="grid grid-cols-2 gap-3" aria-label="Ödeme türü">
                 {(['CASH', 'CARD'] as const).map((value) => (
                   <button
                     key={value}
                     type="button"
-                    className={value === method ? primaryButton : secondaryButton}
+                    className={`${value === method ? 'border-primary bg-primary-soft text-primary' : 'border-line bg-surface text-ink'} flex min-h-20 flex-col items-center justify-center gap-2 rounded-card border text-sm font-bold transition`}
                     onClick={() => setMethod(value)}
                   >
+                    {value === 'CASH' ? (
+                      <Banknote className="h-6 w-6" />
+                    ) : (
+                      <CreditCard className="h-6 w-6" />
+                    )}
                     {PAYMENT_METHOD_LABELS[value]}
                   </button>
                 ))}
@@ -292,16 +299,17 @@ export function CheckPaymentPanel({
                 ) : null}
               </div>
               {method === 'CASH' ? (
-                <p className="text-sm">
-                  Para üstü: <strong className="tabular">{formatKurus(changeKurus)}</strong>
+                <p className="flex items-center justify-between rounded-card bg-success-soft p-3 text-sm text-success">
+                  <span>Para üstü</span>
+                  <strong className="tabular text-lg">{formatKurus(changeKurus)}</strong>
                 </p>
               ) : null}
               <button
                 type="submit"
-                className={primaryButton}
+                className={`${buttonStyles('primary', 'large')} w-full`}
                 disabled={payment.isPending || appliedKurus <= 0}
               >
-                Ödeme al
+                <ReceiptText className="h-5 w-5" /> Ödeme al
               </button>
               <ErrorText error={payment.error} />
             </form>

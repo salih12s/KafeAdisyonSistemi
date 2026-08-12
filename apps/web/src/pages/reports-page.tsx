@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { PAYMENT_METHOD_LABELS, formatKurus, type NamedSalesTotal } from '@kafe/contracts';
 import { Panel } from '../components/ui/panel';
 import { fetchDayEnd, fetchSalesReport } from '../lib/api';
+import { Button } from '../components/ui/button';
 
 const input = 'min-h-touch rounded-panel border border-line bg-white px-3 text-sm';
 
@@ -17,9 +18,9 @@ function todayIstanbul(): string {
 
 function Metric({ label, value }: { label: string; value: string }): JSX.Element {
   return (
-    <div className="border-b border-line px-3 py-3 last:border-b-0 sm:border-b-0 sm:border-r sm:last:border-r-0">
-      <dt className="text-xs uppercase tracking-wide text-ink-muted">{label}</dt>
-      <dd className="mt-1 text-lg font-semibold tabular-nums">{value}</dd>
+    <div className="bg-surface px-4 py-4">
+      <dt className="text-xs font-bold uppercase tracking-wide text-ink-secondary">{label}</dt>
+      <dd className="tabular mt-1 text-xl font-extrabold">{value}</dd>
     </div>
   );
 }
@@ -60,11 +61,18 @@ export function ReportsPage(): JSX.Element {
   const dayEnd = useQuery({ queryKey: ['day-end', today], queryFn: () => fetchDayEnd(today) });
   const maxHour = Math.max(1, ...(report.data?.hourlySales.map((row) => row.totalKurus) ?? [0]));
   return (
-    <div className="space-y-4">
-      <Panel title="Tarih aralığı">
+    <div className="space-y-5">
+      <header>
+        <p className="text-sm font-bold uppercase tracking-[0.14em] text-primary">Performans</p>
+        <h2 className="mt-1 text-2xl font-extrabold tracking-tight">Raporlar</h2>
+        <p className="mt-1 text-sm text-ink-secondary">
+          Gerçekleşen satışları ve operasyon dağılımını inceleyin.
+        </p>
+      </header>
+      <Panel title="Tarih aralığı" variant="elevated">
         <form
           aria-label="Rapor tarih filtresi"
-          className="flex flex-wrap items-end gap-3 p-3"
+          className="flex flex-wrap items-end gap-3 p-4"
           onSubmit={(event: FormEvent<HTMLFormElement>) => {
             event.preventDefault();
             const form = new FormData(event.currentTarget);
@@ -79,19 +87,17 @@ export function ReportsPage(): JSX.Element {
             Bitiş
             <input className={input} type="date" name="to" defaultValue={range.to} required />
           </label>
-          <button className="min-h-touch rounded-panel bg-espresso px-4 text-sm font-semibold text-white">
-            Raporu getir
-          </button>
+          <Button>Raporu getir</Button>
         </form>
       </Panel>
 
-      <Panel title="Gün sonu" meta="Muhasebe/fiskal Z raporu değildir">
+      <Panel title="Gün sonu" meta="Muhasebe/fiskal Z raporu değildir" variant="elevated">
         {dayEnd.isError ? (
           <p className="p-4 text-sm text-danger">
             Gün sonu özeti yüklenemedi. Bağlantıyı kontrol edip yeniden deneyin.
           </p>
         ) : dayEnd.data ? (
-          <dl className="grid sm:grid-cols-4">
+          <dl className="grid gap-px bg-line sm:grid-cols-4">
             <Metric label="Toplam ciro" value={formatKurus(dayEnd.data.revenueKurus)} />
             <Metric label="Nakit" value={formatKurus(dayEnd.data.cashKurus)} />
             <Metric label="Kart" value={formatKurus(dayEnd.data.cardKurus)} />
@@ -117,13 +123,17 @@ export function ReportsPage(): JSX.Element {
         </Panel>
       ) : report.data ? (
         <>
-          <Panel title="Satış özeti" meta={`${report.data.range.from} — ${report.data.range.to}`}>
-            <dl className="grid sm:grid-cols-3">
+          <Panel
+            title="Satış özeti"
+            meta={`${report.data.range.from} — ${report.data.range.to}`}
+            variant="elevated"
+          >
+            <dl className="grid gap-px bg-line sm:grid-cols-3">
               <Metric label="Ciro" value={formatKurus(report.data.revenueKurus)} />
               <Metric label="Adisyon sayısı" value={String(report.data.paidCheckCount)} />
               <Metric label="Ortalama adisyon" value={formatKurus(report.data.averageCheckKurus)} />
             </dl>
-            <dl className="grid border-t border-line sm:grid-cols-3">
+            <dl className="grid gap-px border-t border-line bg-line sm:grid-cols-3">
               {report.data.paymentDistribution.map((row) => (
                 <Metric
                   key={row.method}
@@ -162,7 +172,7 @@ export function ReportsPage(): JSX.Element {
                 />
               </dl>
             </Panel>
-            <Panel title="Saatlik satış dağılımı">
+            <Panel title="Saatlik satış dağılımı" meta="Saat bazında ciro">
               <ul aria-label="Saatlik satışlar" className="space-y-2 p-3">
                 {report.data.hourlySales
                   .filter((row) => row.totalKurus > 0)
@@ -172,9 +182,9 @@ export function ReportsPage(): JSX.Element {
                       className="grid grid-cols-[3rem_1fr_auto] items-center gap-2 text-sm"
                     >
                       <span className="tabular-nums">{String(row.hour).padStart(2, '0')}:00</span>
-                      <span className="h-3 bg-canvas">
+                      <span className="h-3 overflow-hidden rounded-full bg-surface-muted">
                         <span
-                          className="block h-full bg-accent"
+                          className="chart-reveal block h-full rounded-full bg-primary"
                           style={{ width: `${Math.max(2, (row.totalKurus / maxHour) * 100)}%` }}
                         />
                       </span>
