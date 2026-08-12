@@ -10,12 +10,12 @@ sonraki geliştiriciye devredilir.
 
 | Alan                  | Değer                                              |
 | --------------------- | -------------------------------------------------- |
-| **Tamamlanan Phase**  | Phase 4 — Gerçek zamanlı mutfak/bar                |
-| **Branch**            | `feat/phase-4-realtime-kitchen`                    |
+| **Tamamlanan Phase**  | Phase 5 — Ödeme ve hesap kapatma                   |
+| **Branch**            | `feat/phase-5-payments`                             |
 | **Ana geliştirici**   | Codex                                              |
 | **Durum**             | **Tamamlandı — draft PR açık, merge edilmedi** |
-| **Base branch / SHA** | `feat/phase-3-orders` / `596305e`                  |
-| **Phase commit**      | `feat: complete phase 4 realtime kitchen workflow` |
+| **Base branch / SHA** | `feat/phase-4-realtime-kitchen` / `8855a6c`        |
+| **Phase commit**      | `feat: complete phase 5 payments and check closing` |
 | **Son güncelleme**    | 2026-08-12                                         |
 
 ### Phase durumu
@@ -27,6 +27,30 @@ sonraki geliştiriciye devredilir.
 | 2     | `feat/phase-2-menu-products`   | Claude          | Tamamlandı · draft PR açık     |
 | 3     | `feat/phase-3-orders`          | Codex           | Tamamlandı · draft PR açık     |
 | 4     | `feat/phase-4-realtime-kitchen` | Codex          | Tamamlandı · draft PR açık     |
+| 5     | `feat/phase-5-payments`          | Codex          | Tamamlandı · draft PR hazırlanıyor |
+
+---
+
+## Phase 5 teslimi
+
+- Additive `20260812133000_phase_5_payments` migration'ı `Payment`,
+  `PaymentMethod`, `PAID` ve nullable kapanış alanlarını ekler; gerçek DB'ye
+  uygulandı, beş migration güncel ve `SELECT 1` başarılıdır.
+- Nakit, kart ve karma ödeme immutable satırlardır. Kalan bakiye backend'de
+  hesaplanır; fazla ödeme, yetersiz nakit ve ödenenden düşük yeni toplam reddedilir.
+- Tutar/kalem/kişi bölme ana adisyonu parçalamaz; kuruş artıkları deterministik
+  dağıtılır. Ödeme ve kapanış audit'e yazılır.
+- Kapanış aynı adisyon satırını kilitleyen serializable transaction içindedir;
+  yalnız bakiye sıfırken `PAID` olur ve masa yeniden boş görünür.
+- Adisyon ekranında toplam/ödenen/kalan, ödeme türü, nakit/para üstü, bölme,
+  ödeme geçmişi ve kapatma akışları çalışır. Ödeme/kapanış Socket.IO sinyaliyle
+  REST cache'lerini yeniler.
+- `npm run verify`: PASS — 160/160 test (API 117, web 43); production health ve
+  root `0.0.0.0:3105` üzerinde 200.
+
+Kalan risk: Gerçek DB'de ödeme/adisyon verisi olmadığı için authenticated Prisma
+mutation E2E yapılmadı; transaction SQL'i, gerçek migration ve HTTP bellek-store
+testleri doğrulandı. Gerçek telefon/tablet görsel incelemesi yapılmadı.
 
 ---
 
@@ -156,18 +180,18 @@ Phase 3'te 23 test eklendi: 17 backend + 6 frontend.
 
 ---
 
-## Sonraki geliştiricinin işi — Phase 5 (Codex)
+## Sonraki geliştiricinin işi — Phase 6
 
-Phase 5: hesap kapatma, ödeme, indirim/ikram ve hesap bölme. Yeni branch bu
-branch'ten açılmalıdır.
+Phase 6 kapsamı cari hesap, indirim/ikram ve masa işlemleridir. Yeni branch
+`feat/phase-5-payments` tabanından açılmalıdır.
 
-- Phase 4 kalem snapshot'ını ve hazırlık durumunu değiştirmeden kullanmalıdır.
-- Socket.IO event'i veri kaynağı değildir; Phase 5 değişikliklerinde REST
-  cache'leri invalidate/refetch edilmelidir.
-- Cari, stok, yazıcı ve Railway kapsam dışı kalır.
-- Phase 5'e bu teslim sırasında başlanmadı.
+- Immutable ödeme satırlarını değiştirmemeli veya fiziksel olarak silmemelidir.
+- İndirim/ikram eklenirse kalan bakiye hesabı ve ödenmiş toplam koruması backend
+  transaction'larında yeniden değerlendirilmelidir.
+- Socket.IO yalnız invalidation sinyali olarak kalmalı; REST veri kaynağı olmalıdır.
+- Stok, yazıcı, Railway ve refund kapsam dışı kalır.
 
-**Merge yapılmadı. Phase 5'e başlanmadı.**
+**Merge yapılmadı. Phase 6'ya başlanmadı.**
 
 ---
 
@@ -180,3 +204,4 @@ branch'ten açılmalıdır.
 | 2026-08-12 | Phase 2 | Claude   | Codex    | Menü, ürün, seçenek ve ekstra yönetimi tamamlandı.        |
 | 2026-08-12 | Phase 3 | Codex    | Codex    | Masa açma, adisyon ve sipariş tamamlandı; Phase 4 sırada. |
 | 2026-08-12 | Phase 4 | Codex    | Codex    | Realtime mutfak/bar tamamlandı; Phase 5 sırada.           |
+| 2026-08-12 | Phase 5 | Codex    | Codex    | Ödeme ve hesap kapatma tamamlandı; Phase 6 sırada.         |

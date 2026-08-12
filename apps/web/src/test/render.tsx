@@ -89,6 +89,7 @@ export function stubAppFetch(
     salesMenu?: unknown;
     check?: unknown;
     kitchenOrders?: unknown[];
+    paymentSplit?: unknown;
   } = {},
 ): void {
   let currentUser = options.user === undefined ? ownerUser : options.user;
@@ -100,12 +101,18 @@ export function stubAppFetch(
       recordRequest(path, init);
       const isWrite = (init?.method ?? 'GET') !== 'GET';
 
-      if (path === '/api/orders/floor-plan')
-        {return Promise.resolve(response(options.floorPlan ?? { areas: [] }));}
-      if (path.startsWith('/api/orders/kitchen'))
-        {return Promise.resolve(response({ orders: options.kitchenOrders ?? [] }));}
-      if (path.startsWith('/api/orders/checks') || path.startsWith('/api/orders/items'))
-        {return Promise.resolve(response({ check: options.check ?? null }, isWrite ? 201 : 200));}
+      if (path === '/api/orders/floor-plan') {
+        return Promise.resolve(response(options.floorPlan ?? { areas: [] }));
+      }
+      if (path.startsWith('/api/orders/kitchen')) {
+        return Promise.resolve(response({ orders: options.kitchenOrders ?? [] }));
+      }
+      if (path.endsWith('/payment-split')) {
+        return Promise.resolve(response({ split: options.paymentSplit ?? null }));
+      }
+      if (path.startsWith('/api/orders/checks') || path.startsWith('/api/orders/items')) {
+        return Promise.resolve(response({ check: options.check ?? null }, isWrite ? 201 : 200));
+      }
 
       if (path.startsWith('/api/menu')) {
         if (options.menuFails === true) {
@@ -113,36 +120,44 @@ export function stubAppFetch(
         }
         if (path.startsWith('/api/menu/products') && path.includes('/option-groups')) {
           return Promise.resolve(
-            isWrite
-              ? response({}, 201)
-              : response({ optionGroups: options.optionGroups ?? [] }),
+            isWrite ? response({}, 201) : response({ optionGroups: options.optionGroups ?? [] }),
           );
         }
-        if (path.startsWith('/api/menu/option-groups') || path.startsWith('/api/menu/option-values'))
-          {return Promise.resolve(response({}, isWrite ? 201 : 200));}
-        if (path.startsWith('/api/menu/categories'))
-          {return Promise.resolve(
+        if (
+          path.startsWith('/api/menu/option-groups') ||
+          path.startsWith('/api/menu/option-values')
+        ) {
+          return Promise.resolve(response({}, isWrite ? 201 : 200));
+        }
+        if (path.startsWith('/api/menu/categories')) {
+          return Promise.resolve(
             isWrite ? response({}, 201) : response({ categories: options.categories ?? [] }),
-          );}
-        if (path.startsWith('/api/menu/products'))
-          {return Promise.resolve(
+          );
+        }
+        if (path.startsWith('/api/menu/products')) {
+          return Promise.resolve(
             isWrite ? response({}, 201) : response({ products: options.products ?? [] }),
-          );}
+          );
+        }
         return Promise.resolve(response(options.salesMenu ?? { categories: [] }));
       }
-      if (path === '/api/health')
-        {return Promise.resolve(response(options.health ?? healthyResponse, options.healthStatus));}
-      if (path === '/api/setup/status')
-        {return Promise.resolve(response({ initialized: options.initialized ?? true }));}
-      if (path === '/api/auth/me')
-        {return Promise.resolve(
+      if (path === '/api/health') {
+        return Promise.resolve(response(options.health ?? healthyResponse, options.healthStatus));
+      }
+      if (path === '/api/setup/status') {
+        return Promise.resolve(response({ initialized: options.initialized ?? true }));
+      }
+      if (path === '/api/auth/me') {
+        return Promise.resolve(
           currentUser === null
             ? response({ error: { message: 'Oturum açmanız gerekiyor.' } }, 401)
             : response({ user: currentUser }),
-        );}
+        );
+      }
       if (path === '/api/auth/login') {
-        if (options.loginError !== undefined)
-          {return Promise.resolve(response({ error: { message: options.loginError } }, 401));}
+        if (options.loginError !== undefined) {
+          return Promise.resolve(response({ error: { message: options.loginError } }, 401));
+        }
         currentUser = ownerUser;
         return Promise.resolve(response({ user: currentUser }));
       }
@@ -150,14 +165,16 @@ export function stubAppFetch(
         currentUser = null;
         return Promise.resolve(response(null, 204));
       }
-      if (path === '/api/floor-plan')
-        {return Promise.resolve(response(options.floorPlan ?? { areas: [] }));}
-      if (path === '/api/staff')
-        {return Promise.resolve(
+      if (path === '/api/floor-plan') {
+        return Promise.resolve(response(options.floorPlan ?? { areas: [] }));
+      }
+      if (path === '/api/staff') {
+        return Promise.resolve(
           init?.method === 'POST' ? response({}, 201) : response({ staff: options.staff ?? [] }),
-        );}
-      if (path === '/api/business-settings')
-        {return Promise.resolve(
+        );
+      }
+      if (path === '/api/business-settings') {
+        return Promise.resolve(
           response({
             settings: {
               id: 'business',
@@ -167,15 +184,18 @@ export function stubAppFetch(
               updatedAt: '2026-08-12T08:00:00.000Z',
             },
           }),
-        );}
-      if (path.startsWith('/api/areas'))
-        {return Promise.resolve(
+        );
+      }
+      if (path.startsWith('/api/areas')) {
+        return Promise.resolve(
           init?.method === 'POST' ? response({}, 201) : response({ areas: options.areas ?? [] }),
-        );}
-      if (path.startsWith('/api/tables'))
-        {return Promise.resolve(
+        );
+      }
+      if (path.startsWith('/api/tables')) {
+        return Promise.resolve(
           init?.method === 'POST' ? response({}, 201) : response({ tables: options.tables ?? [] }),
-        );}
+        );
+      }
       return Promise.resolve(response({}));
     }),
   );
@@ -201,8 +221,9 @@ export function stubFailingFetch(): void {
     vi.fn((input: RequestInfo | URL) => {
       if (String(input) === '/api/health') return Promise.reject(new Error('network down'));
       if (String(input) === '/api/auth/me') return Promise.resolve(response({ user: ownerUser }));
-      if (String(input) === '/api/setup/status')
-        {return Promise.resolve(response({ initialized: true }));}
+      if (String(input) === '/api/setup/status') {
+        return Promise.resolve(response({ initialized: true }));
+      }
       if (String(input) === '/api/floor-plan') return Promise.resolve(response({ areas: [] }));
       return Promise.resolve(response({}));
     }),

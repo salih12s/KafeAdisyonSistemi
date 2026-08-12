@@ -1,6 +1,11 @@
 import { Router, type RequestHandler } from 'express';
 import { z } from 'zod';
-import { ORDER_ITEM_STATUSES, PERMISSIONS, PREPARATION_AREAS } from '@kafe/contracts';
+import {
+  ORDER_ITEM_STATUSES,
+  PAYMENT_METHODS,
+  PERMISSIONS,
+  PREPARATION_AREAS,
+} from '@kafe/contracts';
 import { callStore, parse, requireAuth, requirePermission } from './http';
 import { silentOrderEventPublisher, type OrderEventPublisher } from './order-events';
 import type { AppStore } from './store';
@@ -49,6 +54,66 @@ export function createOrderRouter(
   router.get('/tables/:id/open-check', ...canView, async (req, res) => {
     const { id } = parse(uuidParamsSchema, req.params);
     res.json({ check: await callStore(() => store.getOpenCheckByTable(id)) });
+  });
+
+  router.post('/checks/:id/payments', ...canManage, async (req, res) => {
+    const { id } = parse(uuidParamsSchema, req.params);
+    const body = parse(
+      z
+        .object({
+          method: z.enum(PAYMENT_METHODS),
+          amountKurus: z.number().int().min(1).max(2_147_483_647),
+          cashReceivedKurus: z.number().int().min(1).max(2_147_483_647).nullable().default(null),
+        })
+        .superRefine((value, context) => {
+          if (value.method === 'CARD' && value.cashReceivedKurus !== null) {
+            context.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ['cashReceivedKurus'],
+              message: 'Kart ödemesinde alınan nakit gönderilemez.',
+            });
+          }
+        }),
+      req.body,
+    );
+    const check = await callStore(() =>
+      store.addPayment({
+        actorUserId: requireAuth(req).user.id,
+        checkId: id,
+        ...body,
+      }),
+    );
+    events.publish({ type: 'PAYMENT_ADDED', checkId: id });
+    res.status(201).json({ check });
+  });
+
+  router.post('/checks/:id/payment-split', ...canManage, async (req, res) => {
+    const { id } = parse(uuidParamsSchema, req.params);
+    const body = parse(
+      z.discriminatedUnion('mode', [
+        z.object({ mode: z.literal('AMOUNT'), amountKurus: z.number().int().min(1) }),
+        z.object({ mode: z.literal('ITEMS'), itemIds: z.array(uuidSchema).min(1).max(100) }),
+        z.object({ mode: z.literal('GUESTS') }),
+      ]),
+      req.body,
+    );
+    const split = await callStore(() =>
+      store.previewPaymentSplit({
+        actorUserId: requireAuth(req).user.id,
+        checkId: id,
+        ...body,
+      }),
+    );
+    res.json({ split });
+  });
+
+  router.post('/checks/:id/close', ...canManage, async (req, res) => {
+    const { id } = parse(uuidParamsSchema, req.params);
+    const check = await callStore(() =>
+      store.closeCheck({ actorUserId: requireAuth(req).user.id, checkId: id }),
+    );
+    events.publish({ type: 'CHECK_CLOSED', checkId: id });
+    res.json({ check });
   });
 
   router.post('/checks/:id/items', ...canManage, async (req, res) => {

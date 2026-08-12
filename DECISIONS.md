@@ -289,3 +289,24 @@ event'lerin reconnect sonrasında telafi edilmesini sağlar.
 sonradan değişse bile eski sipariş başka istasyona taşınmaz. Hazırlık akışı yalnız
 `SENT → PREPARING → READY → SERVED` yönünde ilerler; iptal edilmiş kalemler
 değiştirilemez ve her geçiş actor ile audit'e yazılır.
+
+---
+
+## ADR-016 — Ödemeler immutable satırlar, hesap bölme ise ödeme kolaylığı olacak
+
+- **Tarih:** 2026-08-12
+- **Durum:** Kabul edildi
+
+**Karar.** Nakit ve kart ödemeleri `Payment` tablosuna ayrı, sonradan
+değiştirilmeyen satırlar olarak kaydedilir. Kalan bakiye her zaman adisyon toplamı
+eksi ödeme satırlarının toplamıdır. Hesap bölme yeni adisyon üretmez; kalan
+bakiyeyi tutar, seçili kalem veya kişi sayısına göre ödeme paylarına dönüştürür.
+Kişi paylarındaki kuruş artıkları ilk paylardan başlayarak deterministik dağıtılır.
+
+**Gerekçe.** Immutable ödeme defteri kasa denetimini korur. Bölme için alt
+adisyonlar oluşturmak masa ve sipariş yaşam döngüsünü gereksiz karmaşıklaştırır.
+
+**Sonuç.** Ödeme ve kapanış aynı adisyon satırını kilitleyen serializable
+transaction'larla yürür; fazla/çift ödeme ve çift kapanış engellenir. Adisyon
+yalnız kalan bakiye sıfırken `PAID` olur. Ödeme alınmışken kalem değişiklikleri
+toplamı ödenen tutarın altına indiremez.

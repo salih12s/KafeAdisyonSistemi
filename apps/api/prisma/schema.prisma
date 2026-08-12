@@ -39,6 +39,8 @@ model User {
   sessions            Session[]
   auditLogs           AuditLog[]
   openedChecks        Check[]     @relation("CheckOpenedBy")
+  closedChecks        Check[]     @relation("CheckClosedBy")
+  receivedPayments    Payment[]   @relation("PaymentReceivedBy")
   createdOrderItems   OrderItem[] @relation("OrderItemCreatedBy")
   cancelledOrderItems OrderItem[] @relation("OrderItemCancelledBy")
 
@@ -181,6 +183,12 @@ model ProductOptionValue {
 enum CheckStatus {
   OPEN
   CANCELLED
+  PAID
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
 }
 
 enum OrderItemStatus {
@@ -197,14 +205,32 @@ model Check {
   guestCount     Int
   status         CheckStatus @default(OPEN)
   openedAt       DateTime    @default(now())
+  closedAt       DateTime?
+  closedByUserId String?     @db.Uuid
   totalKurus     Int         @default(0)
   updatedAt      DateTime    @updatedAt
   table          CafeTable   @relation(fields: [tableId], references: [id], onDelete: Restrict)
   openedBy       User        @relation("CheckOpenedBy", fields: [openedByUserId], references: [id], onDelete: Restrict)
+  closedBy       User?       @relation("CheckClosedBy", fields: [closedByUserId], references: [id], onDelete: Restrict)
   items          OrderItem[]
+  payments       Payment[]
 
   @@index([tableId, status])
   @@index([status, openedAt])
+}
+
+model Payment {
+  id               String        @id @default(uuid()) @db.Uuid
+  checkId          String        @db.Uuid
+  method           PaymentMethod
+  amountKurus      Int
+  receivedByUserId String        @db.Uuid
+  createdAt        DateTime      @default(now())
+  check            Check         @relation(fields: [checkId], references: [id], onDelete: Restrict)
+  receivedBy       User          @relation("PaymentReceivedBy", fields: [receivedByUserId], references: [id], onDelete: Restrict)
+
+  @@index([checkId, createdAt])
+  @@index([receivedByUserId, createdAt])
 }
 
 model OrderItem {

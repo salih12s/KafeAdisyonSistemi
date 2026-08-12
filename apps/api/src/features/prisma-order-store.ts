@@ -5,21 +5,28 @@ import type {
   OperationalFloorPlanResponse,
   OrderItemResponse,
   OrderItemStatus,
+  PaymentSplitResponse,
 } from '@kafe/contracts';
 import { StoreError } from './store';
 import type {
   AddOrderItemInput,
+  AddPaymentInput,
   CancelOrderItemInput,
+  CloseCheckInput,
   OpenCheckInput,
   OrderStore,
+  SplitPaymentInput,
   UpdateOrderItemInput,
   UpdateOrderItemStatusInput,
 } from './order-store';
+import { calculatePaymentSplit } from './payment-calculations';
 
 const MAX_POSTGRES_INT = 2_147_483_647;
 const CHECK_INCLUDE = {
   table: true,
   openedBy: true,
+  closedBy: true,
+  payments: { orderBy: { createdAt: 'asc' }, include: { receivedBy: true } },
   items: {
     orderBy: { createdAt: 'asc' },
     include: {
@@ -74,6 +81,7 @@ const STATUS_AUDIT_ACTION: Record<Exclude<OrderItemStatus, 'SENT'>, string> = {
 };
 
 function toCheck(row: FullCheck): CheckResponse {
+  const paidKurus = row.payments.reduce((total, payment) => total + payment.amountKurus, 0);
   return {
     id: row.id,
     tableId: row.tableId,
@@ -84,6 +92,19 @@ function toCheck(row: FullCheck): CheckResponse {
     status: row.status,
     openedAt: row.openedAt.toISOString(),
     totalKurus: row.totalKurus,
+    paidKurus,
+    remainingKurus: row.totalKurus - paidKurus,
+    closedAt: row.closedAt?.toISOString() ?? null,
+    closedByUserId: row.closedByUserId,
+    closedByName: row.closedBy?.fullName ?? null,
+    payments: row.payments.map((payment) => ({
+      id: payment.id,
+      method: payment.method,
+      amountKurus: payment.amountKurus,
+      receivedByUserId: payment.receivedByUserId,
+      receivedByName: payment.receivedBy.fullName,
+      createdAt: payment.createdAt.toISOString(),
+    })),
     items: row.items.map(toOrderItem),
   };
 }
@@ -110,14 +131,28 @@ async function requireOpenCheck(
 }
 
 async function updateTotal(transaction: Prisma.TransactionClient, checkId: string): Promise<void> {
-  const result = await transaction.orderItem.aggregate({
-    where: { checkId, cancelledAt: null },
-    _sum: { lineTotalKurus: true },
-  });
+  const [result, payments] = await Promise.all([
+    transaction.orderItem.aggregate({
+      where: { checkId, cancelledAt: null },
+      _sum: { lineTotalKurus: true },
+    }),
+    transaction.payment.aggregate({ where: { checkId }, _sum: { amountKurus: true } }),
+  ]);
+  const totalKurus = result._sum.lineTotalKurus ?? 0;
+  if (totalKurus < (payments._sum.amountKurus ?? 0)) {
+    throw new StoreError(
+      'CONFLICT',
+      'İşlem, alınmış ödemelerden düşük bir adisyon toplamı oluşturamaz.',
+    );
+  }
   await transaction.check.update({
     where: { id: checkId },
-    data: { totalKurus: result._sum.lineTotalKurus ?? 0 },
+    data: { totalKurus },
   });
+}
+
+async function lockCheck(transaction: Prisma.TransactionClient, id: string): Promise<void> {
+  await transaction.$queryRaw`SELECT "id" FROM "Check" WHERE "id" = ${id}::uuid FOR UPDATE`;
 }
 
 async function readCheck(
@@ -509,6 +544,119 @@ export function createPrismaOrderStore(client: PrismaClient): OrderStore {
       } catch (error) {
         if (isSerializationConflict(error)) {
           throw new StoreError('CONFLICT', 'Sipariş durumu değişti; işlemi yeniden deneyin.');
+        }
+        throw error;
+      }
+    },
+
+    async addPayment(input: AddPaymentInput): Promise<CheckResponse> {
+      try {
+        return await client.$transaction(async (transaction) => {
+          await lockCheck(transaction, input.checkId);
+          const check = await requireOpenCheck(transaction, input.checkId);
+          const totals = await transaction.payment.aggregate({
+            where: { checkId: check.id },
+            _sum: { amountKurus: true },
+          });
+          const totalRow = await transaction.check.findUniqueOrThrow({
+            where: { id: check.id },
+            select: { totalKurus: true },
+          });
+          const remainingKurus = totalRow.totalKurus - (totals._sum.amountKurus ?? 0);
+          if (input.amountKurus > remainingKurus) {
+            throw new StoreError('VALIDATION', 'Ödeme kalan bakiyeyi aşamaz.');
+          }
+          if (input.method === 'CASH' && (input.cashReceivedKurus ?? 0) < input.amountKurus) {
+            throw new StoreError('VALIDATION', 'Alınan nakit ödeme tutarından az olamaz.');
+          }
+          const payment = await transaction.payment.create({
+            data: {
+              checkId: check.id,
+              method: input.method,
+              amountKurus: input.amountKurus,
+              receivedByUserId: input.actorUserId,
+            },
+          });
+          await transaction.auditLog.create({
+            data: {
+              actorUserId: input.actorUserId,
+              action: 'PAYMENT_RECEIVED',
+              entityType: 'Payment',
+              entityId: payment.id,
+              metadata: { checkId: check.id, method: input.method, amountKurus: input.amountKurus },
+            },
+          });
+          return readCheck(transaction, check.id);
+        }, transactionOptions());
+      } catch (error) {
+        if (isSerializationConflict(error)) {
+          throw new StoreError('CONFLICT', 'Ödeme bakiyesi değişti; yeniden deneyin.');
+        }
+        throw error;
+      }
+    },
+
+    async previewPaymentSplit(input: SplitPaymentInput): Promise<PaymentSplitResponse> {
+      return client.$transaction(async (transaction) => {
+        await requireOpenCheck(transaction, input.checkId);
+        const check = await readCheck(transaction, input.checkId);
+        const split = calculatePaymentSplit(check, input);
+        await transaction.auditLog.create({
+          data: {
+            actorUserId: input.actorUserId,
+            action: 'CHECK_SPLIT_PREVIEWED',
+            entityType: 'Check',
+            entityId: check.id,
+            metadata: { mode: input.mode, shares: split.shares.map((share) => share.amountKurus) },
+          },
+        });
+        return split;
+      }, transactionOptions());
+    },
+
+    async closeCheck(input: CloseCheckInput): Promise<CheckResponse> {
+      try {
+        return await client.$transaction(async (transaction) => {
+          await lockCheck(transaction, input.checkId);
+          const check = await requireOpenCheck(transaction, input.checkId);
+          const [totalRow, payments] = await Promise.all([
+            transaction.check.findUniqueOrThrow({
+              where: { id: check.id },
+              select: { totalKurus: true },
+            }),
+            transaction.payment.aggregate({
+              where: { checkId: check.id },
+              _sum: { amountKurus: true },
+            }),
+          ]);
+          if (totalRow.totalKurus - (payments._sum.amountKurus ?? 0) !== 0) {
+            throw new StoreError(
+              'CONFLICT',
+              'Adisyon yalnız kalan bakiye sıfır olduğunda kapatılabilir.',
+            );
+          }
+          const closedAt = new Date();
+          const updated = await transaction.check.updateMany({
+            where: { id: check.id, status: 'OPEN' },
+            data: { status: 'PAID', closedAt, closedByUserId: input.actorUserId },
+          });
+          if (updated.count !== 1) {
+            throw new StoreError('CONFLICT', 'Adisyon başka bir cihaz tarafından kapatıldı.');
+          }
+          await transaction.auditLog.create({
+            data: {
+              actorUserId: input.actorUserId,
+              action: 'CHECK_CLOSED',
+              entityType: 'Check',
+              entityId: check.id,
+              metadata: { totalKurus: totalRow.totalKurus },
+            },
+          });
+          return readCheck(transaction, check.id);
+        }, transactionOptions());
+      } catch (error) {
+        if (isSerializationConflict(error)) {
+          throw new StoreError('CONFLICT', 'Adisyon durumu değişti; yeniden deneyin.');
         }
         throw error;
       }

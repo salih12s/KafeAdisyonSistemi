@@ -8,6 +8,7 @@ import {
   type OrderItemResponse,
 } from '@kafe/contracts';
 import { Panel } from '../components/ui/panel';
+import { CheckPaymentPanel } from '../components/payments/check-payment-panel';
 import { useCurrentUser } from '../hooks/use-auth';
 import {
   ApiError,
@@ -44,7 +45,7 @@ export function CheckView({
   onBack: () => void;
 }): JSX.Element {
   const auth = useCurrentUser();
-  const canManage = auth.isSuccess && auth.data.role !== 'KITCHEN';
+  const canManageRole = auth.isSuccess && auth.data.role !== 'KITCHEN';
   const check = useQuery({ queryKey: ['check', checkId], queryFn: () => fetchCheck(checkId) });
   const menu = useQuery({ queryKey: ['sales-menu'], queryFn: fetchSalesMenu });
   const [selectedCategoryId, setSelectedCategoryId] = useState('');
@@ -58,6 +59,10 @@ export function CheckView({
       setSelectedCategoryId(menu.data.categories[0]?.id ?? '');
     }
   }, [menu.data, selectedCategoryId]);
+
+  useEffect(() => {
+    if (check.data?.status === 'PAID') onBack();
+  }, [check.data?.status, onBack]);
 
   if (check.isPending || menu.isPending) {
     return (
@@ -77,6 +82,7 @@ export function CheckView({
   }
 
   const category = menu.data.categories.find((entry) => entry.id === selectedCategoryId);
+  const canManage = canManageRole && check.data.status === 'OPEN';
 
   return (
     <div className="space-y-4">
@@ -155,6 +161,8 @@ export function CheckView({
         </Panel>
       </div>
 
+      <CheckPaymentPanel check={check.data} canManage={canManage} onClosed={onBack} />
+
       {selectedProduct === null ? null : (
         <ProductSelection
           product={selectedProduct}
@@ -224,8 +232,9 @@ function ProductSelection({
                           checked={checked}
                           onChange={() => {
                             setSelected((current) => {
-                              if (group.selectionType === 'SINGLE')
-                                {return { ...current, [group.id]: [value.id] };}
+                              if (group.selectionType === 'SINGLE') {
+                                return { ...current, [group.id]: [value.id] };
+                              }
                               const values = current[group.id] ?? [];
                               return {
                                 ...current,

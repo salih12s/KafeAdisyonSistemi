@@ -5,16 +5,21 @@ import type {
   OperationalFloorPlanResponse,
   OrderItemResponse,
   OrderItemStatus,
+  PaymentSplitResponse,
 } from '@kafe/contracts';
 import {
   StoreError,
   type AddOrderItemInput,
+  type AddPaymentInput,
   type CancelOrderItemInput,
+  type CloseCheckInput,
   type OpenCheckInput,
   type OrderStore,
+  type SplitPaymentInput,
   type UpdateOrderItemInput,
   type UpdateOrderItemStatusInput,
 } from '../../src/features/store';
+import { calculatePaymentSplit } from '../../src/features/payment-calculations';
 import { MemoryMenuStore } from './memory-menu-store';
 
 interface OrderTable {
@@ -88,6 +93,12 @@ export abstract class MemoryOrderStore extends MemoryMenuStore implements OrderS
       status: 'OPEN',
       openedAt: new Date().toISOString(),
       totalKurus: 0,
+      paidKurus: 0,
+      remainingKurus: 0,
+      closedAt: null,
+      closedByUserId: null,
+      closedByName: null,
+      payments: [],
       items: [],
     };
     this.checks.push(check);
@@ -183,9 +194,17 @@ export abstract class MemoryOrderStore extends MemoryMenuStore implements OrderS
       (total, option) => total + option.priceDeltaKurusSnapshot,
       0,
     );
+    const nextLineTotal = (item.unitPriceKurusSnapshot + optionTotal) * input.quantity;
+    const nextCheckTotal = check.totalKurus - item.lineTotalKurus + nextLineTotal;
+    if (nextCheckTotal < check.paidKurus) {
+      throw new StoreError(
+        'CONFLICT',
+        'İşlem, alınmış ödemelerden düşük bir adisyon toplamı oluşturamaz.',
+      );
+    }
     item.quantity = input.quantity;
     item.note = input.note;
-    item.lineTotalKurus = (item.unitPriceKurusSnapshot + optionTotal) * input.quantity;
+    item.lineTotalKurus = nextLineTotal;
     this.recalculate(check);
     this.record(input.actorUserId, 'ORDER_ITEM_UPDATED', 'OrderItem', item.id);
     return cloneCheck(check);
@@ -194,6 +213,9 @@ export abstract class MemoryOrderStore extends MemoryMenuStore implements OrderS
   async cancelOrderItem(input: CancelOrderItemInput): Promise<CheckResponse> {
     const { check, item } = this.requireItem(input.itemId);
     this.ensureMutable(check, item);
+    if (check.totalKurus - item.lineTotalKurus < check.paidKurus) {
+      throw new StoreError('CONFLICT', 'Ödemesi alınmış sipariş kalemi iptal edilemez.');
+    }
     item.cancellationReason = input.reason;
     item.cancelledByUserId = input.actorUserId;
     item.cancelledByName = this.findOrderUserName(input.actorUserId);
@@ -254,6 +276,50 @@ export abstract class MemoryOrderStore extends MemoryMenuStore implements OrderS
     return cloneCheck(check);
   }
 
+  async addPayment(input: AddPaymentInput): Promise<CheckResponse> {
+    const check = this.requireOpenCheck(input.checkId);
+    if (input.amountKurus > check.remainingKurus) {
+      throw new StoreError('VALIDATION', 'Ödeme kalan bakiyeyi aşamaz.');
+    }
+    if (input.method === 'CASH' && (input.cashReceivedKurus ?? 0) < input.amountKurus) {
+      throw new StoreError('VALIDATION', 'Alınan nakit ödeme tutarından az olamaz.');
+    }
+    check.payments.push({
+      id: randomUUID(),
+      method: input.method,
+      amountKurus: input.amountKurus,
+      receivedByUserId: input.actorUserId,
+      receivedByName: this.findOrderUserName(input.actorUserId),
+      createdAt: new Date().toISOString(),
+    });
+    this.recalculate(check);
+    this.record(input.actorUserId, 'PAYMENT_RECEIVED', 'Payment', check.payments.at(-1)?.id ?? '');
+    return cloneCheck(check);
+  }
+
+  async previewPaymentSplit(input: SplitPaymentInput): Promise<PaymentSplitResponse> {
+    const check = this.requireOpenCheck(input.checkId);
+    const split = calculatePaymentSplit(check, input);
+    this.record(input.actorUserId, 'CHECK_SPLIT_PREVIEWED', 'Check', check.id);
+    return split;
+  }
+
+  async closeCheck(input: CloseCheckInput): Promise<CheckResponse> {
+    const check = this.requireOpenCheck(input.checkId);
+    if (check.remainingKurus !== 0) {
+      throw new StoreError(
+        'CONFLICT',
+        'Adisyon yalnız kalan bakiye sıfır olduğunda kapatılabilir.',
+      );
+    }
+    check.status = 'PAID';
+    check.closedAt = new Date().toISOString();
+    check.closedByUserId = input.actorUserId;
+    check.closedByName = this.findOrderUserName(input.actorUserId);
+    this.record(input.actorUserId, 'CHECK_CLOSED', 'Check', check.id);
+    return cloneCheck(check);
+  }
+
   private requireCheck(id: string): CheckResponse {
     const check = this.checks.find((entry) => entry.id === id);
     if (check === undefined) throw new StoreError('NOT_FOUND', 'Adisyon bulunamadı.');
@@ -285,6 +351,8 @@ export abstract class MemoryOrderStore extends MemoryMenuStore implements OrderS
     check.totalKurus = check.items
       .filter((item) => item.cancelledAt === null)
       .reduce((total, item) => total + item.lineTotalKurus, 0);
+    check.paidKurus = check.payments.reduce((total, payment) => total + payment.amountKurus, 0);
+    check.remainingKurus = check.totalKurus - check.paidKurus;
   }
 }
 
