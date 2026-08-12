@@ -96,8 +96,9 @@ export class MemoryStore extends MemoryOrderStore implements AppStore {
   }
 
   async bootstrapOwner(input: BootstrapOwnerInput): Promise<CurrentUser> {
-    if (await this.hasActiveOwner())
-      {throw new StoreError('ALREADY_INITIALIZED', 'Aktif işletme sahibi zaten mevcut.');}
+    if (await this.hasActiveOwner()) {
+      throw new StoreError('ALREADY_INITIALIZED', 'Aktif işletme sahibi zaten mevcut.');
+    }
     const user = this.seedUser({ ...input, role: 'OWNER' });
     this.business = {
       id: 'business',
@@ -169,8 +170,9 @@ export class MemoryStore extends MemoryOrderStore implements AppStore {
   }
 
   async createStaff(input: CreateStaffInput): Promise<StaffMember> {
-    if (this.users.some((user) => user.username === input.username))
-      {throw new StoreError('CONFLICT', 'Bu kullanıcı adı zaten kullanılıyor.');}
+    if (this.users.some((user) => user.username === input.username)) {
+      throw new StoreError('CONFLICT', 'Bu kullanıcı adı zaten kullanılıyor.');
+    }
     const user = this.seedUser(input);
     this.audits.push({
       actorUserId: input.actorUserId,
@@ -183,17 +185,19 @@ export class MemoryStore extends MemoryOrderStore implements AppStore {
 
   async updateStaff(input: UpdateStaffInput): Promise<StaffMember> {
     const user = this.requireUser(input.targetUserId);
-    if (user.id === input.actorUserId && !input.isActive)
-      {throw new StoreError('SELF_DEACTIVATE', 'Kendi hesabınızı pasife alamazsınız.');}
+    if (user.id === input.actorUserId && !input.isActive) {
+      throw new StoreError('SELF_DEACTIVATE', 'Kendi hesabınızı pasife alamazsınız.');
+    }
     if (user.role === 'OWNER' && user.isActive && (input.role !== 'OWNER' || !input.isActive)) {
       const ownerCount = this.users.filter(
         (entry) => entry.role === 'OWNER' && entry.isActive,
       ).length;
-      if (ownerCount <= 1)
-        {throw new StoreError(
+      if (ownerCount <= 1) {
+        throw new StoreError(
           'LAST_OWNER',
           'Son aktif işletme sahibi pasife alınamaz veya rolü değiştirilemez.',
-        );}
+        );
+      }
     }
     user.fullName = input.fullName;
     user.role = input.role;
@@ -254,8 +258,9 @@ export class MemoryStore extends MemoryOrderStore implements AppStore {
   }
 
   async createArea(input: AreaWriteInput): Promise<DiningAreaResponse> {
-    if (this.areas.some((area) => area.nameKey === input.nameKey))
-      {throw new StoreError('CONFLICT', 'Bu salon adı zaten kullanılıyor.');}
+    if (this.areas.some((area) => area.nameKey === input.nameKey)) {
+      throw new StoreError('CONFLICT', 'Bu salon adı zaten kullanılıyor.');
+    }
     const area: MemoryArea = {
       id: randomUUID(),
       name: input.name,
@@ -276,8 +281,9 @@ export class MemoryStore extends MemoryOrderStore implements AppStore {
   async updateArea(id: string, input: AreaWriteInput): Promise<DiningAreaResponse> {
     const area = this.areas.find((entry) => entry.id === id);
     if (area === undefined) throw new StoreError('NOT_FOUND', 'Salon bulunamadı.');
-    if (this.areas.some((entry) => entry.id !== id && entry.nameKey === input.nameKey))
-      {throw new StoreError('CONFLICT', 'Bu salon adı zaten kullanılıyor.');}
+    if (this.areas.some((entry) => entry.id !== id && entry.nameKey === input.nameKey)) {
+      throw new StoreError('CONFLICT', 'Bu salon adı zaten kullanılıyor.');
+    }
     Object.assign(area, {
       name: input.name,
       nameKey: input.nameKey,
@@ -307,12 +313,14 @@ export class MemoryStore extends MemoryOrderStore implements AppStore {
   }
 
   async createTable(input: TableWriteInput): Promise<CafeTableResponse> {
-    if (!this.areas.some((area) => area.id === input.areaId))
-      {throw new StoreError('NOT_FOUND', 'Salon bulunamadı.');}
+    if (!this.areas.some((area) => area.id === input.areaId)) {
+      throw new StoreError('NOT_FOUND', 'Salon bulunamadı.');
+    }
     if (
       this.tables.some((table) => table.areaId === input.areaId && table.nameKey === input.nameKey)
-    )
-      {throw new StoreError('CONFLICT', 'Bu salonda aynı masa adı zaten kullanılıyor.');}
+    ) {
+      throw new StoreError('CONFLICT', 'Bu salonda aynı masa adı zaten kullanılıyor.');
+    }
     const table: MemoryTable = {
       id: randomUUID(),
       areaId: input.areaId,
@@ -340,8 +348,9 @@ export class MemoryStore extends MemoryOrderStore implements AppStore {
         (entry) =>
           entry.id !== id && entry.areaId === input.areaId && entry.nameKey === input.nameKey,
       )
-    )
-      {throw new StoreError('CONFLICT', 'Bu salonda aynı masa adı zaten kullanılıyor.');}
+    ) {
+      throw new StoreError('CONFLICT', 'Bu salonda aynı masa adı zaten kullanılıyor.');
+    }
     Object.assign(table, input);
     this.audits.push({
       actorUserId: input.actorUserId,

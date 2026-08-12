@@ -12,8 +12,8 @@ Her Phase kendi branch'inde çalışır ve **draft PR** ile kapanır.
 Branch adı kalıbı: `feat/phase-<n>-<konu>`
 Her Phase branch'i bir önceki Phase branch'inden açılır; PR'ı da ona hedeflenir.
 
-| Phase | Konu                                                   | Ana geliştirici | Durum            |
-| ----- | ------------------------------------------------------ | --------------- | ---------------- |
+| Phase | Konu                                                   | Ana geliştirici | Durum                      |
+| ----- | ------------------------------------------------------ | --------------- | -------------------------- |
 | 0     | Proje temeli                                           | Claude          | Tamamlandı — draft PR açık |
 | 1     | Authentication, personel, işletme, salon ve masa       | Codex           | Tamamlandı — draft PR açık |
 | 2     | Kategoriler, ürünler, seçenekler ve ekstralar          | Claude          | Tamamlandı — draft PR açık |

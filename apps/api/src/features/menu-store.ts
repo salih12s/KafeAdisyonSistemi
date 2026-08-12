@@ -62,7 +62,10 @@ export interface MenuStore {
   createCategory(input: CategoryWriteInput): Promise<CategoryResponse>;
   updateCategory(id: string, input: CategoryWriteInput): Promise<CategoryResponse>;
 
-  listProducts(categoryId: string | undefined, includeInactive: boolean): Promise<ProductResponse[]>;
+  listProducts(
+    categoryId: string | undefined,
+    includeInactive: boolean,
+  ): Promise<ProductResponse[]>;
   createProduct(input: ProductWriteInput): Promise<ProductResponse>;
   updateProduct(id: string, input: ProductWriteInput): Promise<ProductResponse>;
 

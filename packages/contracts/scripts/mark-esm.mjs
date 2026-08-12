@@ -9,4 +9,8 @@ const packageRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const esmDir = join(packageRoot, 'dist', 'esm');
 
 mkdirSync(esmDir, { recursive: true });
-writeFileSync(join(esmDir, 'package.json'), `${JSON.stringify({ type: 'module' }, null, 2)}\n`, 'utf8');
+writeFileSync(
+  join(esmDir, 'package.json'),
+  `${JSON.stringify({ type: 'module' }, null, 2)}\n`,
+  'utf8',
+);

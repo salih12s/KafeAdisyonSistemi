@@ -126,20 +126,20 @@ Kafe Adisyon Sistemi'nin **ilk sürüm** kapsamı. Buradaki maddeler ürünün
 Aşağıdakiler **ilk sürümde geliştirilmeyecektir.** Talep gelirse ayrı bir
 karar ve Phase gerekir.
 
-| Konu | Neden kapsam dışı |
-| --- | --- |
-| Stok ve reçete takibi | Kendi başına bir ürün; adisyon akışını geciktirir |
-| Termal yazıcı / fiş yazdırma | Donanım bağımlılığı ve sürücü çeşitliliği |
-| ÖKC / yazarkasa entegrasyonu | Yasal sertifikasyon ve donanım gerektirir |
-| Online ödeme | Ödeme sağlayıcı entegrasyonu ve uyum yükü |
-| QR menü | Müşteriye açık ayrı bir arayüz gerektirir |
-| Rezervasyon | Ayrı bir domain; masa akışını karmaşıklaştırır |
-| Paket servis platformları (Yemeksepeti vb.) | Dış servis entegrasyonu |
-| Çoklu işletme ve çoklu şube | ADR-007: tek işletme, tek şube |
-| Offline çalışma / PWA service worker | İlk sürümde ihtiyaç yok |
-| Yerel ağ üzerinden IP bağlantısı | ADR-001: şimdilik yalnızca local geliştirme |
-| Native mobil uygulama, Electron | Tarayıcı üzerinden erişim yeterlidir |
-| Docker | Railway doğrudan Node.js servisi çalıştırır (ADR-002) |
+| Konu                                        | Neden kapsam dışı                                     |
+| ------------------------------------------- | ----------------------------------------------------- |
+| Stok ve reçete takibi                       | Kendi başına bir ürün; adisyon akışını geciktirir     |
+| Termal yazıcı / fiş yazdırma                | Donanım bağımlılığı ve sürücü çeşitliliği             |
+| ÖKC / yazarkasa entegrasyonu                | Yasal sertifikasyon ve donanım gerektirir             |
+| Online ödeme                                | Ödeme sağlayıcı entegrasyonu ve uyum yükü             |
+| QR menü                                     | Müşteriye açık ayrı bir arayüz gerektirir             |
+| Rezervasyon                                 | Ayrı bir domain; masa akışını karmaşıklaştırır        |
+| Paket servis platformları (Yemeksepeti vb.) | Dış servis entegrasyonu                               |
+| Çoklu işletme ve çoklu şube                 | ADR-007: tek işletme, tek şube                        |
+| Offline çalışma / PWA service worker        | İlk sürümde ihtiyaç yok                               |
+| Yerel ağ üzerinden IP bağlantısı            | ADR-001: şimdilik yalnızca local geliştirme           |
+| Native mobil uygulama, Electron             | Tarayıcı üzerinden erişim yeterlidir                  |
+| Docker                                      | Railway doğrudan Node.js servisi çalıştırır (ADR-002) |
 
 > **Not:** Railway'e deployment kapsam **dışı değildir**; production hedefidir
 > (ADR-002) ve Phase 7'de yapılır. Bu aşamada yalnızca yapılandırması yazılmaz.

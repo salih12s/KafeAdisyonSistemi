@@ -55,6 +55,8 @@ main()
     process.exitCode = exitCode;
   })
   .catch((error: unknown) => {
-    process.stderr.write(`Beklenmeyen hata: ${error instanceof Error ? error.message : String(error)}\n`);
+    process.stderr.write(
+      `Beklenmeyen hata: ${error instanceof Error ? error.message : String(error)}\n`,
+    );
     process.exitCode = 1;
   });

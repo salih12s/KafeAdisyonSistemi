@@ -111,8 +111,9 @@ export function createPrismaMenuStore(client: PrismaClient): MenuStore {
         });
         return toCategory(created);
       } catch (error) {
-        if (isUniqueConstraint(error))
-          {throw new StoreError('CONFLICT', 'Bu kategori adı zaten kullanılıyor.');}
+        if (isUniqueConstraint(error)) {
+          throw new StoreError('CONFLICT', 'Bu kategori adı zaten kullanılıyor.');
+        }
         throw error;
       }
     },
@@ -142,8 +143,9 @@ export function createPrismaMenuStore(client: PrismaClient): MenuStore {
         });
         return toCategory(updated);
       } catch (error) {
-        if (isUniqueConstraint(error))
-          {throw new StoreError('CONFLICT', 'Bu kategori adı zaten kullanılıyor.');}
+        if (isUniqueConstraint(error)) {
+          throw new StoreError('CONFLICT', 'Bu kategori adı zaten kullanılıyor.');
+        }
         if (isMissingRecord(error)) throw new StoreError('NOT_FOUND', 'Kategori bulunamadı.');
         throw error;
       }
@@ -195,8 +197,9 @@ export function createPrismaMenuStore(client: PrismaClient): MenuStore {
         });
         return toProduct(created);
       } catch (error) {
-        if (isUniqueConstraint(error))
-          {throw new StoreError('CONFLICT', 'Bu kategoride aynı ürün adı zaten kullanılıyor.');}
+        if (isUniqueConstraint(error)) {
+          throw new StoreError('CONFLICT', 'Bu kategoride aynı ürün adı zaten kullanılıyor.');
+        }
         throw error;
       }
     },
@@ -238,8 +241,9 @@ export function createPrismaMenuStore(client: PrismaClient): MenuStore {
         });
         return toProduct(updated);
       } catch (error) {
-        if (isUniqueConstraint(error))
-          {throw new StoreError('CONFLICT', 'Bu kategoride aynı ürün adı zaten kullanılıyor.');}
+        if (isUniqueConstraint(error)) {
+          throw new StoreError('CONFLICT', 'Bu kategoride aynı ürün adı zaten kullanılıyor.');
+        }
         if (isMissingRecord(error)) throw new StoreError('NOT_FOUND', 'Ürün bulunamadı.');
         throw error;
       }
@@ -296,8 +300,9 @@ export function createPrismaMenuStore(client: PrismaClient): MenuStore {
         });
         return toOptionGroup(created);
       } catch (error) {
-        if (isUniqueConstraint(error))
-          {throw new StoreError('CONFLICT', 'Bu üründe aynı seçenek grubu adı zaten kullanılıyor.');}
+        if (isUniqueConstraint(error)) {
+          throw new StoreError('CONFLICT', 'Bu üründe aynı seçenek grubu adı zaten kullanılıyor.');
+        }
         throw error;
       }
     },
@@ -333,8 +338,9 @@ export function createPrismaMenuStore(client: PrismaClient): MenuStore {
         });
         return toOptionGroup(updated);
       } catch (error) {
-        if (isUniqueConstraint(error))
-          {throw new StoreError('CONFLICT', 'Bu üründe aynı seçenek grubu adı zaten kullanılıyor.');}
+        if (isUniqueConstraint(error)) {
+          throw new StoreError('CONFLICT', 'Bu üründe aynı seçenek grubu adı zaten kullanılıyor.');
+        }
         if (isMissingRecord(error)) throw new StoreError('NOT_FOUND', 'Seçenek grubu bulunamadı.');
         throw error;
       }
@@ -371,8 +377,9 @@ export function createPrismaMenuStore(client: PrismaClient): MenuStore {
         });
         return toOptionValue(created);
       } catch (error) {
-        if (isUniqueConstraint(error))
-          {throw new StoreError('CONFLICT', 'Bu grupta aynı seçenek adı zaten kullanılıyor.');}
+        if (isUniqueConstraint(error)) {
+          throw new StoreError('CONFLICT', 'Bu grupta aynı seçenek adı zaten kullanılıyor.');
+        }
         throw error;
       }
     },
@@ -406,8 +413,9 @@ export function createPrismaMenuStore(client: PrismaClient): MenuStore {
         });
         return toOptionValue(updated);
       } catch (error) {
-        if (isUniqueConstraint(error))
-          {throw new StoreError('CONFLICT', 'Bu grupta aynı seçenek adı zaten kullanılıyor.');}
+        if (isUniqueConstraint(error)) {
+          throw new StoreError('CONFLICT', 'Bu grupta aynı seçenek adı zaten kullanılıyor.');
+        }
         if (isMissingRecord(error)) throw new StoreError('NOT_FOUND', 'Seçenek bulunamadı.');
         throw error;
       }
