@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import { MOBILE_PRIMARY_PATHS, navigationForRole } from '../../config/navigation';
@@ -12,6 +12,9 @@ import { useCurrentUser } from '../../hooks/use-auth';
  */
 export function MobileNav(): JSX.Element {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const drawerRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
   const { pathname } = useLocation();
   const auth = useCurrentUser();
   const items = auth.isSuccess ? navigationForRole(auth.data.role) : [];
@@ -26,9 +29,29 @@ export function MobileNav(): JSX.Element {
       return;
     }
 
+    const previousOverflow = document.body.style.overflow;
+    const trigger = triggerRef.current;
+    document.body.style.overflow = 'hidden';
+    closeRef.current?.focus();
+
     const onKeyDown = (event: KeyboardEvent): void => {
       if (event.key === 'Escape') {
         setDrawerOpen(false);
+        return;
+      }
+      if (event.key !== 'Tab' || drawerRef.current === null) return;
+      const focusable = Array.from(
+        drawerRef.current.querySelectorAll<HTMLElement>('a[href], button:not(:disabled)'),
+      );
+      const first = focusable[0];
+      const last = focusable.at(-1);
+      if (first === undefined || last === undefined) return;
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
       }
     };
 
@@ -36,6 +59,8 @@ export function MobileNav(): JSX.Element {
 
     return () => {
       window.removeEventListener('keydown', onKeyDown);
+      document.body.style.overflow = previousOverflow;
+      trigger?.focus();
     };
   }, [drawerOpen]);
 
@@ -53,6 +78,7 @@ export function MobileNav(): JSX.Element {
           />
 
           <div
+            ref={drawerRef}
             role="dialog"
             aria-modal="true"
             aria-label="Tüm modüller"
@@ -61,6 +87,7 @@ export function MobileNav(): JSX.Element {
             <div className="flex h-14 items-center justify-between border-b border-line px-4">
               <span className="text-sm font-semibold">Tüm modüller</span>
               <button
+                ref={closeRef}
                 type="button"
                 onClick={() => {
                   setDrawerOpen(false);
@@ -104,7 +131,8 @@ export function MobileNav(): JSX.Element {
 
       <nav
         aria-label="Alt gezinme"
-        className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-30 grid border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] lg:hidden"
+        style={{ gridTemplateColumns: `repeat(${primaryItems.length + 1}, minmax(0, 1fr))` }}
       >
         {primaryItems.map((item) => (
           <NavLink
@@ -124,6 +152,7 @@ export function MobileNav(): JSX.Element {
         ))}
 
         <button
+          ref={triggerRef}
           type="button"
           aria-haspopup="dialog"
           aria-expanded={drawerOpen}

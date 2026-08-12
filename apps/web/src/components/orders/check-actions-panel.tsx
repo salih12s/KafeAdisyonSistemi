@@ -29,10 +29,15 @@ export function CheckActionsPanel({
   onChanged: (check: CheckResponse) => void;
 }): JSX.Element {
   const client = useQueryClient();
-  const customers = useQuery({ queryKey: ['customers'], queryFn: () => fetchCustomers() });
+  const customers = useQuery({
+    queryKey: ['customers'],
+    queryFn: () => fetchCustomers(),
+    enabled: canAdjust,
+  });
   const floor = useQuery({
     queryKey: ['operational-floor-plan'],
     queryFn: fetchOperationalFloorPlan,
+    enabled: canMove || canMerge,
   });
   const [discountType, setDiscountType] = useState<'PERCENT' | 'FIXED'>('PERCENT');
   const apply = (updated: CheckResponse) => {
@@ -74,13 +79,24 @@ export function CheckActionsPanel({
       <div className="grid gap-4 p-4 md:grid-cols-2">
         {canAdjust ? (
           <>
-            <form aria-label="İndirim formu" className="space-y-2">
+            <form
+              aria-label="İndirim formu"
+              className="space-y-2"
+              onSubmit={(event: FormEvent<HTMLFormElement>) => {
+                event.preventDefault();
+                discount.mutate(new FormData(event.currentTarget));
+              }}
+            >
               <h3 className="font-semibold">İndirim</h3>
               <select
                 aria-label="İndirim türü"
                 className={input}
                 value={discountType}
-                onChange={(e) => setDiscountType(e.target.value as 'PERCENT' | 'FIXED')}
+                onChange={(event) => {
+                  if (event.target.value === 'PERCENT' || event.target.value === 'FIXED') {
+                    setDiscountType(event.target.value);
+                  }
+                }}
               >
                 <option value="PERCENT">Yüzde</option>
                 <option value="FIXED">Sabit tutar</option>
@@ -93,13 +109,14 @@ export function CheckActionsPanel({
                 minLength={3}
                 required
               />
-              <button
-                type="button"
-                className={button}
-                onClick={(e) => discount.mutate(new FormData(e.currentTarget.form ?? undefined))}
-              >
+              <button type="submit" className={button}>
                 İndirim uygula
               </button>
+              {discount.isError ? (
+                <p role="alert" className="text-sm text-danger">
+                  İndirim uygulanamadı.
+                </p>
+              ) : null}
             </form>
             <form
               aria-label="İkram formu"
@@ -127,6 +144,11 @@ export function CheckActionsPanel({
                 required
               />
               <button className={button}>İkram yap</button>
+              {gift.isError ? (
+                <p role="alert" className="text-sm text-danger">
+                  İkram kaydedilemedi.
+                </p>
+              ) : null}
             </form>
             <form
               aria-label="Cariye aktarma formu"
@@ -147,6 +169,11 @@ export function CheckActionsPanel({
                   ))}
               </select>
               <button className={button}>Kalanı cariye aktar</button>
+              {account.isError ? (
+                <p role="alert" className="text-sm text-danger">
+                  Cariye aktarma tamamlanamadı.
+                </p>
+              ) : null}
             </form>
           </>
         ) : null}
@@ -170,6 +197,11 @@ export function CheckActionsPanel({
                 ))}
             </select>
             <button className={button}>Masayı taşı</button>
+            {move.isError ? (
+              <p role="alert" className="text-sm text-danger">
+                Masa taşınamadı.
+              </p>
+            ) : null}
           </form>
         ) : null}
         {canMerge ? (
@@ -192,6 +224,11 @@ export function CheckActionsPanel({
                 ))}
             </select>
             <button className={button}>Adisyonları birleştir</button>
+            {merge.isError ? (
+              <p role="alert" className="text-sm text-danger">
+                Adisyonlar birleştirilemedi.
+              </p>
+            ) : null}
           </form>
         ) : null}
       </div>

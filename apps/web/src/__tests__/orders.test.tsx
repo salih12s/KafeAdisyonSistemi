@@ -2,7 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { App } from '../App';
-import { recordedRequests, renderWithProviders, stubAppFetch, userForRole } from '../test/render';
+import {
+  recordedRequests,
+  renderWithProviders,
+  requestedPaths,
+  stubAppFetch,
+  userForRole,
+} from '../test/render';
 
 const tableId = '00000000-0000-4000-8000-000000000101';
 const checkId = '00000000-0000-4000-8000-000000000102';
@@ -252,6 +258,15 @@ describe('Phase 3 masa ve adisyon ekranı', () => {
     expect(await screen.findByText(/Mutfak rolü adisyonu görüntüleyebilir/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Adet / not' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Kalemi iptal et' })).not.toBeInTheDocument();
+  });
+
+  it('garson adisyonunda yetkisiz cari sorgusu çalıştırmaz', async () => {
+    stubAppFetch({ floorPlan: floor(), check, salesMenu, user: userForRole('WAITER') });
+    const user = userEvent.setup();
+    renderWithProviders(<App />, '/masalar');
+    await user.click(await screen.findByRole('button', { name: /Masa 1/ }));
+    await screen.findByText('Masa 1 adisyonu');
+    expect(requestedPaths.some((path) => path.startsWith('/api/accounts'))).toBe(false);
   });
 
   it('nakit ödemede alınan tutarı ve para üstünü gösterip yalnız uygulanan tutarı gönderir', async () => {

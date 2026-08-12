@@ -90,7 +90,27 @@ export function createPrismaAccountStore(client: PrismaClient): AccountStore {
               },
         orderBy: [{ isActive: 'desc' }, { name: 'asc' }],
       });
-      return Promise.all(rows.map(summary));
+      const entries = await client.accountEntry.findMany({
+        where: { customerId: { in: rows.map((row) => row.id) } },
+        select: { customerId: true, type: true, amountKurus: true },
+      });
+      const balances = new Map<string, number>();
+      for (const entry of entries) {
+        balances.set(
+          entry.customerId,
+          (balances.get(entry.customerId) ?? 0) + signedAmount(entry.type, entry.amountKurus),
+        );
+      }
+      return rows.map((row) => ({
+        id: row.id,
+        name: row.name,
+        phone: row.phone,
+        note: row.note,
+        isActive: row.isActive,
+        balanceKurus: balances.get(row.id) ?? 0,
+        createdAt: row.createdAt.toISOString(),
+        updatedAt: row.updatedAt.toISOString(),
+      }));
     },
     getCustomer: customer,
     async createCustomer(input): Promise<CustomerResponse> {

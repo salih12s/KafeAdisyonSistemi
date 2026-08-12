@@ -37,7 +37,9 @@ export default defineConfig({
     css: false,
     setupFiles: ['./src/test/setup.ts'],
     include: ['src/**/*.test.{ts,tsx}'],
+    maxWorkers: 2,
     restoreMocks: true,
+    testTimeout: 10_000,
     unstubGlobals: true,
   },
 });

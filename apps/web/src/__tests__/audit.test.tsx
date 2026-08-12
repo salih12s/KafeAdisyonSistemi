@@ -39,10 +39,11 @@ describe('Phase 7 işlem geçmişi', () => {
     const user = userEvent.setup();
     renderWithProviders(<App />, '/ayarlar');
     await user.click(await screen.findByRole('button', { name: 'İşlem Geçmişi' }));
-    expect((await screen.findAllByText('PAYMENT_RECEIVED')).length).toBeGreaterThan(0);
-    expect(screen.getByText(/amountKurus: 5000/)).toBeInTheDocument();
+    expect((await screen.findAllByText('Ödeme alındı')).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Tutar:.*50,00/)).toBeInTheDocument();
+    expect(screen.queryByText('PAYMENT_RECEIVED')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /sil|değiştir/i })).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Filtrele' }));
-    expect((await screen.findAllByText('PAYMENT_RECEIVED')).length).toBeGreaterThan(0);
+    expect((await screen.findAllByText('Ödeme alındı')).length).toBeGreaterThan(0);
   });
 });

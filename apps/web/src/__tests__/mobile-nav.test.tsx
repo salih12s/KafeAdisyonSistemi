@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { screen, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { App } from '../App';
 import { NAV_ITEMS } from '../config/navigation';
@@ -48,8 +48,10 @@ describe('Mobil gezinme', () => {
     const drawer = screen.getByRole('dialog', { name: 'Tüm modüller' });
     await user.click(within(drawer).getByRole('link', { name: /Cariler/ }));
 
-    expect(screen.getByRole('heading', { level: 1, name: 'Cariler' })).toBeInTheDocument();
-    expect(screen.queryByRole('dialog', { name: 'Tüm modüller' })).not.toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 1, name: 'Cariler' })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Tüm modüller' })).not.toBeInTheDocument();
+    });
   });
 
   it('kapat düğmesi çekmeceyi kapatır', async () => {
@@ -64,5 +66,17 @@ describe('Mobil gezinme', () => {
     await user.click(screen.getByRole('button', { name: 'Kapat' }));
 
     expect(screen.queryByRole('dialog', { name: 'Tüm modüller' })).not.toBeInTheDocument();
+  });
+
+  it('çekmece açıldığında odağı içine alır ve kapanınca Tümü düğmesine döndürür', async () => {
+    stubHealthFetch(healthyResponse);
+    const user = userEvent.setup();
+    renderWithProviders(<App />);
+    const bottomNav = await screen.findByRole('navigation', { name: 'Alt gezinme' });
+    const trigger = within(bottomNav).getByRole('button', { name: 'Tümü' });
+    await user.click(trigger);
+    expect(screen.getByRole('button', { name: 'Kapat' })).toHaveFocus();
+    await user.keyboard('{Escape}');
+    expect(trigger).toHaveFocus();
   });
 });

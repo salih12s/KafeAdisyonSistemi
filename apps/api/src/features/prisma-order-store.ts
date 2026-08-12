@@ -26,6 +26,17 @@ import type {
 import { calculatePaymentSplit } from './payment-calculations';
 
 const MAX_POSTGRES_INT = 2_147_483_647;
+
+function statusAuditAction(status: OrderItemStatus): string {
+  switch (status) {
+    case 'PREPARING':
+    case 'READY':
+    case 'SERVED':
+      return STATUS_AUDIT_ACTION[status];
+    case 'SENT':
+      throw new StoreError('CONFLICT', 'Geçersiz hazırlık durumu geçişi.');
+  }
+}
 export const CHECK_INCLUDE = {
   table: true,
   openedBy: true,
@@ -572,7 +583,7 @@ export function createPrismaOrderStore(client: PrismaClient): OrderStore {
           await transaction.auditLog.create({
             data: {
               actorUserId: input.actorUserId,
-              action: STATUS_AUDIT_ACTION[input.status as Exclude<OrderItemStatus, 'SENT'>],
+              action: statusAuditAction(input.status),
               entityType: 'OrderItem',
               entityId: item.id,
               metadata: { checkId: item.checkId, preparationStatus: input.status },

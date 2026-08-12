@@ -34,6 +34,12 @@ const STATUS_ACCENT = {
   READY: 'border-t-kds-ready',
 } as const;
 
+type ActiveStatus = (typeof ACTIVE_STATUSES)[number];
+
+function isActiveStatus(status: OrderItemStatus): status is ActiveStatus {
+  return ACTIVE_STATUSES.some((candidate) => candidate === status);
+}
+
 export function KitchenPage(): JSX.Element {
   const [filter, setFilter] = useState<StationFilter>('ALL');
   const preparationArea = filter === 'ALL' ? undefined : filter;
@@ -154,16 +160,20 @@ function OrderColumn({
   );
 }
 
-function KitchenOrderCard({ order }: { order: KitchenOrderResponse }): JSX.Element {
+function KitchenOrderCard({ order }: { order: KitchenOrderResponse }): JSX.Element | null {
   const queryClient = useQueryClient();
-  const status = order.preparationStatus as (typeof ACTIVE_STATUSES)[number];
+  const status = isActiveStatus(order.preparationStatus) ? order.preparationStatus : null;
   const mutation = useMutation({
-    mutationFn: () => updateOrderItemStatus(order.itemId, NEXT_STATUS[status]),
+    mutationFn: () => {
+      if (status === null) throw new ApiError('Siparişin hazırlık durumu geçersiz.');
+      return updateOrderItemStatus(order.itemId, NEXT_STATUS[status]);
+    },
     onSuccess: (check) => {
       queryClient.setQueryData(['check', check.id], check);
       void queryClient.invalidateQueries({ queryKey: ['kitchen-orders'] });
     },
   });
+  if (status === null) return null;
   const waitMinutes = Math.max(
     0,
     Math.floor((Date.now() - new Date(order.createdAt).getTime()) / 60_000),

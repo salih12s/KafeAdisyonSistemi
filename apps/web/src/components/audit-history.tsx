@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Panel } from './ui/panel';
 import { fetchAuditLogs, fetchStaff } from '../lib/api';
 import { formatDateTime } from '../lib/datetime';
+import { formatKurus } from '@kafe/contracts';
 
 const input = 'min-h-touch rounded-panel border border-line bg-white px-3 text-sm';
 
@@ -10,10 +11,104 @@ function todayIstanbul(): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Istanbul' }).format(new Date());
 }
 
+const ACTION_LABELS: Record<string, string> = {
+  OWNER_CREATED: 'İlk işletme sahibi oluşturuldu',
+  STAFF_CREATED: 'Personel oluşturuldu',
+  STAFF_UPDATED: 'Personel güncellendi',
+  STAFF_PASSWORD_RESET: 'Personel şifresi sıfırlandı',
+  PASSWORD_CHANGED: 'Şifre değiştirildi',
+  BUSINESS_UPDATED: 'İşletme bilgileri güncellendi',
+  AREA_CREATED: 'Salon oluşturuldu',
+  AREA_UPDATED: 'Salon güncellendi',
+  TABLE_CREATED: 'Masa oluşturuldu',
+  TABLE_UPDATED: 'Masa güncellendi',
+  CATEGORY_CREATED: 'Kategori oluşturuldu',
+  CATEGORY_UPDATED: 'Kategori güncellendi',
+  PRODUCT_CREATED: 'Ürün oluşturuldu',
+  PRODUCT_UPDATED: 'Ürün güncellendi',
+  OPTION_GROUP_CREATED: 'Seçenek grubu oluşturuldu',
+  OPTION_GROUP_UPDATED: 'Seçenek grubu güncellendi',
+  OPTION_VALUE_CREATED: 'Seçenek oluşturuldu',
+  OPTION_VALUE_UPDATED: 'Seçenek güncellendi',
+  CHECK_OPENED: 'Adisyon açıldı',
+  CHECK_CLOSED: 'Adisyon kapatıldı',
+  ORDER_ITEM_ADDED: 'Sipariş kalemi eklendi',
+  ORDER_ITEM_UPDATED: 'Sipariş kalemi güncellendi',
+  ORDER_ITEM_CANCELLED: 'Sipariş kalemi iptal edildi',
+  ORDER_ITEM_COMPLIMENTARY: 'Sipariş kalemi ikram edildi',
+  ORDER_ITEM_PREPARING: 'Hazırlamaya başlandı',
+  ORDER_ITEM_READY: 'Sipariş hazırlandı',
+  ORDER_ITEM_SERVED: 'Sipariş servis edildi',
+  PAYMENT_RECEIVED: 'Ödeme alındı',
+  CHECK_SPLIT_PREVIEWED: 'Hesap bölme önizlendi',
+  CHECK_DISCOUNT_APPLIED: 'İndirim uygulandı',
+  CHECK_TABLE_MOVED: 'Masa taşındı',
+  CHECKS_MERGED: 'Adisyonlar birleştirildi',
+  CUSTOMER_CREATED: 'Cari müşteri oluşturuldu',
+  CUSTOMER_UPDATED: 'Cari müşteri güncellendi',
+  CHECK_TRANSFERRED_TO_ACCOUNT: 'Adisyon cariye aktarıldı',
+  ACCOUNT_COLLECTION: 'Cari tahsilat kaydedildi',
+  ACCOUNT_ENTRY_CREATED: 'Cari hareket kaydedildi',
+};
+
+const ENTITY_LABELS: Record<string, string> = {
+  User: 'Personel',
+  BusinessSettings: 'İşletme',
+  DiningArea: 'Salon',
+  CafeTable: 'Masa',
+  Category: 'Kategori',
+  Product: 'Ürün',
+  ProductOptionGroup: 'Seçenek grubu',
+  ProductOptionValue: 'Seçenek',
+  Check: 'Adisyon',
+  OrderItem: 'Sipariş kalemi',
+  Payment: 'Ödeme',
+  CheckDiscount: 'İndirim',
+  Customer: 'Cari müşteri',
+  AccountEntry: 'Cari hareket',
+};
+
+const METADATA_LABELS: Record<string, string> = {
+  username: 'Kullanıcı adı',
+  role: 'Rol',
+  isActive: 'Aktif',
+  name: 'Ad',
+  areaId: 'Salon kimliği',
+  tableId: 'Masa kimliği',
+  guestCount: 'Kişi sayısı',
+  checkId: 'Adisyon kimliği',
+  productId: 'Ürün kimliği',
+  quantity: 'Adet',
+  reason: 'Gerekçe',
+  preparationStatus: 'Hazırlık durumu',
+  method: 'Ödeme yöntemi',
+  amountKurus: 'Tutar',
+  totalKurus: 'Toplam',
+  mode: 'Bölme yöntemi',
+  shares: 'Paylar',
+  customerId: 'Müşteri kimliği',
+  sourceTableId: 'Kaynak masa kimliği',
+  targetTableId: 'Hedef masa kimliği',
+  sourceCheckId: 'Kaynak adisyon kimliği',
+  priceKurus: 'Fiyat',
+  groupId: 'Grup kimliği',
+};
+
+function label(value: string, labels: Record<string, string>): string {
+  return labels[value] ?? 'Diğer işlem';
+}
+
+function metadataValue(key: string, value: unknown): string {
+  if (key.endsWith('Kurus') && typeof value === 'number') return formatKurus(value);
+  if (typeof value === 'boolean') return value ? 'Evet' : 'Hayır';
+  if (Array.isArray(value)) return value.map((entry) => String(entry)).join(', ');
+  return String(value);
+}
+
 function safeMetadata(metadata: Record<string, unknown> | null): string {
   if (metadata === null || Object.keys(metadata).length === 0) return '—';
   return Object.entries(metadata)
-    .map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(', ') : String(value)}`)
+    .map(([key, value]) => `${METADATA_LABELS[key] ?? 'Detay'}: ${metadataValue(key, value)}`)
     .join(' · ');
 }
 
@@ -70,7 +165,9 @@ export function AuditHistory(): JSX.Element {
             <select className={input} name="action" defaultValue={filter.action}>
               <option value="">Tümü</option>
               {audit.data?.actions.map((value) => (
-                <option key={value}>{value}</option>
+                <option key={value} value={value}>
+                  {label(value, ACTION_LABELS)}
+                </option>
               ))}
             </select>
           </label>
@@ -79,7 +176,9 @@ export function AuditHistory(): JSX.Element {
             <select className={input} name="entityType" defaultValue={filter.entityType}>
               <option value="">Tümü</option>
               {audit.data?.entityTypes.map((value) => (
-                <option key={value}>{value}</option>
+                <option key={value} value={value}>
+                  {label(value, ENTITY_LABELS)}
+                </option>
               ))}
             </select>
           </label>
@@ -112,9 +211,9 @@ export function AuditHistory(): JSX.Element {
                       {formatDateTime(entry.createdAt)}
                     </td>
                     <td className="px-3 py-2 font-medium">{entry.actorName}</td>
-                    <td className="px-3 py-2">{entry.action}</td>
+                    <td className="px-3 py-2">{label(entry.action, ACTION_LABELS)}</td>
                     <td className="px-3 py-2">
-                      <span className="block">{entry.entityType}</span>
+                      <span className="block">{label(entry.entityType, ENTITY_LABELS)}</span>
                       <code className="text-xs text-ink-muted">{entry.entityId}</code>
                     </td>
                     <td className="max-w-md break-words px-3 py-2 text-xs text-ink-muted">

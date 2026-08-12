@@ -87,4 +87,12 @@ describe('Frontend authentication', () => {
     await user.click(await screen.findByRole('button', { name: 'Çıkış' }));
     expect(await screen.findByText('Personel girişi')).toBeInTheDocument();
   });
+
+  it('garson doğrudan cari URL açtığında 403 ekranına yönlenir', async () => {
+    stubAppFetch({ user: userForRole('WAITER') });
+    renderWithProviders(<App />, '/cariler');
+    expect(
+      await screen.findByRole('heading', { name: 'Bu bölüme erişim yetkiniz yok' }),
+    ).toBeInTheDocument();
+  });
 });
