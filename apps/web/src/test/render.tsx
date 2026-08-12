@@ -80,6 +80,8 @@ export function stubAppFetch(
     healthStatus?: number;
     floorPlan?: unknown;
     loginError?: string;
+    /** Login başarılı olur ama çerez saklanmaz; /api/auth/me 401 dönmeye devam eder. */
+    sessionNotStored?: boolean;
     staff?: unknown[];
     areas?: unknown[];
     tables?: unknown[];
@@ -190,8 +192,9 @@ export function stubAppFetch(
         if (options.loginError !== undefined) {
           return Promise.resolve(response({ error: { message: options.loginError } }, 401));
         }
-        currentUser = ownerUser;
-        return Promise.resolve(response({ user: currentUser }));
+        // Çerez saklanmadığında sunucu girişi kabul eder ama oturum kurulmaz.
+        if (options.sessionNotStored !== true) currentUser = ownerUser;
+        return Promise.resolve(response({ user: ownerUser }));
       }
       if (path === '/api/auth/logout') {
         currentUser = null;

@@ -43,6 +43,20 @@ describe('Frontend authentication', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Kullanıcı adı veya şifre hatalı.');
   });
 
+  it('çerez saklanmadığında sessizce geri düşmez, açıklayıcı hata gösterir', async () => {
+    stubAppFetch({ user: null, sessionNotStored: true });
+    const user = userEvent.setup();
+    renderWithProviders(<App />, '/login');
+
+    await user.type(await screen.findByLabelText('Kullanıcı adı'), 'admin');
+    await user.type(screen.getByLabelText('Şifre'), 'JokerCafe2026!');
+    await user.click(screen.getByRole('button', { name: 'Giriş yap' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/oturum çerezini saklamadı/i);
+    // Korumalı alana geçilmemeli; aksi hâlde 401 döngüsü başlar.
+    expect(screen.queryByRole('heading', { level: 1, name: 'Özet' })).not.toBeInTheDocument();
+  });
+
   it('giriş yapılmadan protected route login ekranına yönlenir', async () => {
     stubAppFetch({ user: null });
     renderWithProviders(<App />, '/masalar');

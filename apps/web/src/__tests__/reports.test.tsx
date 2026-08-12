@@ -4,6 +4,16 @@ import userEvent from '@testing-library/user-event';
 import { App } from '../App';
 import { renderWithProviders, requestedPaths, stubAppFetch, userForRole } from '../test/render';
 
+/** Rapor ekranının varsayılan bitiş tarihiyle aynı hesap (reports-page ile birebir). */
+function todayIstanbul(): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Istanbul',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date());
+}
+
 const report = {
   range: { from: '2026-08-12', to: '2026-08-12' },
   revenueKurus: 18_500,
@@ -60,7 +70,8 @@ describe('Phase 7 rapor ekranı', () => {
     await user.type(within(form).getByLabelText('Başlangıç'), '2026-08-01');
     await user.click(within(form).getByRole('button', { name: 'Raporu getir' }));
     expect(await screen.findByText('Latte')).toBeInTheDocument();
-    expect(requestedPaths).toContain('/api/reports/sales?from=2026-08-01&to=2026-08-12');
+    // Bitiş alanı bugüne göre dolar; sabit tarih yazmak testi ertesi gün kırar.
+    expect(requestedPaths).toContain(`/api/reports/sales?from=2026-08-01&to=${todayIstanbul()}`);
   });
 
   it('WAITER için rapor ekranını göstermeyip 403 ekranına yönlendirir', async () => {

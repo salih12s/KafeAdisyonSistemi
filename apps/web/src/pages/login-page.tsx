@@ -3,8 +3,21 @@ import { Navigate, useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Eye, EyeOff } from 'lucide-react';
 import { AUTH_QUERY_KEY, useCurrentUser } from '../hooks/use-auth';
-import { ApiError, fetchSetupStatus, login } from '../lib/api';
+import { ApiError, fetchCurrentUser, fetchSetupStatus, login } from '../lib/api';
 import { APP_NAME, APP_SUBTITLE } from '../config/app-info';
+import { IS_CROSS_ORIGIN } from '../config/api-base';
+
+/**
+ * Şifre doğru ama tarayıcı oturum çerezini saklamadı. Ayrı barındırmada bunun
+ * nedeni neredeyse her zaman üçüncü taraf çerez engelidir.
+ */
+const SESSION_NOT_STORED_MESSAGE = IS_CROSS_ORIGIN
+  ? 'Kullanıcı adı ve şifre doğru, ancak tarayıcınız oturum çerezini saklamadı. ' +
+    'Bunun nedeni genellikle üçüncü taraf çerezlerin engellenmesidir (gizli sekme ' +
+    'veya katı gizlilik ayarı). Bu site için çerezlere izin verin ya da uygulamayı ' +
+    'sunucuyla aynı adresten açın.'
+  : 'Kullanıcı adı ve şifre doğru, ancak tarayıcınız oturum çerezini saklamadı. ' +
+    'Tarayıcınızın çerez ayarlarını kontrol edin.';
 import { BrandMark } from '../components/ui/brand-mark';
 import { Button } from '../components/ui/button';
 import { TextField } from '../components/ui/field';
@@ -19,7 +32,17 @@ export function LoginPage(): JSX.Element {
   const [showPassword, setShowPassword] = useState(false);
 
   const loginMutation = useMutation({
-    mutationFn: () => login(username, password),
+    mutationFn: async () => {
+      await login(username, password);
+      // Şifre doğru olsa bile oturum çerezi saklanmamış olabilir (üçüncü taraf
+      // çerez engeli). Doğrulamadan içeri alırsak kullanıcı sebebini anlamadan
+      // giriş ekranına geri düşer; bu yüzden oturumu burada teyit ediyoruz.
+      try {
+        return await fetchCurrentUser();
+      } catch {
+        throw new ApiError(SESSION_NOT_STORED_MESSAGE);
+      }
+    },
     onSuccess: (user) => {
       queryClient.setQueryData(AUTH_QUERY_KEY, user);
       navigate('/', { replace: true });
