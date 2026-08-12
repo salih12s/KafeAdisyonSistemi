@@ -49,6 +49,9 @@ vite.config.ts.timestamp-*
 prisma/*.db
 prisma/*.db-journal
 
+# Dagitim arsivleri (statik barindirmaya yuklenen paket)
+*.zip
+
 # Yerel yedekler
 *.bak
 *.local
