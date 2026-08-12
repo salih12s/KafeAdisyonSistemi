@@ -2,9 +2,12 @@ import { Outlet } from 'react-router-dom';
 import { MobileNav } from './mobile-nav';
 import { Sidebar } from './sidebar';
 import { TopBar } from './top-bar';
+import { useOrderRealtime } from '../../hooks/use-order-realtime';
 
 /** Masaüstünde sabit kenar çubuğu, telefonda alt gezinme kullanan uygulama kabuğu. */
 export function AppLayout(): JSX.Element {
+  useOrderRealtime();
+
   return (
     <div className="flex min-h-dvh bg-canvas">
       <Sidebar />

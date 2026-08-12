@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   formatKurus,
+  ORDER_ITEM_STATUS_LABELS,
   type CheckResponse,
   type MenuResponse,
   type OrderItemResponse,
@@ -325,6 +326,11 @@ function OrderItemRow({
           <p className={`${cancelled ? 'line-through' : ''} font-semibold`}>
             {item.quantity} × {item.productNameSnapshot}
           </p>
+          {!cancelled ? (
+            <p className="text-[12px] font-medium text-accent">
+              {ORDER_ITEM_STATUS_LABELS[item.preparationStatus]}
+            </p>
+          ) : null}
           {item.options.length > 0 ? (
             <p className="text-[13px] text-ink-muted">
               {item.options

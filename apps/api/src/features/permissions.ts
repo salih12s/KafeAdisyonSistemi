@@ -7,15 +7,22 @@ const VIEW_ONLY: readonly Permission[] = [
   PERMISSIONS.VIEW_TABLES,
   PERMISSIONS.VIEW_MENU,
   PERMISSIONS.VIEW_ORDERS,
+  PERMISSIONS.VIEW_KITCHEN,
 ];
 
-const SERVICE_PERMISSIONS: readonly Permission[] = [...VIEW_ONLY, PERMISSIONS.MANAGE_ORDERS];
+const SERVICE_PERMISSIONS: readonly Permission[] = [
+  ...VIEW_ONLY,
+  PERMISSIONS.MANAGE_ORDERS,
+  PERMISSIONS.MANAGE_KITCHEN,
+];
+
+const KITCHEN_PERMISSIONS: readonly Permission[] = [...VIEW_ONLY, PERMISSIONS.MANAGE_KITCHEN];
 
 const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[]> = {
   OWNER: OWNER_PERMISSIONS,
   CASHIER: SERVICE_PERMISSIONS,
   WAITER: SERVICE_PERMISSIONS,
-  KITCHEN: VIEW_ONLY,
+  KITCHEN: KITCHEN_PERMISSIONS,
 };
 
 export function hasPermission(role: UserRole, permission: Permission): boolean {

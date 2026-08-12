@@ -10,12 +10,12 @@ sonraki geliştiriciye devredilir.
 
 | Alan                  | Değer                                              |
 | --------------------- | -------------------------------------------------- |
-| **Tamamlanan Phase**  | Phase 3 — Masa, adisyon ve sipariş                 |
-| **Branch**            | `feat/phase-3-orders`                              |
+| **Tamamlanan Phase**  | Phase 4 — Gerçek zamanlı mutfak/bar                |
+| **Branch**            | `feat/phase-4-realtime-kitchen`                    |
 | **Ana geliştirici**   | Codex                                              |
 | **Durum**             | **Tamamlandı — draft PR açık, merge edilmedi** |
-| **Base branch / SHA** | `feat/phase-2-menu-products` / `7241d17`           |
-| **Phase commit**      | `feat: complete phase 3 table checks and ordering` |
+| **Base branch / SHA** | `feat/phase-3-orders` / `596305e`                  |
+| **Phase commit**      | `feat: complete phase 4 realtime kitchen workflow` |
 | **Son güncelleme**    | 2026-08-12                                         |
 
 ### Phase durumu
@@ -26,7 +26,67 @@ sonraki geliştiriciye devredilir.
 | 1     | `feat/phase-1-identity-tables` | Codex           | Tamamlandı · draft PR açık     |
 | 2     | `feat/phase-2-menu-products`   | Claude          | Tamamlandı · draft PR açık     |
 | 3     | `feat/phase-3-orders`          | Codex           | Tamamlandı · draft PR açık     |
-| 4     | `feat/phase-4-realtime`        | Codex           | Başlanmadı                     |
+| 4     | `feat/phase-4-realtime-kitchen` | Codex          | Tamamlandı · draft PR açık     |
+
+---
+
+## Phase 4 teslimi
+
+### Veri modeli ve migration
+
+- Additive migration: `20260812114500_phase_4_realtime_kitchen`.
+- Yeni enum: `OrderItemStatus` (`SENT`, `PREPARING`, `READY`, `SERVED`).
+- `OrderItem.preparationAreaSnapshot` ve `preparationStatus` alanları eklendi.
+- Mevcut Phase 3 kalemlerinin istasyonu bağlı ürünün alanından güvenli şekilde
+  backfill edilir; tablo/sütun/veri silme yoktur.
+- Migration gerçek `CafeAdisyon` veritabanına uygulandı; dört migration güncel,
+  `SELECT 1` başarılı ve Phase 4 alanları gerçek Prisma sorgusuyla okundu.
+
+### Backend ve realtime
+
+- Socket.IO Express ile aynı HTTP server üzerinde ve aynı HttpOnly cookie
+  session'ıyla çalışır; oturumsuz bağlantılar reddedilir, token loglanmaz.
+- Hazırlık listesi `KITCHEN`/`BAR` filtresiyle yalnız açık, iptal edilmemiş ve
+  servis edilmemiş kalemleri döndürür.
+- Yalnız sıralı `SENT → PREPARING → READY → SERVED` geçişi kabul edilir;
+  iptal edilmiş kalem ve atlanan/geri geçişler `409` alır.
+- Ekleme, adet/not değişimi, iptal ve hazırlık durumu değişimlerinde küçük
+  invalidation event'leri yayınlanır. Hazırlık geçişleri actor ile audit'e yazılır.
+
+### Frontend
+
+- `/mutfak` Mutfak/Bar/Tümü filtreli gerçek operasyon ekranıdır; Yeni,
+  Hazırlanıyor ve Hazır sütunlarında masa, ürün, adet, seçenek, not, istasyon ve
+  bekleme süresi gösterilir.
+- Hazırlamaya başla, Hazır ve Servis edildi aksiyonları backend durum ucuna gider.
+- Socket.IO otomatik reconnect eder; ilk bağlantı, reconnect ve event sonrasında
+  mutfak, masa planı ve açık adisyon TanStack Query cache'leri REST'ten yenilenir.
+- Vite `/socket.io` websocket proxy'si ve `0.0.0.0` geliştirme/preview erişimi
+  telefon/tablet kullanımını destekler.
+
+### Kalite kanıtı
+
+| Komut                       | Sonuç                                      |
+| --------------------------- | ------------------------------------------ |
+| `npm run lint`              | PASS — 0 hata, 0 uyarı                     |
+| `npm run typecheck`         | PASS — contracts + api + web               |
+| `npm run test`              | PASS — 150/150 (API 110, web 40)           |
+| `npm run build`             | PASS — web JS 346.95 kB, gzip 103.98 kB    |
+| `npm run verify`            | PASS — lint → typecheck → test → build     |
+| `npm run db:check`          | PASS — PostgreSQL `SELECT 1`               |
+| `npm run db:migrate:status` | PASS — 4 migration, schema up to date      |
+| Production runtime         | PASS — health/DB/root 200, `0.0.0.0:3104` |
+
+Phase 4 için 7 backend ve 4 frontend testi eklendi; Socket auth, event, filtre,
+geçiş, iptal koruması, audit ve reconnect/refetch davranışları kapsandı.
+
+### Bilinen riskler
+
+1. Yerel veritabanında sipariş kalemi bulunmadığından backfill sorgusunun dolu
+   veri üzerindeki sonucu gözlenemedi; migration SQL'i ürün istasyonunu koruyacak
+   şekilde incelendi ve boş şemada başarıyla uygulandı.
+2. Responsive düzen kod/test ile doğrulandı; gerçek telefon/tablet üzerinde
+   görsel inceleme yapılmadı.
 
 ---
 
@@ -96,19 +156,18 @@ Phase 3'te 23 test eklendi: 17 backend + 6 frontend.
 
 ---
 
-## Sonraki geliştiricinin işi — Phase 4 (Codex)
+## Sonraki geliştiricinin işi — Phase 5 (Codex)
 
-Phase 4: mutfak/bar ekranı, hazırlık durumları ve Socket.IO gerçek zamanlı
-güncellemeler. `feat/phase-4-realtime` branch'i bu branch'ten açılmalıdır.
+Phase 5: hesap kapatma, ödeme, indirim/ikram ve hesap bölme. Yeni branch bu
+branch'ten açılmalıdır.
 
-- Phase 3 `preparationArea` değerini değiştirmedi; mutfak/bar yönlendirmesinde
-  ürün referansından veya gerekli yeni snapshot kararından yararlanılmalıdır.
-- Phase 3 kalemlerinde hazırlık durum alanı yoktur; Phase 4 migration'ı additive
-  olmalıdır.
-- Ödeme, hesap kapatma/bölme, cari, indirim ve Railway kapsam dışı kalır.
-- Phase 4'e bu teslim sırasında başlanmadı.
+- Phase 4 kalem snapshot'ını ve hazırlık durumunu değiştirmeden kullanmalıdır.
+- Socket.IO event'i veri kaynağı değildir; Phase 5 değişikliklerinde REST
+  cache'leri invalidate/refetch edilmelidir.
+- Cari, stok, yazıcı ve Railway kapsam dışı kalır.
+- Phase 5'e bu teslim sırasında başlanmadı.
 
-**Merge yapılmadı. Phase 4'e başlanmadı.**
+**Merge yapılmadı. Phase 5'e başlanmadı.**
 
 ---
 
@@ -120,3 +179,4 @@ güncellemeler. `feat/phase-4-realtime` branch'i bu branch'ten açılmalıdır.
 | 2026-08-12 | Phase 1 | Codex    | Claude   | Kimlik, personel, salon ve masa tamamlandı.               |
 | 2026-08-12 | Phase 2 | Claude   | Codex    | Menü, ürün, seçenek ve ekstra yönetimi tamamlandı.        |
 | 2026-08-12 | Phase 3 | Codex    | Codex    | Masa açma, adisyon ve sipariş tamamlandı; Phase 4 sırada. |
+| 2026-08-12 | Phase 4 | Codex    | Codex    | Realtime mutfak/bar tamamlandı; Phase 5 sırada.           |

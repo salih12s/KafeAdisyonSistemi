@@ -7,7 +7,7 @@ const API_TARGET = process.env.VITE_API_PROXY_TARGET ?? 'http://127.0.0.1:3000';
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
-    host: '127.0.0.1',
+    host: '0.0.0.0',
     port: 5173,
     strictPort: true,
     proxy: {
@@ -15,10 +15,15 @@ export default defineConfig({
         target: API_TARGET,
         changeOrigin: false,
       },
+      '/socket.io': {
+        target: API_TARGET,
+        changeOrigin: false,
+        ws: true,
+      },
     },
   },
   preview: {
-    host: '127.0.0.1',
+    host: '0.0.0.0',
     port: 4173,
   },
   build: {

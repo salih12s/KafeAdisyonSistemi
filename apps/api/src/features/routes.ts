@@ -22,6 +22,7 @@ import {
 import type { AppStore } from './store';
 import { createMenuRouter } from './menu-routes';
 import { createOrderRouter } from './order-routes';
+import type { OrderEventPublisher } from './order-events';
 
 const usernameSchema = z
   .string()
@@ -65,7 +66,11 @@ function authCookieOptions(env: Env) {
   };
 }
 
-export function createPhaseOneRouter(store: AppStore, env: Env): Router {
+export function createPhaseOneRouter(
+  store: AppStore,
+  env: Env,
+  orderEvents?: OrderEventPublisher,
+): Router {
   const router = Router();
   const identity = new IdentityService(store);
   const authenticate = requireAuthentication(identity, SESSION_COOKIE_NAME);
@@ -304,7 +309,7 @@ export function createPhaseOneRouter(store: AppStore, env: Env): Router {
 
   // Phase 2 menü uçları /api/menu altında toplanır.
   router.use('/menu', createMenuRouter(store, authenticate));
-  router.use('/orders', createOrderRouter(store, authenticate));
+  router.use('/orders', createOrderRouter(store, authenticate, orderEvents));
 
   return router;
 }

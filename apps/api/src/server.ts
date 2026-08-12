@@ -1,10 +1,13 @@
 import dotenv from 'dotenv';
+import { createServer } from 'node:http';
 import { createApp } from './app';
 import { ENV_FILE_PATH, WEB_DIST_PATH } from './config/paths';
 import { EnvValidationError, parseEnv, type Env } from './config/env';
 import { createPrismaLifecycle } from './lib/database';
 import { createLogger } from './lib/logger';
 import { createPrismaStore } from './features/prisma-store';
+import { createOrderEventHub } from './features/order-events';
+import { createRealtimeServer } from './realtime';
 
 dotenv.config({ path: ENV_FILE_PATH });
 
@@ -34,16 +37,22 @@ function start(): void {
   const env = loadEnv();
   const logger = createLogger(env.LOG_LEVEL);
   const database = createPrismaLifecycle(env.DATABASE_URL, logger);
+  const store = createPrismaStore(database.client);
+  const orderEvents = createOrderEventHub();
 
   const app = createApp({
     env,
     logger,
     database: database.probe,
-    store: createPrismaStore(database.client),
+    store,
+    orderEvents,
     ...(env.NODE_ENV === 'production' ? { webDistPath: WEB_DIST_PATH } : {}),
   });
 
-  const server = app.listen(env.PORT, env.HOST, () => {
+  const server = createServer(app);
+  const realtime = createRealtimeServer(server, store, orderEvents, logger);
+
+  server.listen(env.PORT, env.HOST, () => {
     logger.info('API sunucusu dinlemede.', {
       host: env.HOST,
       port: env.PORT,
@@ -92,20 +101,19 @@ function start(): void {
 
     forceExit.unref();
 
-    server.close(() => {
-      void database
-        .disconnect()
-        .then(() => {
-          logger.info('Kapanış tamamlandı.');
-          process.exit(0);
-        })
-        .catch((error: unknown) => {
-          logger.error('Veritabanı bağlantısı kapatılamadı.', {
-            message: error instanceof Error ? error.message : String(error),
-          });
-          process.exit(1);
+    void realtime
+      .close()
+      .then(() => database.disconnect())
+      .then(() => {
+        logger.info('Kapanış tamamlandı.');
+        process.exit(0);
+      })
+      .catch((error: unknown) => {
+        logger.error('Sunucu veya veritabanı bağlantısı kapatılamadı.', {
+          message: error instanceof Error ? error.message : String(error),
         });
-    });
+        process.exit(1);
+      });
   };
 
   process.on('SIGINT', () => shutdown('SIGINT'));

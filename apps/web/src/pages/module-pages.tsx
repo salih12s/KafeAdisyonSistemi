@@ -1,24 +1,6 @@
-import { BarChart3, ChefHat, UsersRound } from 'lucide-react';
+import { BarChart3, UsersRound } from 'lucide-react';
 import { EmptyState } from '../components/ui/empty-state';
 import { Panel } from '../components/ui/panel';
-
-export function KitchenPage(): JSX.Element {
-  return (
-    <Panel>
-      <EmptyState
-        icon={ChefHat}
-        title="Bekleyen sipariş yok"
-        description="Mutfak ekranı Phase 4'te etkinleştirilecek. Sipariş alma devreye girdiğinde mutfak ve bara düşen kalemler burada sırayla listelenecek."
-        upcoming={[
-          'Yeni siparişlerin anlık listelenmesi',
-          'Hazırlanıyor ve hazır durum takibi',
-          'Mutfak ve bar ayrımı',
-          'Bekleme süresi göstergesi',
-        ]}
-      />
-    </Panel>
-  );
-}
 
 export function AccountsPage(): JSX.Element {
   return (

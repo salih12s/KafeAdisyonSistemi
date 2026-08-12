@@ -1,7 +1,8 @@
 import { Router, type RequestHandler } from 'express';
 import { z } from 'zod';
-import { PERMISSIONS } from '@kafe/contracts';
+import { ORDER_ITEM_STATUSES, PERMISSIONS, PREPARATION_AREAS } from '@kafe/contracts';
 import { callStore, parse, requireAuth, requirePermission } from './http';
+import { silentOrderEventPublisher, type OrderEventPublisher } from './order-events';
 import type { AppStore } from './store';
 
 const uuidSchema = z.string().uuid('Geçerli bir UUID girin.');
@@ -16,7 +17,11 @@ const noteSchema = z
     value === undefined || value === null || value.length === 0 ? null : value,
   );
 
-export function createOrderRouter(store: AppStore, authenticate: RequestHandler): Router {
+export function createOrderRouter(
+  store: AppStore,
+  authenticate: RequestHandler,
+  events: OrderEventPublisher = silentOrderEventPublisher,
+): Router {
   const router = Router();
   const canView = [authenticate, requirePermission(PERMISSIONS.VIEW_ORDERS)];
   const canManage = [authenticate, requirePermission(PERMISSIONS.MANAGE_ORDERS)];
@@ -64,6 +69,15 @@ export function createOrderRouter(store: AppStore, authenticate: RequestHandler)
         ...body,
       }),
     );
+    const item = check.items.at(-1);
+    if (item !== undefined) {
+      events.publish({
+        type: 'ITEM_ADDED',
+        checkId: check.id,
+        itemId: item.id,
+        preparationArea: item.preparationAreaSnapshot,
+      });
+    }
     res.status(201).json({ check });
   });
 
@@ -80,6 +94,15 @@ export function createOrderRouter(store: AppStore, authenticate: RequestHandler)
         ...body,
       }),
     );
+    const item = check.items.find((entry) => entry.id === id);
+    if (item !== undefined) {
+      events.publish({
+        type: 'ITEM_UPDATED',
+        checkId: check.id,
+        itemId: item.id,
+        preparationArea: item.preparationAreaSnapshot,
+      });
+    }
     res.json({ check });
   });
 
@@ -94,6 +117,48 @@ export function createOrderRouter(store: AppStore, authenticate: RequestHandler)
     const check = await callStore(() =>
       store.cancelOrderItem({ actorUserId: requireAuth(req).user.id, itemId: id, reason }),
     );
+    const item = check.items.find((entry) => entry.id === id);
+    if (item !== undefined) {
+      events.publish({
+        type: 'ITEM_CANCELLED',
+        checkId: check.id,
+        itemId: item.id,
+        preparationArea: item.preparationAreaSnapshot,
+      });
+    }
+    res.json({ check });
+  });
+
+  const canViewKitchen = [authenticate, requirePermission(PERMISSIONS.VIEW_KITCHEN)];
+  const canManageKitchen = [authenticate, requirePermission(PERMISSIONS.MANAGE_KITCHEN)];
+
+  router.get('/kitchen', ...canViewKitchen, async (req, res) => {
+    const { preparationArea } = parse(
+      z.object({ preparationArea: z.enum(PREPARATION_AREAS).optional() }),
+      req.query,
+    );
+    res.json({ orders: await callStore(() => store.listKitchenOrders(preparationArea)) });
+  });
+
+  router.patch('/items/:id/status', ...canManageKitchen, async (req, res) => {
+    const { id } = parse(uuidParamsSchema, req.params);
+    const { status } = parse(z.object({ status: z.enum(ORDER_ITEM_STATUSES) }), req.body);
+    const check = await callStore(() =>
+      store.updateOrderItemStatus({
+        actorUserId: requireAuth(req).user.id,
+        itemId: id,
+        status,
+      }),
+    );
+    const item = check.items.find((entry) => entry.id === id);
+    if (item !== undefined) {
+      events.publish({
+        type: 'ITEM_STATUS_CHANGED',
+        checkId: check.id,
+        itemId: item.id,
+        preparationArea: item.preparationAreaSnapshot,
+      });
+    }
     res.json({ check });
   });
 

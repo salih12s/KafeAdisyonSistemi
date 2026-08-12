@@ -56,6 +56,8 @@ const check = {
       productId,
       productNameSnapshot: 'Latte',
       unitPriceKurusSnapshot: 8000,
+      preparationAreaSnapshot: 'BAR',
+      preparationStatus: 'SENT',
       quantity: 2,
       note: 'Az sıcak',
       lineTotalKurus: 18_500,
