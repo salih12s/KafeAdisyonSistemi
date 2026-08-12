@@ -10,12 +10,12 @@ sonraki geliştiriciye devredilir.
 
 | Alan                  | Değer                                              |
 | --------------------- | -------------------------------------------------- |
-| **Tamamlanan Phase**  | Phase 5 — Ödeme ve hesap kapatma                   |
-| **Branch**            | `feat/phase-5-payments`                             |
+| **Tamamlanan Phase**  | Phase 6 — Cari, ayarlamalar ve masa işlemleri       |
+| **Branch**            | `feat/phase-6-accounts-adjustments-tables`          |
 | **Ana geliştirici**   | Codex                                              |
 | **Durum**             | **Tamamlandı — draft PR açık, merge edilmedi** |
-| **Base branch / SHA** | `feat/phase-4-realtime-kitchen` / `8855a6c`        |
-| **Phase commit**      | `feat: complete phase 5 payments and check closing` |
+| **Base branch / SHA** | `feat/phase-5-payments` / `336b98e`                |
+| **Phase commit**      | `feat: complete phase 6 accounts discounts and table operations` |
 | **Son güncelleme**    | 2026-08-12                                         |
 
 ### Phase durumu
@@ -27,7 +27,34 @@ sonraki geliştiriciye devredilir.
 | 2     | `feat/phase-2-menu-products`   | Claude          | Tamamlandı · draft PR açık     |
 | 3     | `feat/phase-3-orders`          | Codex           | Tamamlandı · draft PR açık     |
 | 4     | `feat/phase-4-realtime-kitchen` | Codex          | Tamamlandı · draft PR açık     |
-| 5     | `feat/phase-5-payments`          | Codex          | Tamamlandı · draft PR hazırlanıyor |
+| 5     | `feat/phase-5-payments`          | Codex          | Tamamlandı · draft PR açık     |
+| 6     | `feat/phase-6-accounts-adjustments-tables` | Codex | Tamamlandı · draft PR hazırlanıyor |
+
+---
+
+## Phase 6 teslimi
+
+- Additive `20260812150000_phase_6_accounts_adjustments_tables` migration'ı
+  müşteri/cari ledger, indirim, ikram ve adisyon birleştirme alanlarını ekler;
+  destructive SQL içermez. Gerçek `CafeAdisyon` veritabanına uygulandı, altı
+  migration güncel ve `SELECT 1` başarılıdır.
+- Cari bakiye mutable kolon değildir; `DEBT`, `COLLECTION`, `REFUND` ve
+  `CORRECTION` hareketlerinden hesaplanır. Cariye aktarım adisyona immutable
+  `ACCOUNT` ödeme satırı ve müşteriye `DEBT` hareketi yazar.
+- Yüzde/sabit indirim ile gerekçeli ikram backend'de kuruş üzerinden hesaplanır;
+  toplam negatif veya alınmış ödeme tutarının altına inemez.
+- Masa taşıma ve iki açık adisyonu birleştirme serializable transaction ve satır
+  kilitleriyle yapılır. Kaynak adisyon `MERGED` olarak korunur; kalem, ödeme,
+  indirim ve cari hareketleri hedef adisyona aktarılır.
+- `/cariler` müşteri arama/oluşturma/düzenleme, bakiye, tahsilat ve ekstreyi;
+  adisyon ekranı indirim, ikram, cariye aktarma, taşıma ve birleştirmeyi sunar.
+  Audit kayıtları ve küçük Socket.IO invalidation event'leri eklenmiştir.
+- `npm run verify`: PASS — 169/169 test (API 123, web 46); production health ve
+  root `0.0.0.0:3106` üzerinde 200.
+
+Kalan risk: Gerçek veritabanında müşteri/adisyon verisi bulunmadığı için
+authenticated Prisma mutation E2E yapılmadı; migration gerçek DB'de, kurallar HTTP
+bellek-store testlerinde doğrulandı. Gerçek telefon/tablet görsel incelemesi yapılmadı.
 
 ---
 
@@ -180,18 +207,18 @@ Phase 3'te 23 test eklendi: 17 backend + 6 frontend.
 
 ---
 
-## Sonraki geliştiricinin işi — Phase 6
+## Sonraki geliştiricinin işi — Phase 7
 
-Phase 6 kapsamı cari hesap, indirim/ikram ve masa işlemleridir. Yeni branch
-`feat/phase-5-payments` tabanından açılmalıdır.
+Phase 7 kapsamı raporlama, audit geçmişi ekranı ve Railway deployment'tır. Yeni
+branch `feat/phase-6-accounts-adjustments-tables` tabanından açılmalıdır.
 
-- Immutable ödeme satırlarını değiştirmemeli veya fiziksel olarak silmemelidir.
-- İndirim/ikram eklenirse kalan bakiye hesabı ve ödenmiş toplam koruması backend
-  transaction'larında yeniden değerlendirilmelidir.
+- Cari ledger, immutable ödeme ve audit satırları değiştirilmemeli veya fiziksel
+  olarak silinmemelidir.
 - Socket.IO yalnız invalidation sinyali olarak kalmalı; REST veri kaynağı olmalıdır.
-- Stok, yazıcı, Railway ve refund kapsam dışı kalır.
+- Phase 7 raporları iptal, ikram, indirim, cari ve birleşmiş adisyon durumlarını
+  birbirinden doğru ayırmalıdır.
 
-**Merge yapılmadı. Phase 6'ya başlanmadı.**
+**Merge yapılmadı. Phase 7'ye başlanmadı.**
 
 ---
 
@@ -205,3 +232,4 @@ Phase 6 kapsamı cari hesap, indirim/ikram ve masa işlemleridir. Yeni branch
 | 2026-08-12 | Phase 3 | Codex    | Codex    | Masa açma, adisyon ve sipariş tamamlandı; Phase 4 sırada. |
 | 2026-08-12 | Phase 4 | Codex    | Codex    | Realtime mutfak/bar tamamlandı; Phase 5 sırada.           |
 | 2026-08-12 | Phase 5 | Codex    | Codex    | Ödeme ve hesap kapatma tamamlandı; Phase 6 sırada.         |
+| 2026-08-12 | Phase 6 | Codex    | Codex    | Cari, indirim/ikram ve masa işlemleri tamamlandı; Phase 7 sırada. |

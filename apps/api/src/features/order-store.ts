@@ -6,6 +6,7 @@ import type {
   PaymentMethod,
   PaymentSplitResponse,
   PreparationArea,
+  DiscountType,
 } from '@kafe/contracts';
 
 export interface OpenCheckInput {
@@ -60,6 +61,32 @@ export interface CloseCheckInput {
   checkId: string;
 }
 
+export interface ApplyDiscountInput {
+  actorUserId: string;
+  checkId: string;
+  type: DiscountType;
+  value: number;
+  reason: string;
+}
+
+export interface ComplimentaryItemInput {
+  actorUserId: string;
+  itemId: string;
+  reason: string;
+}
+
+export interface MoveCheckInput {
+  actorUserId: string;
+  checkId: string;
+  targetTableId: string;
+}
+
+export interface MergeChecksInput {
+  actorUserId: string;
+  targetCheckId: string;
+  sourceCheckId: string;
+}
+
 export interface OrderStore {
   getOperationalFloorPlan(): Promise<OperationalFloorPlanResponse>;
   openCheck(input: OpenCheckInput): Promise<CheckResponse>;
@@ -73,4 +100,8 @@ export interface OrderStore {
   addPayment(input: AddPaymentInput): Promise<CheckResponse>;
   previewPaymentSplit(input: SplitPaymentInput): Promise<PaymentSplitResponse>;
   closeCheck(input: CloseCheckInput): Promise<CheckResponse>;
+  applyDiscount(input: ApplyDiscountInput): Promise<CheckResponse>;
+  makeOrderItemComplimentary(input: ComplimentaryItemInput): Promise<CheckResponse>;
+  moveCheck(input: MoveCheckInput): Promise<CheckResponse>;
+  mergeChecks(input: MergeChecksInput): Promise<CheckResponse>;
 }

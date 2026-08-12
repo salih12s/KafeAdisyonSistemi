@@ -6,6 +6,9 @@ import type {
   OrderItemResponse,
   OrderItemStatus,
   PaymentSplitResponse,
+  CustomerResponse,
+  CustomerStatementResponse,
+  AccountEntryResponse,
 } from '@kafe/contracts';
 import {
   StoreError,
@@ -15,6 +18,14 @@ import {
   type CloseCheckInput,
   type OpenCheckInput,
   type OrderStore,
+  type AccountStore,
+  type CustomerWriteInput,
+  type AccountEntryInput,
+  type TransferCheckInput,
+  type ApplyDiscountInput,
+  type ComplimentaryItemInput,
+  type MoveCheckInput,
+  type MergeChecksInput,
   type SplitPaymentInput,
   type UpdateOrderItemInput,
   type UpdateOrderItemStatusInput,
@@ -29,8 +40,9 @@ interface OrderTable {
   areaIsActive: boolean;
 }
 
-export abstract class MemoryOrderStore extends MemoryMenuStore implements OrderStore {
-  private readonly checks: CheckResponse[] = [];
+export abstract class MemoryOrderStore extends MemoryMenuStore implements OrderStore, AccountStore {
+  protected readonly checks: CheckResponse[] = [];
+  private readonly customers: CustomerStatementResponse[] = [];
 
   protected abstract findOrderTable(id: string): OrderTable | null;
   protected abstract findOrderUserName(id: string): string;
@@ -93,12 +105,15 @@ export abstract class MemoryOrderStore extends MemoryMenuStore implements OrderS
       status: 'OPEN',
       openedAt: new Date().toISOString(),
       totalKurus: 0,
+      discountTotalKurus: 0,
       paidKurus: 0,
       remainingKurus: 0,
       closedAt: null,
       closedByUserId: null,
       closedByName: null,
       payments: [],
+      discounts: [],
+      mergedIntoCheckId: null,
       items: [],
     };
     this.checks.push(check);
@@ -172,6 +187,10 @@ export abstract class MemoryOrderStore extends MemoryMenuStore implements OrderS
       cancellationReason: null,
       cancelledByUserId: null,
       cancelledByName: null,
+      complimentaryAt: null,
+      complimentaryReason: null,
+      complimentaryByUserId: null,
+      complimentaryByName: null,
       options: selected.map(({ group, value }) => ({
         id: randomUUID(),
         optionGroupId: group.id,
@@ -320,13 +339,210 @@ export abstract class MemoryOrderStore extends MemoryMenuStore implements OrderS
     return cloneCheck(check);
   }
 
-  private requireCheck(id: string): CheckResponse {
+  async applyDiscount(input: ApplyDiscountInput): Promise<CheckResponse> {
+    const check = this.requireOpenCheck(input.checkId);
+    const baseTotal = check.totalKurus + check.discountTotalKurus;
+    const amount =
+      input.type === 'PERCENT' ? Math.floor((baseTotal * input.value) / 100) : input.value;
+    const applied = Math.min(amount, check.totalKurus);
+    if (check.totalKurus - applied < check.paidKurus) {
+      throw new StoreError(
+        'CONFLICT',
+        'İndirim, adisyon toplamını alınmış ödemelerin altına indiremez.',
+      );
+    }
+    check.discounts.push({
+      id: randomUUID(),
+      type: input.type,
+      value: input.value,
+      amountKurus: applied,
+      reason: input.reason,
+      appliedByUserId: input.actorUserId,
+      appliedByName: this.findOrderUserName(input.actorUserId),
+      createdAt: new Date().toISOString(),
+    });
+    this.recalculate(check);
+    this.record(input.actorUserId, 'CHECK_DISCOUNT_APPLIED', 'Check', check.id);
+    return cloneCheck(check);
+  }
+
+  async makeOrderItemComplimentary(input: ComplimentaryItemInput): Promise<CheckResponse> {
+    const { check, item } = this.requireItem(input.itemId);
+    this.ensureMutable(check, item);
+    if (item.complimentaryAt !== null) throw new StoreError('CONFLICT', 'Bu kalem zaten ikram.');
+    if (Math.max(0, check.totalKurus - item.lineTotalKurus) < check.paidKurus) {
+      throw new StoreError('CONFLICT', 'İkram, toplamı alınmış ödemelerin altına indiremez.');
+    }
+    item.complimentaryAt = new Date().toISOString();
+    item.complimentaryReason = input.reason;
+    item.complimentaryByUserId = input.actorUserId;
+    item.complimentaryByName = this.findOrderUserName(input.actorUserId);
+    this.recalculate(check);
+    this.record(input.actorUserId, 'ORDER_ITEM_COMPLIMENTARY', 'OrderItem', item.id);
+    return cloneCheck(check);
+  }
+
+  async moveCheck(input: MoveCheckInput): Promise<CheckResponse> {
+    const check = this.requireOpenCheck(input.checkId);
+    const table = this.findOrderTable(input.targetTableId);
+    if (table === null || !table.isActive || !table.areaIsActive) {
+      throw new StoreError('CONFLICT', 'Hedef masa aktif değil.');
+    }
+    if (this.checks.some((entry) => entry.tableId === table.id && entry.status === 'OPEN')) {
+      throw new StoreError('CONFLICT', 'Hedef masada açık adisyon var.');
+    }
+    check.tableId = table.id;
+    check.tableName = table.name;
+    this.record(input.actorUserId, 'CHECK_TABLE_MOVED', 'Check', check.id);
+    return cloneCheck(check);
+  }
+
+  async mergeChecks(input: MergeChecksInput): Promise<CheckResponse> {
+    if (input.sourceCheckId === input.targetCheckId) {
+      throw new StoreError('VALIDATION', 'Adisyon kendisiyle birleştirilemez.');
+    }
+    const source = this.requireOpenCheck(input.sourceCheckId);
+    const target = this.requireOpenCheck(input.targetCheckId);
+    target.items.push(...source.items);
+    target.payments.push(...source.payments);
+    target.discounts.push(...source.discounts);
+    source.items = [];
+    source.payments = [];
+    source.discounts = [];
+    source.status = 'MERGED';
+    source.mergedIntoCheckId = target.id;
+    source.totalKurus = 0;
+    source.paidKurus = 0;
+    source.remainingKurus = 0;
+    source.closedAt = new Date().toISOString();
+    source.closedByUserId = input.actorUserId;
+    source.closedByName = this.findOrderUserName(input.actorUserId);
+    this.recalculate(target);
+    this.record(input.actorUserId, 'CHECKS_MERGED', 'Check', target.id);
+    return cloneCheck(target);
+  }
+
+  async listCustomers(search?: string): Promise<CustomerResponse[]> {
+    const key = search?.toLocaleLowerCase('tr-TR');
+    return this.customers
+      .filter(
+        (customer) =>
+          key === undefined ||
+          customer.name.toLocaleLowerCase('tr-TR').includes(key) ||
+          customer.phone?.includes(search ?? '') === true,
+      )
+      .map(({ entries: _entries, ...customer }) => structuredClone(customer));
+  }
+
+  async getCustomer(id: string): Promise<CustomerStatementResponse> {
+    const row = this.customers.find((customer) => customer.id === id);
+    if (row === undefined) throw new StoreError('NOT_FOUND', 'Müşteri bulunamadı.');
+    return structuredClone(row);
+  }
+
+  async createCustomer(input: CustomerWriteInput): Promise<CustomerResponse> {
+    const now = new Date().toISOString();
+    const row: CustomerStatementResponse = {
+      id: randomUUID(),
+      name: input.name,
+      phone: input.phone,
+      note: input.note,
+      isActive: input.isActive,
+      balanceKurus: 0,
+      createdAt: now,
+      updatedAt: now,
+      entries: [],
+    };
+    this.customers.push(row);
+    this.record(input.actorUserId, 'CUSTOMER_CREATED', 'Customer', row.id);
+    const { entries: _entries, ...result } = row;
+    return structuredClone(result);
+  }
+
+  async updateCustomer(id: string, input: CustomerWriteInput): Promise<CustomerResponse> {
+    const row = this.customers.find((customer) => customer.id === id);
+    if (row === undefined) throw new StoreError('NOT_FOUND', 'Müşteri bulunamadı.');
+    Object.assign(row, {
+      name: input.name,
+      phone: input.phone,
+      note: input.note,
+      isActive: input.isActive,
+      updatedAt: new Date().toISOString(),
+    });
+    this.record(input.actorUserId, 'CUSTOMER_UPDATED', 'Customer', row.id);
+    const { entries: _entries, ...result } = row;
+    return structuredClone(result);
+  }
+
+  async addAccountEntry(input: AccountEntryInput): Promise<CustomerStatementResponse> {
+    const customer = this.customers.find((row) => row.id === input.customerId);
+    if (customer === undefined || !customer.isActive) {
+      throw new StoreError('CONFLICT', 'Aktif müşteri bulunamadı.');
+    }
+    const entry: AccountEntryResponse = {
+      id: randomUUID(),
+      customerId: customer.id,
+      type: input.type,
+      amountKurus: input.amountKurus,
+      description: input.description,
+      checkId: null,
+      actorUserId: input.actorUserId,
+      actorName: this.findOrderUserName(input.actorUserId),
+      createdAt: new Date().toISOString(),
+    };
+    customer.entries.unshift(entry);
+    this.recalculateCustomer(customer);
+    this.record(
+      input.actorUserId,
+      input.type === 'COLLECTION' ? 'ACCOUNT_COLLECTION' : 'ACCOUNT_ENTRY_CREATED',
+      'AccountEntry',
+      entry.id,
+    );
+    return structuredClone(customer);
+  }
+
+  async transferCheckToAccount(input: TransferCheckInput): Promise<CheckResponse> {
+    const check = this.requireOpenCheck(input.checkId);
+    const customer = this.customers.find((row) => row.id === input.customerId);
+    if (customer === undefined || !customer.isActive) {
+      throw new StoreError('CONFLICT', 'Aktif müşteri bulunamadı.');
+    }
+    if (check.remainingKurus <= 0) {
+      throw new StoreError('CONFLICT', 'Cariye aktarılacak bakiye bulunmuyor.');
+    }
+    const amountKurus = check.remainingKurus;
+    customer.entries.unshift({
+      id: randomUUID(),
+      customerId: customer.id,
+      type: 'DEBT',
+      amountKurus,
+      description: 'Adisyon borcu',
+      checkId: check.id,
+      actorUserId: input.actorUserId,
+      actorName: this.findOrderUserName(input.actorUserId),
+      createdAt: new Date().toISOString(),
+    });
+    check.payments.push({
+      id: randomUUID(),
+      method: 'ACCOUNT',
+      amountKurus,
+      receivedByUserId: input.actorUserId,
+      receivedByName: this.findOrderUserName(input.actorUserId),
+      createdAt: new Date().toISOString(),
+    });
+    this.recalculateCustomer(customer);
+    this.recalculate(check);
+    this.record(input.actorUserId, 'CHECK_TRANSFERRED_TO_ACCOUNT', 'Check', check.id);
+    return cloneCheck(check);
+  }
+
+  protected requireCheck(id: string): CheckResponse {
     const check = this.checks.find((entry) => entry.id === id);
     if (check === undefined) throw new StoreError('NOT_FOUND', 'Adisyon bulunamadı.');
     return check;
   }
 
-  private requireOpenCheck(id: string): CheckResponse {
+  protected requireOpenCheck(id: string): CheckResponse {
     const check = this.requireCheck(id);
     if (check.status !== 'OPEN') throw new StoreError('CONFLICT', 'Bu adisyon artık açık değil.');
     return check;
@@ -345,14 +561,31 @@ export abstract class MemoryOrderStore extends MemoryMenuStore implements OrderS
     if (item.cancelledAt !== null) {
       throw new StoreError('CONFLICT', 'İptal edilmiş kalem değiştirilemez.');
     }
+    if (item.complimentaryAt !== null) {
+      throw new StoreError('CONFLICT', 'İkram edilmiş kalem değiştirilemez.');
+    }
   }
 
   private recalculate(check: CheckResponse): void {
     check.totalKurus = check.items
-      .filter((item) => item.cancelledAt === null)
+      .filter((item) => item.cancelledAt === null && item.complimentaryAt === null)
       .reduce((total, item) => total + item.lineTotalKurus, 0);
+    check.discountTotalKurus = check.discounts.reduce(
+      (total, discount) => total + discount.amountKurus,
+      0,
+    );
+    check.totalKurus = Math.max(0, check.totalKurus - check.discountTotalKurus);
     check.paidKurus = check.payments.reduce((total, payment) => total + payment.amountKurus, 0);
     check.remainingKurus = check.totalKurus - check.paidKurus;
+  }
+
+  private recalculateCustomer(customer: CustomerStatementResponse): void {
+    customer.balanceKurus = customer.entries.reduce(
+      (total, entry) =>
+        total +
+        (entry.type === 'DEBT' || entry.type === 'REFUND' ? entry.amountKurus : -entry.amountKurus),
+      0,
+    );
   }
 }
 

@@ -18,9 +18,9 @@ Her Phase branch'i bir önceki Phase branch'inden açılır; PR'ı da ona hedefl
 | 1     | Authentication, personel, işletme, salon ve masa       | Codex           | Tamamlandı — draft PR açık |
 | 2     | Kategoriler, ürünler, seçenekler ve ekstralar          | Claude          | Tamamlandı — draft PR açık |
 | 3     | Masa açma, adisyon ve sipariş                          | Codex           | Tamamlandı — draft PR açık |
-| 4     | Mutfak/bar ve gerçek zamanlı güncelleme                | Codex           | Başlanmadı       |
-| 5     | Ödeme, hesap bölme ve hesap kapatma                    | Codex           | Başlanmadı       |
-| 6     | Cari hesap, indirim, ikram, masa taşıma ve birleştirme | Codex           | Başlanmadı       |
+| 4     | Mutfak/bar ve gerçek zamanlı güncelleme                | Codex           | Tamamlandı — draft PR açık |
+| 5     | Ödeme, hesap bölme ve hesap kapatma                    | Codex           | Tamamlandı — draft PR açık |
+| 6     | Cari hesap, indirim, ikram, masa taşıma ve birleştirme | Codex           | Tamamlandı — draft PR hazırlanıyor |
 | 7     | Raporlar, audit ekranı ve Railway deployment           | Codex           | Başlanmadı       |
 
 **Phase 3'ten itibaren ana geliştirici Codex'tir.**

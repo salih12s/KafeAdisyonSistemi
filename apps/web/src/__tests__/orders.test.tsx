@@ -17,6 +17,7 @@ const openCheckSummary = {
   guestCount: 3,
   openedAt: new Date(Date.now() - 35 * 60_000).toISOString(),
   totalKurus: 18_500,
+  discountTotalKurus: 0,
 };
 
 function floor(open = true) {
@@ -50,12 +51,15 @@ const check = {
   status: 'OPEN',
   openedAt: '2026-08-12T09:00:00.000Z',
   totalKurus: 18_500,
+  discountTotalKurus: 0,
   paidKurus: 0,
   remainingKurus: 18_500,
   closedAt: null,
   closedByUserId: null,
   closedByName: null,
   payments: [],
+  discounts: [],
+  mergedIntoCheckId: null,
   items: [
     {
       id: itemId,
@@ -74,6 +78,10 @@ const check = {
       cancellationReason: null,
       cancelledByUserId: null,
       cancelledByName: null,
+      complimentaryAt: null,
+      complimentaryReason: null,
+      complimentaryByUserId: null,
+      complimentaryByName: null,
       options: [
         {
           id: '00000000-0000-4000-8000-000000000108',
@@ -306,5 +314,84 @@ describe('Phase 3 masa ve adisyon ekranı', () => {
       expect(recordedRequests.some((entry) => entry.path.endsWith('/close'))).toBe(true),
     );
     expect(await screen.findByRole('heading', { name: 'Salonlar' })).toBeInTheDocument();
+  });
+
+  it('indirim, ikram, cariye aktarma, masa taşıma ve birleştirme isteklerini gönderir', async () => {
+    const emptyTableId = '00000000-0000-4000-8000-000000000120';
+    const sourceCheckId = '00000000-0000-4000-8000-000000000121';
+    const customerId = '00000000-0000-4000-8000-000000000122';
+    const operationalFloor = floor();
+    operationalFloor.areas[0]?.tables.push(
+      {
+        id: emptyTableId,
+        name: 'Masa 2',
+        capacity: 4,
+        sortOrder: 1,
+        openCheck: null,
+      },
+      {
+        id: '00000000-0000-4000-8000-000000000123',
+        name: 'Masa 3',
+        capacity: 4,
+        sortOrder: 2,
+        openCheck: { ...openCheckSummary, id: sourceCheckId },
+      },
+    );
+    const customer = {
+      id: customerId,
+      name: 'Ayşe Yılmaz',
+      phone: null,
+      note: null,
+      isActive: true,
+      balanceKurus: 0,
+      createdAt: '2026-08-12T10:00:00.000Z',
+      updatedAt: '2026-08-12T10:00:00.000Z',
+    };
+    stubAppFetch({ floorPlan: operationalFloor, check, salesMenu, customers: [customer] });
+    const user = userEvent.setup();
+    renderWithProviders(<App />, '/masalar');
+    await user.click(await screen.findByRole('button', { name: /Masa 1/ }));
+    const discount = await screen.findByRole('form', { name: 'İndirim formu' });
+    await user.type(within(discount).getByLabelText('İndirim değeri'), '10');
+    await user.type(within(discount).getByLabelText('İndirim gerekçesi'), 'Kampanya');
+    await user.click(within(discount).getByRole('button', { name: 'İndirim uygula' }));
+
+    const gift = screen.getByRole('form', { name: 'İkram formu' });
+    await user.type(within(gift).getByLabelText('İkram gerekçesi'), 'İşletme ikramı');
+    await user.click(within(gift).getByRole('button', { name: 'İkram yap' }));
+    await user.click(screen.getByRole('button', { name: 'Kalanı cariye aktar' }));
+    await user.click(screen.getByRole('button', { name: 'Masayı taşı' }));
+    await user.click(screen.getByRole('button', { name: 'Adisyonları birleştir' }));
+
+    await waitFor(() => expect(recordedRequests).toHaveLength(5));
+    expect(recordedRequests).toEqual(
+      expect.arrayContaining([
+        {
+          path: `/api/orders/checks/${checkId}/discounts`,
+          method: 'POST',
+          body: { type: 'PERCENT', value: 10, reason: 'Kampanya' },
+        },
+        {
+          path: `/api/orders/items/${itemId}/complimentary`,
+          method: 'POST',
+          body: { reason: 'İşletme ikramı' },
+        },
+        {
+          path: `/api/orders/checks/${checkId}/account-transfer`,
+          method: 'POST',
+          body: { customerId },
+        },
+        {
+          path: `/api/orders/checks/${checkId}/move`,
+          method: 'POST',
+          body: { targetTableId: emptyTableId },
+        },
+        {
+          path: `/api/orders/checks/${checkId}/merge`,
+          method: 'POST',
+          body: { sourceCheckId },
+        },
+      ]),
+    );
   });
 });

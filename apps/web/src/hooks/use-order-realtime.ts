@@ -13,11 +13,18 @@ export function useOrderRealtime(): void {
       void queryClient.invalidateQueries({ queryKey: ['kitchen-orders'] });
       void queryClient.invalidateQueries({ queryKey: ['operational-floor-plan'] });
       void queryClient.invalidateQueries({ queryKey: ['check'] });
+      void queryClient.invalidateQueries({ queryKey: ['customers'] });
     };
     const handleOrderChange = (event: OrderRealtimeEvent): void => {
       void queryClient.invalidateQueries({ queryKey: ['kitchen-orders'] });
       void queryClient.invalidateQueries({ queryKey: ['operational-floor-plan'] });
-      void queryClient.invalidateQueries({ queryKey: ['check', event.checkId] });
+      if ('checkId' in event && event.checkId !== undefined) {
+        void queryClient.invalidateQueries({ queryKey: ['check', event.checkId] });
+      }
+      if (event.type === 'ACCOUNT_CHANGED') {
+        void queryClient.invalidateQueries({ queryKey: ['customers'] });
+        void queryClient.invalidateQueries({ queryKey: ['customer', event.customerId] });
+      }
     };
 
     socket.on('connect', refetchOperationalData);

@@ -9,6 +9,7 @@ import {
 } from '@kafe/contracts';
 import { Panel } from '../components/ui/panel';
 import { CheckPaymentPanel } from '../components/payments/check-payment-panel';
+import { CheckActionsPanel } from '../components/orders/check-actions-panel';
 import { useCurrentUser } from '../hooks/use-auth';
 import {
   ApiError,
@@ -46,6 +47,7 @@ export function CheckView({
 }): JSX.Element {
   const auth = useCurrentUser();
   const canManageRole = auth.isSuccess && auth.data.role !== 'KITCHEN';
+  const role = auth.data?.role;
   const check = useQuery({ queryKey: ['check', checkId], queryFn: () => fetchCheck(checkId) });
   const menu = useQuery({ queryKey: ['sales-menu'], queryFn: fetchSalesMenu });
   const [selectedCategoryId, setSelectedCategoryId] = useState('');
@@ -162,6 +164,13 @@ export function CheckView({
       </div>
 
       <CheckPaymentPanel check={check.data} canManage={canManage} onClosed={onBack} />
+      <CheckActionsPanel
+        check={check.data}
+        canAdjust={canManage && (role === 'OWNER' || role === 'CASHIER')}
+        canMove={canManage && role !== 'KITCHEN'}
+        canMerge={canManage && (role === 'OWNER' || role === 'CASHIER')}
+        onChanged={(updated) => check.refetch().then(() => updated.status === 'MERGED' && onBack())}
+      />
 
       {selectedProduct === null ? null : (
         <ProductSelection
@@ -378,6 +387,11 @@ function OrderItemRow({
           </button>
         </div>
       ) : null}
+      {item.complimentaryAt === null ? null : (
+        <p className="mt-2 text-[13px] text-success">
+          İkram: {item.complimentaryReason} · {item.complimentaryByName}
+        </p>
+      )}
 
       {editing ? (
         <form

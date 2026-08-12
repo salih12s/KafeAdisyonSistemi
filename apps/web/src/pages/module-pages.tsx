@@ -1,24 +1,6 @@
-import { BarChart3, UsersRound } from 'lucide-react';
+import { BarChart3 } from 'lucide-react';
 import { EmptyState } from '../components/ui/empty-state';
 import { Panel } from '../components/ui/panel';
-
-export function AccountsPage(): JSX.Element {
-  return (
-    <Panel>
-      <EmptyState
-        icon={UsersRound}
-        title="Cari hesap kaydı bulunmuyor"
-        description="Cari hesaplar Phase 6'da etkinleştirilecek. Müşteri hesapları açıldığında borç, tahsilat ve hesap özetleri bu ekranda takip edilecek."
-        upcoming={[
-          'Müşteri kartı oluşturma',
-          'Adisyonu cariye aktarma',
-          'Tahsilat kaydı',
-          'Cari hesap ekstresi',
-        ]}
-      />
-    </Panel>
-  );
-}
 
 export function ReportsPage(): JSX.Element {
   return (

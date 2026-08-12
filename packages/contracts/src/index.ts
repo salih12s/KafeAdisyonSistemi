@@ -1,4 +1,5 @@
 export * from './common.js';
+export * from './accounts.js';
 export * from './errors.js';
 export * from './health.js';
 export * from './identity.js';
