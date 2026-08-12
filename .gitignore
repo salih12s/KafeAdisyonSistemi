@@ -1,0 +1,53 @@
+# Bağımlılıklar
+node_modules/
+.npm/
+
+# Derleme çıktıları
+dist/
+build/
+out/
+*.tsbuildinfo
+
+# Ortam değişkenleri — GERÇEK PAROLALAR ASLA COMMIT EDİLMEZ
+.env
+.env.*
+!.env.example
+!.env.test.example
+
+# Loglar
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Test / coverage
+coverage/
+.vitest/
+*.lcov
+
+# Editör ve işletim sistemi
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+
+# Önbellekler
+.cache/
+.eslintcache
+.turbo/
+vite.config.ts.timestamp-*
+
+# Prisma yerel dosyaları
+prisma/*.db
+prisma/*.db-journal
+
+# Yerel yedekler
+*.bak
+*.local
