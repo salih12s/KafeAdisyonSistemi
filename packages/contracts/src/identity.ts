@@ -14,6 +14,8 @@ export const PERMISSIONS = {
   MANAGE_BUSINESS: 'MANAGE_BUSINESS',
   MANAGE_AREAS: 'MANAGE_AREAS',
   MANAGE_TABLES: 'MANAGE_TABLES',
+  VIEW_MENU: 'VIEW_MENU',
+  MANAGE_MENU: 'MANAGE_MENU',
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];

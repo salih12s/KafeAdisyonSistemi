@@ -1,143 +1,195 @@
-# HANDOFF.md — Ajanlar arası devir kaydı
+# HANDOFF.md — Geliştiriciler arası devir kaydı
 
 Bu dosya **her zaman tek bir aktif görevi** gösterir ve görev sonunda güncellenir
 (bkz. [AGENTS.md](AGENTS.md) §7).
+
+> **Çalışma düzeni (2026-08-12'de değişti):** Phase başına ayrı review adımı
+> **yoktur**. Bir Phase; iş bitip testler geçtikten sonra commit + push + draft PR
+> ile kapanır, merge edilmez ve **sonraki Phase hemen başlayabilir**. Kapsamlı
+> review tüm proje bittikten sonra bir kez yapılacaktır (AGENTS.md §5).
+> Bu dosya bir reviewer'a değil, **sonraki geliştiriciye** hazırlanır.
 
 ---
 
 ## Aktif durum
 
-| Alan                  | Değer                                                                  |
-| --------------------- | ---------------------------------------------------------------------- |
-| **Aktif Phase**       | Phase 1 — Authentication, Personel, İşletme, Salon ve Masa             |
-| **Aktif branch**      | `feat/phase-1-identity-tables`                                         |
-| **Ana geliştirici**   | Codex                                                                  |
-| **Reviewer**          | Claude                                                                 |
-| **Durum**             | **Claude review bekliyor**                                             |
-| **Base branch / SHA** | `feat/phase-0-foundation` / `6aaa1169ddd417984821d068befdc52fb90a17fe` |
-| **Phase commit**      | `feat: complete phase 1 identity and table management`                 |
-| **Son güncelleme**    | 2026-08-12                                                             |
+| Alan | Değer |
+| --- | --- |
+| **Aktif Phase** | Phase 2 — Menü ve ürün yönetimi |
+| **Aktif branch** | `feat/phase-2-menu-products` |
+| **Ana geliştirici** | Claude |
+| **Durum** | **Tamamlandı — draft PR açık, merge edilmedi** |
+| **Base branch / SHA** | `feat/phase-1-identity-tables` / `c4b5e1816a6d44790790aa2aa7d870844a7324bb` |
+| **Phase commit** | `feat: complete phase 2 menu and product management` |
+| **Son güncelleme** | 2026-08-12 |
+
+### Phase durumu
+
+| Phase | Branch | Ana geliştirici | Durum |
+| --- | --- | --- | --- |
+| 0 | `feat/phase-0-foundation` | Claude | Tamamlandı · draft PR açık |
+| 1 | `feat/phase-1-identity-tables` | Codex | Tamamlandı · draft PR açık |
+| 2 | `feat/phase-2-menu-products` | Claude | Tamamlandı · draft PR açık |
+| 3 | — | **Codex** | Başlanmadı |
+
+Açık draft PR'lar sonraki Phase'i **bloke etmez**.
 
 ---
 
-## Phase 1 teslimi
+## Phase 2 teslimi
 
-### Veri ve backend
+### Çalışma düzeni değişikliği
 
-- İlk additive Prisma migration: `20260812074504_phase_1_identity_tables`.
-- Yalnız `User`, `Session`, `BusinessSettings`, `DiningArea`, `CafeTable`,
-  `AuditLog` ve sabit `UserRole` enum'u eklendi; destructive SQL yok.
-- `npm run setup:owner` işletme ve ilk OWNER kaydını tek serializable transaction
-  içinde, maskeli şifreyle oluşturur; açık web bootstrap endpoint'i yoktur.
-- bcryptjs cost 12, 8–72 karakter şifre; 12 saatlik HttpOnly,
-  SameSite=Strict `kafe_session`; production'da Secure.
-- Ham session token yalnız cookie'dedir; veritabanında SHA-256 hash bulunur.
-- Login rate limit'i yalnız `/api/auth/login` üzerinde, 15 dakikada 10
-  başarısız denemedir.
-- Sabit roller/permission matrisi ve Express tarafında 401/403 guard'ları.
-- Personel, işletme, salon ve masa endpoint'leri; DELETE endpoint'i yoktur.
-- Son aktif OWNER ve eşzamanlı güncelleme riski serializable transaction ile
-  korunur. Pasife alma ve şifre sıfırlama session'ları iptal eder.
-- Yönetim işlemleri audit kaydı üretir; parola/session/secret metadata'ya girmez.
+Kullanıcı Phase başına Claude/Codex review'unu kaldırdı. `AGENTS.md` §5 yeniden
+yazıldı, `WORKFLOW.md` §3/§9/§12/§13 ve `docs/PHASES.md` başlığı güncellendi;
+`HANDOFF.md` artık reviewer değil sonraki geliştirici için hazırlanıyor.
+`SESSION_LOG.md` append-only kaldı — eski kayıtlara dokunulmadı.
+
+### Veri katmanı
+
+- Additive migration: `20260812085207_phase_2_menu_products`.
+- Yalnız `CREATE TYPE` / `CREATE TABLE` / `CREATE INDEX` / `ADD CONSTRAINT`
+  içerir. Mevcut tablolara `ALTER`, hiçbir `DROP` veya veri değişikliği yok.
+- Yeni enum'lar: `PreparationArea` (KITCHEN/BAR),
+  `OptionSelectionType` (SINGLE/MULTIPLE).
+- Yeni modeller: `Category`, `Product`, `ProductOptionGroup`,
+  `ProductOptionValue`.
+- Benzersizlik: `Category.nameKey` global; `Product` kategori içinde;
+  `ProductOptionGroup` ürün içinde; `ProductOptionValue` grup içinde.
+  `nameKey`, `normalizeNameKey` ile tr-TR küçük harfe indirgenir — "TATLILAR"
+  ile "Tatlılar" aynı sayılır.
+- Tüm ilişkiler `onDelete: Restrict`. **Hiçbir DELETE ucu yoktur**; pasife alma
+  `isActive` ile yapılır.
+- Fiyatlar `Int` kuruştur (`priceKurus`, `priceDeltaKurus`); `Float` yok.
+  Fiyat farkı negatif olabilir (küçük boy indirimi).
+
+### Backend
+
+- `MenuStore` sınırı `src/features/menu-store.ts`; Prisma uygulaması
+  `prisma-menu-store.ts`, `createPrismaStore` içine spread edilir.
+- Yeni izinler: `VIEW_MENU` (tüm roller) ve `MANAGE_MENU` (yalnız OWNER).
+- `/api/menu` altındaki uçlar:
+  - `GET /api/menu` — yalnız aktif kayıtlardan satış görünümü
+  - `GET|POST /api/menu/categories`, `PATCH /api/menu/categories/:id`
+  - `GET|POST /api/menu/products`, `PATCH /api/menu/products/:id`
+  - `GET|POST /api/menu/products/:id/option-groups`
+  - `PATCH /api/menu/option-groups/:id`
+  - `POST /api/menu/option-groups/:id/values`
+  - `PATCH /api/menu/option-values/:id`
+- Validation ve duplicate kontrolü **backend'de**: zod ile ad/sıra/fiyat,
+  `P2002` → 409, `P2025` → 404.
+- Tüm yazma işlemleri `AuditLog` kaydı üretir.
+- Ortak `parse` ve `callStore` yardımcıları `features/http.ts` içine taşındı;
+  `routes.ts` ve `menu-routes.ts` aynı kopyayı kullanır.
 
 ### Frontend
 
-- `/login`, setup durumu, cookie tabanlı session yenileme, protected route,
-  logout ve 401 sonrası güvenli login yönlendirmesi.
-- Top bar'da personel adı, Türkçe rol ve çıkış; OWNER olmayan kullanıcı Ayarlar
-  navigasyonunu göremez ve `/ayarlar` route'una erişemez.
-- İşletme, personel, salon ve masa yönetim formları; personel son giriş bilgisi
-  ve ekran içi maskeli şifre sıfırlama formu.
-- `/masalar` gerçek `/api/floor-plan` verisini gösterir; doluluk, tutar, süre,
-  sipariş veya çalışmayan aksiyon uydurmaz.
-- Menünün Phase 2, mutfağın Phase 4, carilerin Phase 6 ve raporların Phase 7
-  olduğu boş durumlarda açıkça belirtilir.
-
-### Belgeler ve önceki çalışma ağacı
-
-- Başlangıçtaki kirli Phase 0 değişiklikleri silinmeden şu stash'te korundu ve
-  Phase 1'e uygulanmadı: `backup: failed Codex security review before phase 1`.
-- `docs/PHASES.md` Phase 0–7 kapsam dağılımına göre düzeltildi.
-- README, ARCHITECTURE, PRODUCT_SCOPE, UI_GUIDE ve aktif kod yorumları local
-  geliştirme + gelecekte Railway/custom domain kararına uyumlu hale getirildi.
-- ADR-013 kimlik/session/sabit rol kararını kaydeder.
-- Codex Security veya başka bir security scan workflow'u çalıştırılmadı.
+- `/menu` artık gerçek PostgreSQL verisiyle çalışır (`pages/menu-page.tsx`).
+  Eski placeholder `module-pages.tsx` içinden kaldırıldı.
+- OWNER: kategori, ürün, seçenek grubu ve seçenek değeri ekler/düzenler,
+  pasife alır, sıralar.
+- OWNER olmayan roller menüyü **yalnız görüntüler**; hiçbir form veya
+  "Düzenle" düğmesi render edilmez. Yetki hem API hem arayüzde uygulanır.
+- Fiyat arayüzde ₺ olarak girilir, `liraToKurus` ile tam sayı kuruşa çevrilerek
+  gönderilir; listede `formatKurus` ile tr-TR biçiminde gösterilir.
+- Mevcut cafe UI dili korundu: `Panel`, `EmptyState`, aynı palet, 44px dokunma
+  hedefleri, `sm`/`lg`/`xl` kırılımları. Sahte ürün/veri eklenmedi.
 
 ---
 
-## Doğrulama sonuçları
+## Değiştirilen önemli dosyalar
 
-| Kontrol                                | Sonuç                                       |
-| -------------------------------------- | ------------------------------------------- |
-| `npm ci`                               | **PASS** — 549 paket, audit 0 vulnerability |
-| `npm ls`                               | **PASS** — invalid/extraneous/missing yok   |
-| `npm ls react-router-dom react-router` | **PASS** — ikisi de 7.18.2                  |
-| `npm run lint`                         | **PASS**                                    |
-| `npm run typecheck`                    | **PASS** — contracts + api + web strict     |
-| `npm run test`                         | **PASS** — 10 dosya, 77/77 (API 56, web 21) |
-| `npm run build`                        | **PASS**                                    |
-| `npm run verify`                       | **PASS** — lint → typecheck → test → build  |
-| Prisma validate                        | **PASS**                                    |
-| Prisma migrate status                  | **PASS** — database schema up to date       |
-| `npm run db:check`                     | **PASS** — `SELECT 1`                       |
-
-Gerçek PostgreSQL'de yalnız Phase 1'in altı domain tablosu ve
-`_prisma_migrations` vardır. Owner/işletme/salon/masa/session/audit kayıt
-sayıları sıfırdır; kullanıcıya ait veri uydurulmadı.
-
-Production build canlı HTTP sonuçları:
-
-| İstek                               | Sonuç                         |
-| ----------------------------------- | ----------------------------- |
-| `GET /api/health`                   | **200**, connected            |
-| `GET /api/setup/status`             | **200**, `initialized: false` |
-| `GET /api/auth/me` (session yok)    | **401** JSON                  |
-| `GET /api/floor-plan` (session yok) | **401** JSON                  |
-| `GET /api/bilinmeyen`               | **404** JSON                  |
-| `GET /`                             | **200** HTML                  |
-| `GET /login`                        | **200** HTML                  |
-| `GET /masalar`                      | **200** HTML, SPA fallback    |
-| Production listen                   | `0.0.0.0:3101` ile doğrulandı |
-
-Gerçek Microsoft Edge ile login ekranı 390/768/1440 CSS px genişliklerde
-incelendi. Üçünde de `scrollWidth === innerWidth`; input ve butonlar 44px.
-Tab tuşuyla kullanıcı adı alanı `:focus-visible` oldu ve 2px turuncu outline
-aldı. Gerçek owner oluşturulmadığı için authenticated yönetim ekranlarının
-görsel kontrolü DOM/kullanıcı akışı testleriyle sınırlıdır.
+| Yol | Not |
+| --- | --- |
+| `apps/api/prisma/schema.prisma` | 4 yeni model + 2 enum |
+| `apps/api/prisma/migrations/20260812085207_phase_2_menu_products/` | Additive migration |
+| `apps/api/src/features/menu-store.ts` | MenuStore sınırı ve write input tipleri |
+| `apps/api/src/features/prisma-menu-store.ts` | Prisma uygulaması + audit |
+| `apps/api/src/features/menu-routes.ts` | `/api/menu` uçları, zod validation |
+| `apps/api/src/features/http.ts` | Ortak `parse` ve `callStore` |
+| `apps/api/src/features/permissions.ts` | `VIEW_MENU` tüm rollere |
+| `apps/api/src/features/store.ts` | `AppStore extends MenuStore` |
+| `packages/contracts/src/menu.ts` | Menü sözleşmeleri ve tip koruyucular |
+| `packages/contracts/src/identity.ts` | `VIEW_MENU` / `MANAGE_MENU` |
+| `apps/web/src/pages/menu-page.tsx` | Gerçek verili menü ekranı |
+| `apps/web/src/lib/api.ts` | Menü istemci fonksiyonları + tip koruyucular |
+| `apps/api/tests/helpers/memory-menu-store.ts` | Bellek içi MenuStore |
+| `AGENTS.md`, `WORKFLOW.md`, `docs/PHASES.md` | Yeni çalışma düzeni |
 
 ---
 
-## Bilinen riskler ve Claude review odağı
+## Çalıştırılan testler ve sonuçları
 
-1. Varsayılan test paketi bilinçli olarak gerçek local DB'de mutation yapmaz;
-   Prisma store üretimde canlı runtime/read kontrolleriyle, iş kuralları bellek
-   store'uyla test edildi. Ayrı izole integration DB testi yoktur.
-2. Kullanıcıya ait gerçek işletme bilgisi bilinmediği için owner oluşturulmadı;
-   login sonrası gerçek tarayıcı uçtan uca akışı çalıştırılmadı.
-3. Railway deployment ve custom domain Phase 7 kapsamındadır; deploy edilmedi.
-4. Claude migration SQL'ini, Prisma store transaction sınırlarını, auth cookie
-   davranışını ve OWNER permission matrisini bağımsız olarak yeniden incelemeli.
+| Komut | Sonuç |
+| --- | --- |
+| `npm run lint` | **PASS** — 0 hata, 0 uyarı |
+| `npm run typecheck` | **PASS** — contracts + api + web |
+| `npm run test` | **PASS** — 116/116 |
+| `npm run build` | **PASS** — `index.js 285.53 kB (gzip 86.16)` |
+| `npm run verify` | **PASS** — lint → typecheck → test → build |
+| `npx prisma migrate deploy` | **PASS** — migration uygulandı, veri kaybı yok |
+
+```
+@kafe/api (vitest 3.2.7)            @kafe/web (vitest 3.2.7)
+ ✓ env.test.ts            (10)       ✓ app.test.tsx        (6)
+ ✓ error-handler.test.ts   (8)       ✓ mobile-nav.test.tsx (4)
+ ✓ health.test.ts          (4)       ✓ auth.test.tsx       (7)
+ ✓ not-found.test.ts       (3)       ✓ management.test.tsx (4)
+ ✓ password.test.ts        (4)       ✓ menu.test.tsx       (9)
+ ✓ phase-one.test.ts      (27)      Test Files 5 passed (5)
+ ✓ phase-two.test.ts      (30)           Tests 30 passed (30)
+Test Files 7 passed (7)
+     Tests 86 passed (86)
+```
+
+**Phase 2'de eklenen: 39 test** (30 backend + 9 frontend).
+
+Ayrıca gerçek veritabanına karşı **salt okuma** doğrulaması yapıldı:
+`listCategories`, `listProducts` ve `getMenu` (iç içe include zinciriyle)
+gerçek şemaya karşı hatasız çalıştı. Doğrulama betiği geçici oluşturuldu ve
+silindi; hiçbir kayıt yazılmadı.
 
 ---
 
-## Sonraki ajanın yapması gereken iş
+## Bilinen eksikler
 
-**Claude reviewer olarak bu Phase 1 branch'i üzerinde:**
+| # | Konu | Etki |
+| --- | --- | --- |
+| 1 | Veritabanında henüz OWNER yok (`/api/setup/status` → `initialized: false`), bu yüzden **kimlik doğrulamalı menü uçları gerçek DB ile uçtan uca denenmedi**. Testler bellek içi store ile koşar; Prisma tarafı yalnız salt okuma ile doğrulandı. | Orta — `npm run setup:owner` sonrası elle doğrulanmalı |
+| 2 | Arayüz 390/768/1440px kurallarına göre yazıldı ve testlerle doğrulandı; **gerçek tarayıcıda görsel inceleme yapılmadı** | Orta |
+| 3 | Seçenek grubu/değeri güncellemesi grubu/ürünü taşımaz (tasarım gereği); taşıma gerekirse Phase 3'te ayrı uç gerekir | Düşük |
+| 4 | Ürün silme yok (bilinçli, ADR-011); pasife alınan ürün listede `includeInactive` ile görünür | Yok — planlı |
+| 5 | `packages/contracts` içinde göreli içe aktarımlarda `.js` uzantısı zorunlu | Düşük |
 
-1. `feat/phase-0-foundation...feat/phase-1-identity-tables` diff'ini ve migration
-   SQL'ini baştan sona incele.
-2. `npm run verify`, Prisma status ve `npm run db:check` sonuçlarını yeniden üret.
-3. Authentication, server-side authorization, son OWNER, audit ve Phase 2 kapsam
-   sızıntısı kontrollerini yap.
-4. Gerçek sorun varsa aynı branch'te minimal repair commit'i oluştur; merge yapma.
+---
 
-**Merge yapılmadı. Phase 2 başlatılmadı.**
+## Sonraki geliştiricinin işi — Phase 3 (Codex)
+
+**Phase 3 — Masa açma, adisyon ve sipariş.**
+Branch: `feat/phase-3-orders`, base: `feat/phase-2-menu-products`.
+
+1. `AGENTS.md` → `HANDOFF.md` → `DECISIONS.md` → `docs/PHASES.md` sırasıyla oku.
+2. Phase 2'nin bıraktığı sınırları kullan:
+   - Ürün fiyatı `priceKurus`, seçenek farkı `priceDeltaKurus` — **tam sayı kuruş**.
+   - Adisyon toplamı **sunucuda** hesaplanmalı; seçenek farkları ürün fiyatına eklenir.
+   - `preparationArea` (KITCHEN/BAR) sipariş yönlendirmesi için hazırdır.
+   - Zorunlu (`isRequired`) ve tek/çok seçimli (`selectionType`) gruplar sipariş
+     doğrulamasında kullanılmalıdır.
+   - Menü okuması için `GET /api/menu` yalnız aktif kayıtları döner.
+3. Yeni modelleri `MenuStore` gibi ayrı bir store sınırı olarak ekle ve
+   `AppStore`'a bağla; bellek içi karşılığını `tests/helpers/` altında sağla.
+4. Migration additive olmalı; `DELETE` yerine iptal/pasif alanları kullan.
+5. Bitince: `npm run verify` → commit → push → draft PR (base
+   `feat/phase-2-menu-products`) → **merge etme**.
+
+**Merge yapılmadı. Phase 3'e başlanmadı.**
 
 ---
 
 ## Devir geçmişi
 
-| Tarih      | Phase   | Devreden | Devralan | Not                                                                              |
-| ---------- | ------- | -------- | -------- | -------------------------------------------------------------------------------- |
-| 2026-08-12 | Phase 0 | Claude   | Codex    | Phase 0 uygulandı ve review'a devredildi.                                        |
-| 2026-08-12 | Phase 1 | Codex    | Claude   | Identity, personel, işletme, salon ve masa yönetimi tamamlandı; review bekliyor. |
+| Tarih | Phase | Devreden | Devralan | Not |
+| --- | --- | --- | --- | --- |
+| 2026-08-12 | Phase 0 | Claude | Codex | Proje temeli tamamlandı. |
+| 2026-08-12 | Phase 1 | Codex | Claude | Kimlik, personel, salon ve masa tamamlandı. |
+| 2026-08-12 | Phase 2 | Claude | **Codex** | Menü, ürün, seçenek ve ekstra yönetimi tamamlandı. |

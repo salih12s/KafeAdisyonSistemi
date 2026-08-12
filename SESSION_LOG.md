@@ -348,6 +348,145 @@ Yeni/güncel riskler:
 - Codex Security, security scan, threat model veya ayrı güvenlik artefact
   workflow'u çalıştırılmadı.
 
+---
+
+## 2026-08-12 11:40–12:15 (Europe/Istanbul) — Claude — PHASE2-MENU-PRODUCTS
+
+- **Branch:** `feat/phase-2-menu-products` (base: `feat/phase-1-identity-tables`
+  / `c4b5e18`)
+
+### Çalışma düzeni değişikliği
+
+Kullanıcı, Phase başına ayrı Claude/Codex review'unu kaldırdı. Yeni düzen:
+iş biter → testler geçer → commit + push → draft PR → merge yok → sonraki Phase
+hemen başlayabilir; kapsamlı review proje sonunda bir kez yapılır.
+Phase 1'in "Claude review bekliyor" durumu bu Phase'i bloke etmedi.
+
+Güncellenen belgeler: `AGENTS.md` (§5 yeniden yazıldı, §3/§4/§7/§10 sadeleşti),
+`WORKFLOW.md` (§3, §9, §12, §13), `docs/PHASES.md` (başlık + Phase 2 kapsamı +
+ana geliştirici sütunu), `HANDOFF.md` (reviewer alanı kaldırıldı).
+`SESSION_LOG.md` append-only kaldı; eski kayıtlara dokunulmadı.
+
+### İncelenen dosyalar
+
+Phase 1 çıktısının tamamı: `schema.prisma`, `features/{store,prisma-store,
+identity-service,permissions,routes,http}.ts`, `routes/index.ts`, `app.ts`,
+`packages/contracts/src/{identity,index}.ts`, `apps/web/src/{App.tsx,lib/api.ts,
+pages/settings-page.tsx,components/auth/protected-route.tsx,test/render.tsx}`,
+`tests/{phase-one.test.ts,helpers/*}`.
+
+### Değiştirilen dosyalar
+
+- **Sözleşme:** `packages/contracts/src/menu.ts` (yeni), `index.ts`,
+  `identity.ts` (`VIEW_MENU`, `MANAGE_MENU`).
+- **Veri:** `prisma/schema.prisma` (+4 model, +2 enum), migration
+  `20260812085207_phase_2_menu_products`.
+- **Backend:** `features/menu-store.ts`, `features/prisma-menu-store.ts`,
+  `features/menu-routes.ts` (yeni); `features/{store,prisma-store,permissions,
+  http,routes}.ts` (değişiklik).
+- **Frontend:** `pages/menu-page.tsx` (yeni), `lib/api.ts`, `App.tsx`,
+  `pages/module-pages.tsx` (placeholder MenuPage kaldırıldı).
+- **Test:** `tests/phase-two.test.ts`, `tests/helpers/memory-menu-store.ts`
+  (yeni); `tests/helpers/memory-store.ts`, `src/test/render.tsx`,
+  `src/__tests__/menu.test.tsx` (yeni).
+
+### Alınan kararlar
+
+1. **Ekstralar ayrı bir model değil.** "Ekstra shot" gibi ürünler, çoklu seçimli
+   (`MULTIPLE`) ve isteğe bağlı bir seçenek grubunun değeri olarak modellendi.
+   İkinci bir kavram eklemek yerine tek mekanizma kullanıldı.
+2. **`nameKey` ile tr-TR duplicate kontrolü.** Phase 1'deki `normalizeNameKey`
+   yeniden kullanıldı; "TATLILAR" ile "Tatlılar" aynı sayılır. Benzersizlik
+   veritabanı kısıtıyla da garantilenir (`P2002` → 409).
+3. **`MenuStore` ayrı sınır.** `AppStore extends MenuStore`; Prisma uygulaması
+   ayrı dosyada, `createPrismaStore` içine spread edilir. Tek dosyanın
+   şişmesi önlendi.
+4. **Güncelleme girdisinde parent id yok.** `updateOptionGroup`/`updateOptionValue`
+   için `Omit<..., 'productId'|'groupId'>` tipleri tanımlandı; ilk yazımdaki
+   `productId: ''` yer tutucusu kaldırıldı (AGENTS.md §11 "geçici hack" yasağı).
+5. **`parse` ve `callStore` paylaşıldı.** İki router'da kopya durmasın diye
+   `features/http.ts` içine taşındı.
+6. **Fiyat arayüzde ₺, ağda kuruş.** Kullanıcı liraya alışkın; `liraToKurus`
+   ile tam sayıya çevrilir, backend ondalık fiyatı 400 ile reddeder.
+7. **Salt okuma DB doğrulaması.** Veritabanında OWNER olmadığı için authenticated
+   uçlar uçtan uca denenemedi; bunun yerine Prisma sorguları (iç içe include
+   dâhil) gerçek şemaya karşı **yalnız okuma** ile doğrulandı. Kullanıcının
+   veritabanına iş verisi yazmak kendi kararı olduğu için owner oluşturulmadı.
+
+### Çalıştırılan komutlar ve gerçek sonuçları
+
+| Komut | Sonuç |
+| --- | --- |
+| `git checkout -b feat/phase-2-menu-products` | `Switched to a new branch` |
+| `prisma migrate dev --create-only` | Migration üretildi; SQL incelendi |
+| Migration SQL denetimi | Yalnız `CREATE TYPE/TABLE/INDEX` + `ADD CONSTRAINT`. **`DROP`, `ALTER TABLE`, `TRUNCATE` yok** |
+| `npx prisma migrate deploy` | `Applying migration 20260812085207_phase_2_menu_products` → `All migrations have been successfully applied.` |
+| `npx prisma generate` | `Generated Prisma Client (v6.19.3)` |
+| `npm run typecheck -w @kafe/api` | Temiz |
+| `npm run typecheck -w @kafe/web` | Temiz |
+| `npm run test -w @kafe/api` | 86/86 (Phase 2: 30 yeni) |
+| `npm run test -w @kafe/web` (1. deneme) | **BAŞARISIZ** — 2 test: `/₺/` ve `/Tek seçim/` sorguları form kontrolleriyle de eşleşiyordu |
+| Düzeltme | Seçenek grubu `<section>`'ına `aria-label` eklendi (erişilebilirlik iyileştirmesi); sorgular `within(...)` ile kapsandı |
+| `npm run test -w @kafe/web` (2. deneme) | 30/30 |
+| `npm run verify` (1. deneme) | **BAŞARISIZ** — `prisma-menu-store.ts` içinde 8 × `curly` lint hatası |
+| `npx eslint --fix` + `npm run lint` | Temiz |
+| `npm run verify` (son) | **Tamamı yeşil** — lint → typecheck → test → build |
+| `npm start` → `GET /api/health` | **200** `{"status":"ok","database":"connected",...}` |
+| `GET /api/setup/status` | `{"initialized":false}` → DB'de owner yok |
+| `GET /api/menu/categories` (oturumsuz) | **401** |
+| Salt okuma Prisma doğrulaması | `listCategories -> 0`, `listProducts -> 0`, `getMenu -> 0 aktif kategori`; iç içe include zinciri gerçek şemada çalıştı. Geçici betik çalıştırıldıktan sonra silindi |
+
+### Test sonuçları
+
+```
+@kafe/api (vitest 3.2.7)            @kafe/web (vitest 3.2.7)
+ ✓ env.test.ts            (10)       ✓ app.test.tsx        (6)
+ ✓ error-handler.test.ts   (8)       ✓ mobile-nav.test.tsx (4)
+ ✓ health.test.ts          (4)       ✓ auth.test.tsx       (7)
+ ✓ not-found.test.ts       (3)       ✓ management.test.tsx (4)
+ ✓ password.test.ts        (4)       ✓ menu.test.tsx       (9)
+ ✓ phase-one.test.ts      (27)      Test Files 5 passed (5)
+ ✓ phase-two.test.ts      (30)           Tests 30 passed (30)
+Test Files 7 passed (7)
+     Tests 86 passed (86)
+```
+
+**Toplam 116 test, 116 başarılı, 0 uyarı.** Phase 2'de eklenen: 39.
+
+Kapsanan davranışlar — **backend:** oturumsuz 401; OWNER olmayan rollerin
+görüntüleyip değiştirememesi (403, üç rol için ayrı ayrı); kategori oluşturma,
+büyük/küçük harf duplicate reddi, düzenlemede çakışma, pasife alma ve
+`includeInactive`, sıralama, boş ad reddi; ürün kuruş fiyatı, ondalık/negatif
+fiyat ve bilinmeyen `preparationArea` reddi, kategori içi duplicate ve farklı
+kategoride aynı adın kabulü, olmayan kategori 404, satışa kapatma; seçenek
+grubu tekli/çoklu ve zorunlu, negatif fiyat farkı, grup ve değer duplicate
+reddi, değerin pasife alınması, olmayan ürün 404, geçersiz UUID 400; satış
+menüsünün yalnız aktif kayıtları döndürmesi; **DELETE uçlarının bulunmadığı**.
+**Frontend:** gerçek veriyle listeleme, kuruş→tr-TR fiyat gösterimi, kategori
+oluşturma isteğinin gövdesi, ₺→kuruş çevrimi (72.50 → 7250), seçenek
+gruplarının ve fiyat farklarının gösterimi, seçenek ekleme, garsonun yönetim
+formlarını görememesi, boş menü durumu, yükleme hatasında Türkçe mesaj.
+
+### Kalan riskler
+
+1. **Authenticated uçlar gerçek DB ile uçtan uca denenmedi** — veritabanında
+   OWNER yok. `npm run setup:owner` sonrası elle doğrulama gerekir.
+2. **Görsel inceleme yapılmadı** (390/768/1440px kuralları uygulandı, davranış
+   testlerle doğrulandı).
+3. Seçenek grubu/değeri güncellemesi parent değiştirmez; taşıma gerekirse ayrı
+   uç gerekir.
+4. `packages/contracts` içinde `.js` uzantısı zorunluluğu sürüyor.
+5. `HANDOFF.md` bir ara PowerShell `Get-Content -Raw` ile okunup yazıldığı için
+   kodlaması bozuldu; dosya tamamen yeniden yazılarak düzeltildi. Bundan sonra
+   metin dosyaları için PowerShell round-trip kullanılmamalıdır.
+
+### Sonraki geliştiriciye devir
+
+**Codex — Phase 3 (Masa açma, adisyon ve sipariş).** Ayrıntılı kontrol listesi
+ve Phase 2'nin bıraktığı sınırlar [HANDOFF.md](HANDOFF.md) içindedir.
+
+**Merge yapılmadı. Phase 3'e başlanmadı.**
+
 ### Plan, veri modeli ve migration
 
 - Yerel ağ/kasa sunucusu anlatımları local geliştirme + gelecekte

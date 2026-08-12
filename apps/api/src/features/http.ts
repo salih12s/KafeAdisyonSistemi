@@ -1,8 +1,16 @@
 import type { RequestHandler } from 'express';
+import type { z } from 'zod';
 import type { Permission } from '@kafe/contracts';
-import { ForbiddenError, UnauthorizedError, ValidationError } from '../errors/app-error';
+import {
+  ConflictError,
+  ForbiddenError,
+  NotFoundError,
+  UnauthorizedError,
+  ValidationError,
+} from '../errors/app-error';
 import type { IdentityService } from './identity-service';
 import { hasPermission } from './permissions';
+import { StoreError } from './store';
 
 export function readCookie(header: string | undefined, name: string): string | undefined {
   if (header === undefined) return undefined;
@@ -50,4 +58,27 @@ export function validationDetails(error: {
     return path.length === 0 ? issue.message : `${path}: ${issue.message}`;
   });
   return new ValidationError('Gönderilen bilgiler geçersiz.', details);
+}
+
+/** Gövde/parametre doğrulaması; başarısızsa 400 ve alan bazlı ayrıntı döner. */
+export function parse<Output, Input>(
+  schema: z.ZodType<Output, z.ZodTypeDef, Input>,
+  value: unknown,
+): Output {
+  const result = schema.safeParse(value);
+  if (!result.success) throw validationDetails(result.error);
+  return result.data;
+}
+
+/** Store hatalarını istemciye gösterilebilir HTTP hatalarına çevirir. */
+export async function callStore<T>(operation: () => Promise<T>): Promise<T> {
+  try {
+    return await operation();
+  } catch (error) {
+    if (error instanceof StoreError) {
+      if (error.code === 'NOT_FOUND') throw new NotFoundError(error.message);
+      throw new ConflictError(error.message);
+    }
+    throw error;
+  }
 }

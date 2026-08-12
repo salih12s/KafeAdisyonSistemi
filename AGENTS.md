@@ -33,27 +33,31 @@ Bu sıra atlanamaz. "Kısa bir değişiklik" gerekçesiyle de atlanamaz.
 - Ajan yalnızca aktif Phase'in kapsamındaki işi yapar.
 - Kapsam dışı bir ihtiyaç fark edilirse kod yazılmaz; `HANDOFF.md` içindeki
   "Bilinen eksikler" bölümüne not düşülür ve kullanıcıya bildirilir.
-- Bir sonraki Phase'e **kullanıcı açıkça istemeden geçilmez.**
 - Phase'in tamamlanma kriterleri sağlanmadan Phase "tamamlandı" sayılmaz.
 
 ---
 
 ## 4. Aynı anda yalnızca bir ajan kod yazar
 
-- Aktif geliştirici ve reviewer `HANDOFF.md` içinde yazılıdır.
-- Aktif geliştirici değilken kod değiştirilmez; yalnızca inceleme yapılır.
+- O anki ana geliştirici `HANDOFF.md` içinde yazılıdır.
+- Ana geliştirici değilken kod değiştirilmez.
 - Devir tamamlanmadan diğer ajan çalışmaya başlamaz.
 
 ---
 
-## 5. Reviewer kuralları
+## 5. Review düzeni — Phase başına review YOKTUR
 
-- Reviewer, **mevcut branch üzerinde** inceleme yapar; yeni branch açmaz.
-- Reviewer yalnızca **gerçek hata** bulursa düzeltme yapar.
-- Üslup tercihi, isimlendirme zevki veya "ben olsam böyle yazardım" gerekçesiyle
-  çalışan kod değiştirilmez.
-- Bulunan her hata `HANDOFF.md` içine kaydedilir.
-- Reviewer merge yapmaz.
+Bu kural **2026-08-12 tarihinde kullanıcı tarafından değiştirilmiştir.**
+
+- Phase sonunda **ayrı bir Claude/Codex review adımı beklenmez.**
+- Bir Phase şu koşullarda kapanır: iş biter → testler geçer → commit + push →
+  draft PR açılır → **merge edilmez**.
+- Draft PR açıldıktan sonra **sonraki Phase hemen başlayabilir.** Önceki
+  Phase'in açık PR'ı sonraki Phase'i **bloke etmez.**
+- Review, **tüm proje bittikten sonra tek kapsamlı review** olarak yapılacaktır.
+- `HANDOFF.md` bir reviewer'a değil, **sonraki geliştiriciye** hazırlanır.
+
+Merge kararı her durumda kullanıcıya aittir; ajan merge yapmaz.
 
 ---
 
@@ -72,8 +76,9 @@ Bu sıra atlanamaz. "Kısa bir değişiklik" gerekçesiyle de atlanamaz.
 ## 7. Her ajan yaptığı işi HANDOFF.md içine kaydeder
 
 `HANDOFF.md` her görev sonunda güncellenir: aktif Phase, aktif branch, ana
-geliştirici, reviewer, son commit, yapılan işler, değiştirilen önemli dosyalar,
-çalıştırılan testler, test sonuçları, bilinen eksikler, sonraki ajanın işi.
+geliştirici, son commit, yapılan işler, değiştirilen önemli dosyalar,
+çalıştırılan testler, test sonuçları, bilinen eksikler ve **sonraki
+geliştiricinin işi**. Reviewer alanı yoktur (bkz. §5).
 
 `SESSION_LOG.md` ayrıntılı oturum kaydı tutar ve **append-only**'dir:
 eski kayıtlar değiştirilmez ve silinmez.
@@ -116,12 +121,14 @@ Kurallar:
 - `main` branch'ine **doğrudan Phase kodu yazılmaz.** İstisna yalnızca ilk
   bootstrap commit'idir.
 - Her Phase kendi branch'inde çalışır: `feat/phase-<n>-<konu>`
+- Bir Phase branch'i, bir önceki Phase branch'inden açılır ve PR'ı da ona
+  hedeflenir; `main` yalnızca proje sonunda toplanır.
 - **Kullanıcı istemeden merge yapılmaz.**
 - **Force push yapılmaz.** Push edilmiş commit yeniden yazılmaz; düzeltme
   yeni bir commit ile yapılır.
 - Kullanıcının mevcut dosyaları silinmez.
 - Commit mesajları Conventional Commits biçimindedir.
-- PR'lar draft olarak açılır ve reviewer ajanı beklenir.
+- PR'lar **draft** olarak açılır ve açık bırakılır; review beklenmez (§5).
 
 ---
 

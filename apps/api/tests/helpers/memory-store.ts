@@ -21,6 +21,7 @@ import {
   type UpdateStaffInput,
   type UserWithPassword,
 } from '../../src/features/store';
+import { MemoryMenuStore, type MemoryAuditEntry } from './memory-menu-store';
 
 interface MemoryUser extends UserWithPassword {
   lastLoginAt: Date | null;
@@ -44,17 +45,15 @@ interface MemoryTable extends CafeTableResponse {
   nameKey: string;
 }
 
-export interface MemoryAudit {
-  actorUserId: string;
-  action: string;
-  entityType: string;
-  entityId: string;
-  metadata?: Record<string, string | boolean>;
-}
+/** Audit kaydı biçimi menü store'u ile ortaktır; iki yerde ayrı tanım tutulmaz. */
+export type MemoryAudit = MemoryAuditEntry;
 
-export class MemoryStore implements AppStore {
+/**
+ * Kimlik/salon/masa store'u. Menü işlemleri `MemoryMenuStore` içindedir ve
+ * buradan miras alınır; böylece tek bir `AppStore` uygulaması elde edilir.
+ */
+export class MemoryStore extends MemoryMenuStore implements AppStore {
   public readonly sessions: MemorySession[] = [];
-  public readonly audits: MemoryAudit[] = [];
   private readonly users: MemoryUser[] = [];
   private readonly areas: MemoryArea[] = [];
   private readonly tables: MemoryTable[] = [];

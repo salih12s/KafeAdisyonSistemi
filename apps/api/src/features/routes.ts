@@ -3,7 +3,7 @@ import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
 import { PERMISSIONS, USER_ROLES } from '@kafe/contracts';
 import type { Env } from '../config/env';
-import { ConflictError, NotFoundError } from '../errors/app-error';
+import { NotFoundError } from '../errors/app-error';
 import {
   IdentityService,
   SESSION_COOKIE_NAME,
@@ -12,13 +12,15 @@ import {
 } from './identity-service';
 import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from './password';
 import {
+  callStore,
+  parse,
   readCookie,
   requireAuth,
   requireAuthentication,
   requirePermission,
-  validationDetails,
 } from './http';
-import { StoreError, type AppStore } from './store';
+import type { AppStore } from './store';
+import { createMenuRouter } from './menu-routes';
 
 const usernameSchema = z
   .string()
@@ -43,15 +45,6 @@ const includeInactiveSchema = z.object({
     .transform((value) => value === 'true'),
 });
 
-function parse<Output, Input>(
-  schema: z.ZodType<Output, z.ZodTypeDef, Input>,
-  value: unknown,
-): Output {
-  const result = schema.safeParse(value);
-  if (!result.success) throw validationDetails(result.error);
-  return result.data;
-}
-
 function optionalText(maxLength: number) {
   return z
     .string()
@@ -69,18 +62,6 @@ function authCookieOptions(env: Env) {
     path: '/',
     maxAge: SESSION_DURATION_MS,
   };
-}
-
-async function callStore<T>(operation: () => Promise<T>): Promise<T> {
-  try {
-    return await operation();
-  } catch (error) {
-    if (error instanceof StoreError) {
-      if (error.code === 'NOT_FOUND') throw new NotFoundError(error.message);
-      throw new ConflictError(error.message);
-    }
-    throw error;
-  }
 }
 
 export function createPhaseOneRouter(store: AppStore, env: Env): Router {
@@ -319,6 +300,9 @@ export function createPhaseOneRouter(store: AppStore, env: Env): Router {
       res.json(await store.getFloorPlan());
     },
   );
+
+  // Phase 2 menü uçları /api/menu altında toplanır.
+  router.use('/menu', createMenuRouter(store, authenticate));
 
   return router;
 }

@@ -3,9 +3,14 @@
 Bu belge bir Phase'in baştan sona nasıl yürütüleceğini tanımlar.
 Kurallar için bkz. [AGENTS.md](AGENTS.md).
 
-> **Claude ve Codex eş zamanlı çalışamaz.** Aynı anda yalnızca bir ajan aktif
-> geliştiricidir. Diğer ajan reviewer rolündedir ve devir tamamlanmadan
-> kod değiştirmez. Aktif ajan [HANDOFF.md](HANDOFF.md) içinde yazılıdır.
+> **Claude ve Codex eş zamanlı çalışamaz.** Aynı anda yalnızca bir ajan ana
+> geliştiricidir; devir tamamlanmadan diğeri kod değiştirmez. Ana geliştirici
+> [HANDOFF.md](HANDOFF.md) içinde yazılıdır.
+>
+> **Phase başına review yoktur (2026-08-12).** Phase; testler geçtikten sonra
+> commit + push + draft PR ile kapanır, merge edilmez ve sonraki Phase hemen
+> başlayabilir. Açık bir draft PR sonraki Phase'i bloke etmez. Kapsamlı review
+> proje sonunda bir kez yapılır (AGENTS.md §5).
 
 ---
 
@@ -38,9 +43,8 @@ Bu adım atlanamaz.
 `HANDOFF.md` güncellenir:
 
 - Aktif Phase
-- Aktif branch
+- Aktif branch (bir önceki Phase branch'inden açılır)
 - Ana geliştirici
-- Reviewer
 - Durum → `Devam ediyor`
 
 ---
@@ -108,10 +112,10 @@ npm start
 
 ## 9. HANDOFF ve SESSION_LOG güncelleme
 
-`HANDOFF.md` içinde: aktif Phase, aktif branch, ana geliştirici, reviewer,
-son commit, yapılan işler, değiştirilen önemli dosyalar, çalıştırılan testler,
-test sonuçları, bilinen eksikler, sonraki ajanın işi.
-Durum → `Review bekliyor`.
+`HANDOFF.md` içinde: aktif Phase, aktif branch, ana geliştirici, son commit,
+yapılan işler, değiştirilen önemli dosyalar, çalıştırılan testler, test
+sonuçları, bilinen eksikler ve **sonraki geliştiricinin işi**.
+Durum → `Tamamlandı — draft PR açık`.
 
 `SESSION_LOG.md` sonuna **yeni** kayıt eklenir; eski kayıt değiştirilmez.
 
@@ -142,7 +146,8 @@ Force push yapılmaz.
 ## 12. Draft PR
 
 ```bash
-gh pr create --draft --base main --head <branch> --title "<başlık>" --body-file <dosya>
+gh pr create --draft --base <önceki-phase-branch> --head <branch> \
+  --title "<başlık>" --body-file <dosya>
 ```
 
 PR açıklamasında yer alması gerekenler:
@@ -150,20 +155,20 @@ PR açıklamasında yer alması gerekenler:
 - Yapılanlar
 - Mimari kararlar
 - Test sonuçları (gerçek çıktı)
-- Veritabanı doğrulama durumu
-- Yerel ağ kullanım şekli
+- Veritabanı ve migration durumu
 - Kapsam dışında bırakılanlar
 - Bilinen riskler
-- Reviewer'dan beklenen
+- Sonraki Phase için not
 
 `gh` yoksa veya yetki yoksa durum açıkça raporlanır, push yine tamamlanır.
 
 ---
 
-## 13. Reviewer ajanına devir
+## 13. Phase'i kapatma ve devir
 
-- `HANDOFF.md` içinde aktif ajan reviewer olarak güncellenir.
-- Devralan ajan için "Sonraki beklenen işlem" net yazılır.
-- Aktif ajan bu noktadan sonra kod değiştirmez.
-- **Merge yapılmaz.** Merge kararı kullanıcıya aittir.
-- **Bir sonraki Phase'e geçilmez.**
+- `HANDOFF.md` **sonraki geliştiriciye** hazırlanır; "Sonraki geliştiricinin
+  işi" net yazılır (reviewer alanı yoktur).
+- Draft PR açık bırakılır. **Merge yapılmaz** — merge kararı kullanıcıya aittir.
+- **Review beklenmez.** Sonraki Phase, kullanıcı istediğinde hemen başlayabilir;
+  açık draft PR engel değildir.
+- Kapsamlı review proje sonunda bir kez yapılır.

@@ -1,7 +1,8 @@
 // Kafe Adisyon Sistemi — Prisma şeması
 //
-// Phase 1 yalnız kimlik, işletme, salon, masa ve audit altyapısını içerir.
-// Ürün, adisyon, sipariş, ödeme ve cari modelleri sonraki Phase'lere aittir.
+// Phase 1: kimlik, işletme, salon, masa ve audit altyapısı.
+// Phase 2: kategori, ürün, ürün seçenek grupları ve seçenek değerleri.
+// Adisyon, sipariş, ödeme ve cari modelleri sonraki Phase'lere aittir.
 //
 // Kurallar:
 // - Para alanları her zaman tam sayı kuruş (Int) olarak tutulur, Float kullanılmaz.
@@ -89,6 +90,84 @@ model CafeTable {
 
   @@unique([areaId, nameKey])
   @@index([areaId, isActive, sortOrder])
+}
+
+enum PreparationArea {
+  KITCHEN
+  BAR
+}
+
+enum OptionSelectionType {
+  SINGLE
+  MULTIPLE
+}
+
+model Category {
+  id        String    @id @default(uuid()) @db.Uuid
+  name      String
+  // nameKey: tr-TR küçük harfe indirgenmiş ad; aynı isim tekrarını engeller.
+  nameKey   String    @unique
+  sortOrder Int       @default(0)
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  products  Product[]
+
+  @@index([isActive, sortOrder])
+}
+
+model Product {
+  id              String               @id @default(uuid()) @db.Uuid
+  categoryId      String               @db.Uuid
+  name            String
+  nameKey         String
+  // Fiyat her zaman tam sayı kuruş; Float kullanılmaz.
+  priceKurus      Int
+  preparationArea PreparationArea
+  sortOrder       Int                  @default(0)
+  isActive        Boolean              @default(true)
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  category        Category             @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  optionGroups    ProductOptionGroup[]
+
+  @@unique([categoryId, nameKey])
+  @@index([categoryId, isActive, sortOrder])
+}
+
+model ProductOptionGroup {
+  id            String               @id @default(uuid()) @db.Uuid
+  productId     String               @db.Uuid
+  name          String
+  nameKey       String
+  selectionType OptionSelectionType
+  isRequired    Boolean              @default(false)
+  sortOrder     Int                  @default(0)
+  isActive      Boolean              @default(true)
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  product       Product              @relation(fields: [productId], references: [id], onDelete: Restrict)
+  values        ProductOptionValue[]
+
+  @@unique([productId, nameKey])
+  @@index([productId, isActive, sortOrder])
+}
+
+model ProductOptionValue {
+  id              String             @id @default(uuid()) @db.Uuid
+  groupId         String             @db.Uuid
+  name            String
+  nameKey         String
+  // Ürün fiyatına eklenen fark; indirim için negatif olabilir.
+  priceDeltaKurus Int                @default(0)
+  sortOrder       Int                @default(0)
+  isActive        Boolean            @default(true)
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  group           ProductOptionGroup @relation(fields: [groupId], references: [id], onDelete: Restrict)
+
+  @@unique([groupId, nameKey])
+  @@index([groupId, isActive, sortOrder])
 }
 
 model AuditLog {
