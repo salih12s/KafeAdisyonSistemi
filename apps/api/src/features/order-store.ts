@@ -3,6 +3,8 @@ import type {
   KitchenOrderResponse,
   OperationalFloorPlanResponse,
   OrderItemStatus,
+  PaymentMethod,
+  PaymentSplitResponse,
   PreparationArea,
 } from '@kafe/contracts';
 
@@ -40,6 +42,24 @@ export interface UpdateOrderItemStatusInput {
   status: OrderItemStatus;
 }
 
+export interface AddPaymentInput {
+  actorUserId: string;
+  checkId: string;
+  method: PaymentMethod;
+  amountKurus: number;
+  cashReceivedKurus: number | null;
+}
+
+export type SplitPaymentInput =
+  | { actorUserId: string; checkId: string; mode: 'AMOUNT'; amountKurus: number }
+  | { actorUserId: string; checkId: string; mode: 'ITEMS'; itemIds: string[] }
+  | { actorUserId: string; checkId: string; mode: 'GUESTS' };
+
+export interface CloseCheckInput {
+  actorUserId: string;
+  checkId: string;
+}
+
 export interface OrderStore {
   getOperationalFloorPlan(): Promise<OperationalFloorPlanResponse>;
   openCheck(input: OpenCheckInput): Promise<CheckResponse>;
@@ -50,4 +70,7 @@ export interface OrderStore {
   cancelOrderItem(input: CancelOrderItemInput): Promise<CheckResponse>;
   listKitchenOrders(preparationArea?: PreparationArea): Promise<KitchenOrderResponse[]>;
   updateOrderItemStatus(input: UpdateOrderItemStatusInput): Promise<CheckResponse>;
+  addPayment(input: AddPaymentInput): Promise<CheckResponse>;
+  previewPaymentSplit(input: SplitPaymentInput): Promise<PaymentSplitResponse>;
+  closeCheck(input: CloseCheckInput): Promise<CheckResponse>;
 }

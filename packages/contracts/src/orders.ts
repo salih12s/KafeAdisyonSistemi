@@ -1,8 +1,18 @@
 import type { Kurus } from './money.js';
 import type { PreparationArea } from './menu.js';
 
-export const CHECK_STATUSES = ['OPEN', 'CANCELLED'] as const;
+export const CHECK_STATUSES = ['OPEN', 'CANCELLED', 'PAID'] as const;
 export type CheckStatus = (typeof CHECK_STATUSES)[number];
+
+export const PAYMENT_METHODS = ['CASH', 'CARD'] as const;
+export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
+export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
+  CASH: 'Nakit',
+  CARD: 'Kart',
+};
+
+export const PAYMENT_SPLIT_MODES = ['AMOUNT', 'ITEMS', 'GUESTS'] as const;
+export type PaymentSplitMode = (typeof PAYMENT_SPLIT_MODES)[number];
 
 export const ORDER_ITEM_STATUSES = ['SENT', 'PREPARING', 'READY', 'SERVED'] as const;
 export type OrderItemStatus = (typeof ORDER_ITEM_STATUSES)[number];
@@ -20,14 +30,44 @@ export const ORDER_REALTIME_EVENT_TYPES = [
   'ITEM_UPDATED',
   'ITEM_CANCELLED',
   'ITEM_STATUS_CHANGED',
+  'PAYMENT_ADDED',
+  'CHECK_CLOSED',
 ] as const;
 export type OrderRealtimeEventType = (typeof ORDER_REALTIME_EVENT_TYPES)[number];
+export type OrderItemRealtimeEventType = Exclude<
+  OrderRealtimeEventType,
+  'PAYMENT_ADDED' | 'CHECK_CLOSED'
+>;
 
-export interface OrderRealtimeEvent {
-  type: OrderRealtimeEventType;
+export interface OrderItemRealtimeEvent {
+  type: OrderItemRealtimeEventType;
   checkId: string;
   itemId: string;
   preparationArea: PreparationArea;
+}
+
+export type OrderRealtimeEvent =
+  OrderItemRealtimeEvent | { type: 'PAYMENT_ADDED' | 'CHECK_CLOSED'; checkId: string };
+
+export interface PaymentResponse {
+  id: string;
+  method: PaymentMethod;
+  amountKurus: Kurus;
+  receivedByUserId: string;
+  receivedByName: string;
+  createdAt: string;
+}
+
+export interface PaymentSplitShare {
+  label: string;
+  amountKurus: Kurus;
+  itemIds: string[];
+}
+
+export interface PaymentSplitResponse {
+  mode: PaymentSplitMode;
+  totalKurus: Kurus;
+  shares: PaymentSplitShare[];
 }
 
 export interface OrderItemOptionResponse {
@@ -85,6 +125,12 @@ export interface CheckResponse {
   status: CheckStatus;
   openedAt: string;
   totalKurus: Kurus;
+  paidKurus: Kurus;
+  remainingKurus: Kurus;
+  closedAt: string | null;
+  closedByUserId: string | null;
+  closedByName: string | null;
+  payments: PaymentResponse[];
   items: OrderItemResponse[];
 }
 

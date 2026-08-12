@@ -661,3 +661,29 @@ için authenticated browser E2E yerine 21 frontend kullanıcı akışı testi ya
   gözlenemedi; migration boş gerçek şemada uygulandı ve Phase 4 alan sorgusu geçti.
 - Mutfak düzeni responsive kod ve jsdom akış testleriyle doğrulandı; gerçek
   telefon/tablet görsel incelemesi yapılmadı.
+
+## 2026-08-12 — Codex — Phase 5 ödeme ve hesap kapatma
+
+**Branch:** `feat/phase-5-payments`
+**Base:** `feat/phase-4-realtime-kitchen` (`8855a6c`)
+**Sonuç:** Tamamlandı; merge yapılmadı, Phase 6 başlatılmadı.
+
+- `PaymentMethod`, immutable `Payment`, `CheckStatus.PAID` ve kapanış alanları
+  additive `20260812133000_phase_5_payments` migration'ıyla eklendi. SQL
+  destructive işlem içermiyor; gerçek `CafeAdisyon` DB'ye uygulandı ve schema
+  up to date.
+- Nakit/kart/karma ödeme, backend bakiye ve nakit doğrulaması, tutar/kalem/kişi
+  bölme, deterministik kuruş dağıtımı, ödeme geçmişi ve hesap kapatma uygulandı.
+- Ödeme/kapanış adisyon satır kilidi ve serializable transaction ile yarışlara
+  karşı korunur. Ödeme sonrası toplam ödenenin altına indirilemez; kapanmış
+  adisyon sipariş/ödeme mutation'larına kapalıdır ve masa boş görünür.
+- Ödeme, bölme ve kapanış audit kayıtları; ödeme/kapanış için küçük Socket.IO
+  invalidation event'leri eklendi. İstemci event/reconnect sonrası REST refetch eder.
+- `npm run verify` PASS: 17 dosyada 160/160 test (API 117, web 43). Phase 5'e
+  10 test eklendi (7 backend, 3 frontend). Build JS 354.43 kB/gzip 105.73 kB.
+- DB check/migration status PASS; production runtime `0.0.0.0:3105` üzerinde
+  health `ok/connected` ve root 200.
+
+Kalan riskler: gerçek DB boş olduğundan authenticated Prisma ödeme mutation E2E
+yapılmadı; responsive UI jsdom ile doğrulandı fakat gerçek telefon/tablet görsel
+incelemesi yapılmadı.

@@ -41,6 +41,12 @@ const check = {
   status: 'OPEN',
   openedAt: '2026-08-12T09:00:00.000Z',
   totalKurus: 8000,
+  paidKurus: 0,
+  remainingKurus: 8000,
+  closedAt: null,
+  closedByUserId: null,
+  closedByName: null,
+  payments: [],
   items: [
     {
       id: '00000000-0000-4000-8000-000000000203',
@@ -145,12 +151,7 @@ describe('Phase 4 mutfak ve realtime arayüzü', () => {
     socketHarness.emit('connect');
     await waitFor(() => expect(kitchenCallCount()).toBeGreaterThan(initial));
     const afterReconnect = kitchenCallCount();
-    const event: OrderRealtimeEvent = {
-      type: 'ITEM_STATUS_CHANGED',
-      checkId: check.id,
-      itemId: check.items[0]?.id ?? '',
-      preparationArea: 'BAR',
-    };
+    const event: OrderRealtimeEvent = { type: 'PAYMENT_ADDED', checkId: check.id };
     socketHarness.emit(ORDER_REALTIME_EVENT, event);
     await waitFor(() => expect(kitchenCallCount()).toBeGreaterThan(afterReconnect));
   });

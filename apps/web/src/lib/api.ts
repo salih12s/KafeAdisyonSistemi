@@ -23,6 +23,8 @@ import {
   type OperationalFloorPlanResponse,
   type KitchenOrderResponse,
   type OrderItemStatus,
+  type PaymentMethod,
+  type PaymentSplitResponse,
 } from '@kafe/contracts';
 
 export class ApiError extends Error {
@@ -523,9 +525,25 @@ function isCheck(value: unknown): value is CheckResponse {
     typeof value.openedByUserId === 'string' &&
     typeof value.openedByName === 'string' &&
     typeof value.guestCount === 'number' &&
-    (value.status === 'OPEN' || value.status === 'CANCELLED') &&
+    (value.status === 'OPEN' || value.status === 'CANCELLED' || value.status === 'PAID') &&
     typeof value.openedAt === 'string' &&
     typeof value.totalKurus === 'number' &&
+    typeof value.paidKurus === 'number' &&
+    typeof value.remainingKurus === 'number' &&
+    (value.closedAt === null || typeof value.closedAt === 'string') &&
+    (value.closedByUserId === null || typeof value.closedByUserId === 'string') &&
+    (value.closedByName === null || typeof value.closedByName === 'string') &&
+    Array.isArray(value.payments) &&
+    value.payments.every(
+      (payment) =>
+        isRecord(payment) &&
+        typeof payment.id === 'string' &&
+        (payment.method === 'CASH' || payment.method === 'CARD') &&
+        typeof payment.amountKurus === 'number' &&
+        typeof payment.receivedByUserId === 'string' &&
+        typeof payment.receivedByName === 'string' &&
+        typeof payment.createdAt === 'string',
+    ) &&
     Array.isArray(value.items) &&
     value.items.every(isOrderItem)
   );
@@ -659,6 +677,59 @@ export async function cancelOrderItem(itemId: string, reason: string): Promise<C
       body: JSON.stringify({ reason }),
     }),
   );
+}
+
+export async function addPayment(
+  checkId: string,
+  input: {
+    method: PaymentMethod;
+    amountKurus: number;
+    cashReceivedKurus: number | null;
+  },
+): Promise<CheckResponse> {
+  return readCheck(
+    await requestPayload(`/api/orders/checks/${checkId}/payments`, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
+  );
+}
+
+export async function previewPaymentSplit(
+  checkId: string,
+  input:
+    | { mode: 'AMOUNT'; amountKurus: number }
+    | { mode: 'ITEMS'; itemIds: string[] }
+    | { mode: 'GUESTS' },
+): Promise<PaymentSplitResponse> {
+  const split = expectRecord(
+    await requestPayload(`/api/orders/checks/${checkId}/payment-split`, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
+    'split',
+  );
+  if (
+    !isRecord(split) ||
+    (split.mode !== 'AMOUNT' && split.mode !== 'ITEMS' && split.mode !== 'GUESTS') ||
+    typeof split.totalKurus !== 'number' ||
+    !Array.isArray(split.shares) ||
+    !split.shares.every(
+      (share) =>
+        isRecord(share) &&
+        typeof share.label === 'string' &&
+        typeof share.amountKurus === 'number' &&
+        Array.isArray(share.itemIds) &&
+        share.itemIds.every((id) => typeof id === 'string'),
+    )
+  ) {
+    throw new ApiError('Hesap bölme bilgisi okunamadı.');
+  }
+  return split as unknown as PaymentSplitResponse;
+}
+
+export async function closeCheck(checkId: string): Promise<CheckResponse> {
+  return readCheck(await requestPayload(`/api/orders/checks/${checkId}/close`, { method: 'POST' }));
 }
 
 function isKitchenOrder(value: unknown): value is KitchenOrderResponse {

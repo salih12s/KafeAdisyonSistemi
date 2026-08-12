@@ -50,6 +50,12 @@ const check = {
   status: 'OPEN',
   openedAt: '2026-08-12T09:00:00.000Z',
   totalKurus: 18_500,
+  paidKurus: 0,
+  remainingKurus: 18_500,
+  closedAt: null,
+  closedByUserId: null,
+  closedByName: null,
+  payments: [],
   items: [
     {
       id: itemId,
@@ -219,5 +225,86 @@ describe('Phase 3 masa ve adisyon ekranı', () => {
     expect(await screen.findByText(/Mutfak rolü adisyonu görüntüleyebilir/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Adet / not' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Kalemi iptal et' })).not.toBeInTheDocument();
+  });
+
+  it('nakit ödemede alınan tutarı ve para üstünü gösterip yalnız uygulanan tutarı gönderir', async () => {
+    stubAppFetch({ floorPlan: floor(), check, salesMenu });
+    const user = userEvent.setup();
+    renderWithProviders(<App />, '/masalar');
+    await user.click(await screen.findByRole('button', { name: /Masa 1/ }));
+    const form = await screen.findByRole('form', { name: 'Ödeme alma formu' });
+    const amount = within(form).getByLabelText('Ödenecek tutar');
+    const received = within(form).getByLabelText('Alınan nakit');
+    await user.clear(amount);
+    await user.type(amount, '100');
+    await user.clear(received);
+    await user.type(received, '200');
+    expect(within(form).getByText(/100,00/)).toBeInTheDocument();
+    await user.click(within(form).getByRole('button', { name: 'Ödeme al' }));
+    await waitFor(() =>
+      expect(recordedRequests).toContainEqual({
+        path: `/api/orders/checks/${checkId}/payments`,
+        method: 'POST',
+        body: { method: 'CASH', amountKurus: 10_000, cashReceivedKurus: 20_000 },
+      }),
+    );
+  });
+
+  it('kalem ve kişi bazlı hesap bölme kontrollerini sunar', async () => {
+    stubAppFetch({
+      floorPlan: floor(),
+      check,
+      salesMenu,
+      paymentSplit: {
+        mode: 'GUESTS',
+        totalKurus: 18_500,
+        shares: [
+          { label: '1. kişi', amountKurus: 6_167, itemIds: [] },
+          { label: '2. kişi', amountKurus: 6_167, itemIds: [] },
+          { label: '3. kişi', amountKurus: 6_166, itemIds: [] },
+        ],
+      },
+    });
+    const user = userEvent.setup();
+    renderWithProviders(<App />, '/masalar');
+    await user.click(await screen.findByRole('button', { name: /Masa 1/ }));
+    await user.click(await screen.findByRole('button', { name: 'Kişiye göre' }));
+    await user.click(screen.getByRole('button', { name: 'Payları hesapla' }));
+    expect(await screen.findByRole('button', { name: /1\. kişi.*61,67/ })).toBeInTheDocument();
+    expect(recordedRequests).toContainEqual({
+      path: `/api/orders/checks/${checkId}/payment-split`,
+      method: 'POST',
+      body: { mode: 'GUESTS' },
+    });
+    await user.click(screen.getByRole('button', { name: 'Kaleme göre' }));
+    expect(screen.getByLabelText(/2 × Latte/)).toBeInTheDocument();
+  });
+
+  it('bakiye tamamlanınca hesabı kapatır ve masa görünümüne döner', async () => {
+    const settledCheck = {
+      ...check,
+      paidKurus: check.totalKurus,
+      remainingKurus: 0,
+      payments: [
+        {
+          id: '00000000-0000-4000-8000-000000000111',
+          method: 'CARD',
+          amountKurus: check.totalKurus,
+          receivedByUserId: check.openedByUserId,
+          receivedByName: check.openedByName,
+          createdAt: '2026-08-12T09:30:00.000Z',
+        },
+      ],
+    };
+    stubAppFetch({ floorPlan: floor(), check: settledCheck, salesMenu });
+    const user = userEvent.setup();
+    renderWithProviders(<App />, '/masalar');
+    await user.click(await screen.findByRole('button', { name: /Masa 1/ }));
+    expect(await screen.findByText('Kart · İşletme Sahibi')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Hesabı kapat' }));
+    await waitFor(() =>
+      expect(recordedRequests.some((entry) => entry.path.endsWith('/close'))).toBe(true),
+    );
+    expect(await screen.findByRole('heading', { name: 'Salonlar' })).toBeInTheDocument();
   });
 });
