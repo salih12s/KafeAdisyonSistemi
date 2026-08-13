@@ -1026,3 +1026,22 @@ değiştirilmedi, merge yapılmadı.
 - Hostinger yüklemesi için `apps/web/dist` + SPA `.htaccess` arşivi üretildi;
   29 girdinin tamamı `/` ayracı kullanıyor (Compress-Archive yerine
   System.IO.Compression ile elle kuruldu).
+
+## 2026-08-13 — Claude — Ayrı barındırma terk edildi, tek origin'e dönüldü
+
+**Branch:** `main`
+**Sonuç:** Kullanıcı kararıyla production tek origin (Railway) üzerinden yürüyor.
+
+- Hostinger'daki arayüz çalışıyordu ancak yalnız üçüncü taraf çerezlere izin
+  veren tarayıcılarda. Kullanıcının bir arkadaşı giriş yapamadı; Safari/iOS
+  üçüncü taraf çerezleri koşulsuz engellediği ve Chrome bunları kademeli olarak
+  kaldırdığı için bu kurulum kalıcı olarak güvenilir değildi.
+- Kullanıcı tek origin kurulumunu seçti: arayüz ve API aynı Railway servisinden
+  sunulur, çerez birinci taraf olur ve `SameSite=Strict` politikasına döner.
+- Kod değişikliği gerekmedi. ADR-020 ile eklenen ayrı barındırma desteği
+  yapılandırmaya bağlı olduğu için `CORS_ORIGIN` boşaltıldığında tamamen devre
+  dışı kalır; varsayılan davranış ADR-004'teki aynı origin kurulumudur.
+- Gerçek tarayıcı doğrulaması: Railway origin'inde giriş, oturum doğrulama ve
+  operasyon çağrıları 7 istekte 0 adet 401 ile geçti.
+- Hostinger için üretilen dağıtım arşivi silindi; `*.zip` `.gitignore` içinde
+  kalıyor, gerekirse `VITE_API_URL` ile yeniden üretilebilir.
