@@ -2,14 +2,10 @@ import { useState, type FormEvent } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Panel } from './ui/panel';
 import { fetchAuditLogs, fetchStaff } from '../lib/api';
-import { formatDateTime } from '../lib/datetime';
+import { formatDateTime, todayIstanbul } from '../lib/datetime';
 import { formatKurus } from '@kafe/contracts';
 
 const input = 'min-h-touch rounded-panel border border-line bg-white px-3 text-sm';
-
-function todayIstanbul(): string {
-  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Istanbul' }).format(new Date());
-}
 
 const ACTION_LABELS: Record<string, string> = {
   OWNER_CREATED: 'İlk işletme sahibi oluşturuldu',

@@ -2,17 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { App } from '../App';
+import { todayIstanbul } from '../lib/datetime';
 import { renderWithProviders, requestedPaths, stubAppFetch, userForRole } from '../test/render';
-
-/** Rapor ekranının varsayılan bitiş tarihiyle aynı hesap (reports-page ile birebir). */
-function todayIstanbul(): string {
-  return new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Europe/Istanbul',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(new Date());
-}
 
 const report = {
   range: { from: '2026-08-12', to: '2026-08-12' },

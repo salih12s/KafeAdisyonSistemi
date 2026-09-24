@@ -1045,3 +1045,33 @@ değiştirilmedi, merge yapılmadı.
   operasyon çağrıları 7 istekte 0 adet 401 ile geçti.
 - Hostinger için üretilen dağıtım arşivi silindi; `*.zip` `.gitignore` içinde
   kalıyor, gerekirse `VITE_API_URL` ile yeniden üretilebilir.
+
+## 2026-09-24 — Claude — İnceleme bulgularının düzeltilmesi ve yerel veritabanı rolü
+
+**Branch:** `fix/review-findings` (base `main`)
+**Sonuç:** Tamamlandı; draft PR açık, merge edilmedi.
+
+- `/code-review` ve `/security-review` `069a78b^..2da4006` aralığında çalıştı.
+  Güvenlik incelemesi tek bir yüksek bulgu doğruladı (güven 8/10): `CORS_ORIGIN`
+  doluyken çerez `SameSite=None` olur, CORS katmanı izinsiz origin'e `next()`
+  çağırır ve `express.urlencoded` form gövdesini ayrıştırır; başka bir sitedeki
+  otomatik form `POST /api/staff` ile OWNER hesabı açtırabilir. Production şu
+  an tek origin'de (`CORS_ORIGIN` boş) olduğu için canlıda istismar edilemezdi.
+- Düzeltmeler: izinsiz origin'den mutation `403`; form gövdesi ayrıştırılmaz;
+  Socket.IO `allowRequest` origin kontrolü; `Vary: Origin` her yanıtta;
+  `CORS_ORIGIN` normalizasyonu; giriş ekranında yalnız 401'in "çerez
+  saklanmadı" sayılması; tekilleştirilmiş 401 işleyicisi ve 401'in yeniden
+  denenmemesi; `todayIstanbul()` tek kaynağa indirildi.
+- Yeni testler eski koda karşı çalıştırıldı: 19 testten 7'si başarısız oldu
+  (açık gerçekten yakalanıyor); yeni kodda 19/19.
+- `npm run verify` PASS: 216/216 test (API 151, web 65).
+- Yerel PostgreSQL 15'te `kafe_adisyon` rolü oluşturuldu; yerel `CafeAdisyon`
+  nesnelerinin sahipliği devredildi (18 tablo, 8 enum). Veri değişmedi;
+  `User` tablosunda önce ve sonra 3 kayıt. Parola yalnız gitignore'daki
+  `apps/api/.env.local` içinde.
+- `apps/api/.env` oturum başında Railway production'ı gösteriyordu ve kullanıcının
+  VS Code terminalinde bu ayarla başlamış bir `npm run dev` çalışıyordu. O süreç
+  ağacı durduruldu, `.env` yerel role çevrildi ve sunucular yeniden başlatıldı:
+  `/api/health` 200 `database: connected`, arayüz 200, `/masalar` SPA 200.
+- Kapsam dışı bırakılan: `VITE_API_URL`/ayrı barındırma kodunun tamamen
+  kaldırılması (ADR-020 kullanıcı kararı; HANDOFF'a not düşüldü).

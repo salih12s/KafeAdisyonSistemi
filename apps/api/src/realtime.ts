@@ -6,6 +6,7 @@ import { readCookie } from './features/http';
 import type { OrderEventHub } from './features/order-events';
 import type { AppStore } from './features/store';
 import type { Logger } from './lib/logger';
+import { isTrustedOrigin } from './middleware/cors';
 
 interface ServerToClientEvents {
   [ORDER_REALTIME_EVENT]: (event: OrderRealtimeEvent) => void;
@@ -30,6 +31,7 @@ export function createRealtimeServer(
   allowedOrigins: readonly string[] = [],
 ): RealtimeServer {
   const identity = new IdentityService(store);
+  const allowlist = new Set(allowedOrigins);
   const io = new Server<
     Record<string, never>,
     ServerToClientEvents,
@@ -39,9 +41,17 @@ export function createRealtimeServer(
     serveClient: false,
     // Aynı origin kurulumunda CORS gerekmez; ayrı barındırmada çerez taşınabilmesi
     // için credentials ve birebir origin listesi zorunludur.
+    // `cors` seçeneği yalnız HTTP long-polling yanıtlarına başlık yazar; WebSocket
+    // yükseltmesinde Origin'i denetlemez. Çerez SameSite=None olduğunda başka bir
+    // site kimliği doğrulanmış soket açabileceği için el sıkışma burada süzülür.
     ...(allowedOrigins.length === 0
       ? {}
-      : { cors: { origin: [...allowedOrigins], credentials: true } }),
+      : {
+          cors: { origin: [...allowedOrigins], credentials: true },
+          allowRequest: (req, callback) => {
+            callback(null, isTrustedOrigin(req.headers.origin, req.headers.host, allowlist));
+          },
+        }),
   });
 
   io.use(async (socket, next) => {

@@ -6,6 +6,9 @@ import { AUTH_QUERY_KEY, useCurrentUser } from '../hooks/use-auth';
 import { ApiError, fetchCurrentUser, fetchSetupStatus, login } from '../lib/api';
 import { APP_NAME, APP_SUBTITLE } from '../config/app-info';
 import { IS_CROSS_ORIGIN } from '../config/api-base';
+import { BrandMark } from '../components/ui/brand-mark';
+import { Button } from '../components/ui/button';
+import { TextField } from '../components/ui/field';
 
 /**
  * Şifre doğru ama tarayıcı oturum çerezini saklamadı. Ayrı barındırmada bunun
@@ -18,9 +21,6 @@ const SESSION_NOT_STORED_MESSAGE = IS_CROSS_ORIGIN
     'sunucuyla aynı adresten açın.'
   : 'Kullanıcı adı ve şifre doğru, ancak tarayıcınız oturum çerezini saklamadı. ' +
     'Tarayıcınızın çerez ayarlarını kontrol edin.';
-import { BrandMark } from '../components/ui/brand-mark';
-import { Button } from '../components/ui/button';
-import { TextField } from '../components/ui/field';
 
 export function LoginPage(): JSX.Element {
   const navigate = useNavigate();
@@ -37,10 +37,14 @@ export function LoginPage(): JSX.Element {
       // Şifre doğru olsa bile oturum çerezi saklanmamış olabilir (üçüncü taraf
       // çerez engeli). Doğrulamadan içeri alırsak kullanıcı sebebini anlamadan
       // giriş ekranına geri düşer; bu yüzden oturumu burada teyit ediyoruz.
+      // Yalnız 401 çerezin gitmediğini gösterir; ağ/sunucu hataları olduğu gibi iletilir.
       try {
         return await fetchCurrentUser();
-      } catch {
-        throw new ApiError(SESSION_NOT_STORED_MESSAGE);
+      } catch (error) {
+        if (error instanceof ApiError && error.statusCode === 401) {
+          throw new ApiError(SESSION_NOT_STORED_MESSAGE, 401);
+        }
+        throw error;
       }
     },
     onSuccess: (user) => {

@@ -424,3 +424,22 @@ iki kurulumu da kapsar. Ayrı barındırma seçildiğinde `SameSite=None` nedeni
 CSRF koruması yalnız origin allowlist'ine dayanır; bu yüzden listeye yalnız
 gerçekten sahip olunan alan adları yazılır. Statik sunucuda SPA fallback
 kuralı (`.htaccess` veya eşdeğeri) gereklidir.
+
+**Güncelleme (2026-09-24).** Güvenlik incelemesi, yukarıdaki "CSRF koruması
+origin allowlist'ine dayanır" varsayımının kodda karşılığı olmadığını gösterdi:
+CORS katmanı izinsiz origin'den gelen düz form POST'unu işliyordu ve
+`SameSite=None` çerezi bu isteğe ekleniyordu. Karar korunarak uygulama
+sıkılaştırıldı:
+
+- Ayrı barındırmada izinsiz origin'den gelen durum değiştiren (GET/HEAD/OPTIONS
+  dışı) istekler `403` alır. İzinli origin, API'nin kendi origin'i ve `Origin`
+  başlığı taşımayan istekler kabul edilir.
+- API form gövdesi (`application/x-www-form-urlencoded`) ayrıştırmaz; yalnız
+  JSON kabul edilir. Siteler arası JSON isteği preflight gerektirdiği için
+  izinsiz origin tarafından gönderilemez. Bu kural aynı origin kurulumunda da
+  geçerlidir.
+- Socket.IO el sıkışması aynı origin kontrolünden geçer (`allowRequest`);
+  `cors` seçeneği WebSocket yükseltmesini denetlemez.
+- `CORS_ORIGIN` girdileri tarayıcının gönderdiği biçime normalleştirilir
+  (küçük harf, varsayılan port yok); yol, sorgu veya kullanıcı bilgisi içeren
+  değerler reddedilir. `Vary: Origin` her yanıta eklenir.

@@ -4,17 +4,9 @@ import { PAYMENT_METHOD_LABELS, formatKurus, type NamedSalesTotal } from '@kafe/
 import { Panel } from '../components/ui/panel';
 import { fetchDayEnd, fetchSalesReport } from '../lib/api';
 import { Button } from '../components/ui/button';
+import { todayIstanbul } from '../lib/datetime';
 
 const input = 'min-h-touch rounded-panel border border-line bg-white px-3 text-sm';
-
-function todayIstanbul(): string {
-  return new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Europe/Istanbul',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(new Date());
-}
 
 function Metric({ label, value }: { label: string; value: string }): JSX.Element {
   return (
@@ -138,9 +130,9 @@ export function ReportsPage(): JSX.Element {
             {report.data.paymentDistribution.length === 0 ? null : (
               // Sütun sayısı kalem sayısına uyar; eksik sütun boş gri blok bırakmaz.
               <dl
-                className={`grid gap-px border-t border-line bg-line ${
-                  paymentColumnClass(report.data.paymentDistribution.length)
-                }`}
+                className={`grid gap-px border-t border-line bg-line ${paymentColumnClass(
+                  report.data.paymentDistribution.length,
+                )}`}
               >
                 {report.data.paymentDistribution.map((row) => (
                   <Metric

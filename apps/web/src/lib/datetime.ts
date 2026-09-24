@@ -29,6 +29,18 @@ const dateTimeFormatter = new Intl.DateTimeFormat(LOCALE, {
   minute: '2-digit',
 });
 
+const isoDateFormatter = new Intl.DateTimeFormat('en-CA', {
+  timeZone: TIME_ZONE,
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+});
+
+/** Europe/Istanbul takvimine göre bugünün tarihi, `YYYY-AA-GG` biçiminde. */
+export function todayIstanbul(): string {
+  return isoDateFormatter.format(new Date());
+}
+
 export function formatClock(value: Date): string {
   return clockFormatter.format(value);
 }

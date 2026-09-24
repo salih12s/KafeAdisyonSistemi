@@ -57,6 +57,37 @@ describe('Frontend authentication', () => {
     expect(screen.queryByRole('heading', { level: 1, name: 'Özet' })).not.toBeInTheDocument();
   });
 
+  it('oturum kontrolü sunucu hatası verirse çerez uyarısı yerine gerçek hatayı gösterir', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL) => {
+        const path = String(input);
+        const reply = (body: unknown, status = 200) =>
+          Promise.resolve({
+            ok: status >= 200 && status < 300,
+            status,
+            json: () => Promise.resolve(body),
+          });
+        if (path === '/api/setup/status') return reply({ initialized: true });
+        if (path === '/api/auth/login') return reply({ user: userForRole('OWNER') });
+        if (path === '/api/auth/me') {
+          return reply({ error: { message: 'Veritabanına ulaşılamıyor.' } }, 500);
+        }
+        return reply({ error: { message: 'Bulunamadı.' } }, 404);
+      }),
+    );
+    const user = userEvent.setup();
+    renderWithProviders(<App />, '/login');
+
+    await user.type(await screen.findByLabelText('Kullanıcı adı'), 'owner');
+    await user.type(screen.getByLabelText('Şifre'), 'OwnerTest12!');
+    await user.click(screen.getByRole('button', { name: 'Giriş yap' }));
+
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent('Veritabanına ulaşılamıyor.');
+    expect(alert).not.toHaveTextContent(/çerez/i);
+  });
+
   it('giriş yapılmadan protected route login ekranına yönlenir', async () => {
     stubAppFetch({ user: null });
     renderWithProviders(<App />, '/masalar');
