@@ -21,6 +21,21 @@ kapatmak ve gün sonunu görmek. Kapsamın tamamı:
 
 ---
 
+### Özellikler
+
+- Masa, adisyon ve sipariş; seçenekli ürünler, fiyat snapshot'ı
+- Gerçek zamanlı mutfak/bar ekranı (Socket.IO)
+- Nakit/kart/karma ödeme, hesap bölme, indirim, ikram, masa taşıma/birleştirme
+- Cari hesap (hareket defterinden türetilen bakiye)
+- **Kasa oturumu:** açılış, nakit giriş/çıkış, vardiya sonu sayım farkı
+- **Stok:** reçeteye göre otomatik düşüm, alım/fire/sayım, azalan stok uyarısı
+- **QR menü:** masadaki koddan açılan, oturumsuz salt okunur menü
+- **Yazıcı:** 80/58 mm termal adisyon ve mutfak fişi (tarayıcı yazdırması)
+- Raporlar: gün sonu, günlük ciro grafiği, ürün/kategori/personel satışları
+- İşlem geçmişi (audit), rol bazlı yetki, ana ekrana kurulabilir (PWA)
+
+---
+
 ## 2. Teknik yapı
 
 | Katman     | Teknoloji                                                                                |

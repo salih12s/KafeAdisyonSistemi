@@ -26,6 +26,10 @@ const report = {
     hour,
     totalKurus: hour === 13 ? 18_500 : 0,
   })),
+  dailySales: [
+    { date: '2026-08-11', totalKurus: 6_000, checkCount: 1 },
+    { date: '2026-08-12', totalKurus: 18_500, checkCount: 2 },
+  ],
 };
 const dayEnd = {
   date: '2026-08-12',

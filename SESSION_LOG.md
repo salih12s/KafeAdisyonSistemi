@@ -1075,3 +1075,34 @@ değiştirilmedi, merge yapılmadı.
   `/api/health` 200 `database: connected`, arayüz 200, `/masalar` SPA 200.
 - Kapsam dışı bırakılan: `VITE_API_URL`/ayrı barındırma kodunun tamamen
   kaldırılması (ADR-020 kullanıcı kararı; HANDOFF'a not düşüldü).
+
+## 2026-09-25 — Claude — Güvenlik kontrolleri ve Phase 8 operasyon özellikleri
+
+**Branch:** `feat/phase-8-operations` (base `fix/review-findings`)
+**Sonuç:** Tamamlandı; draft PR açık, merge edilmedi.
+
+- Kullanıcı önce güvenlik kontrollerini, ardından önerilen yeni özelliklerin
+  tamamını istedi. Migration planı anlatılıp onay alındı (AGENTS.md §9); yalnız
+  yerel veritabanına uygulanması kararlaştırıldı. QR tarafında "yalnız menü"
+  seçildi, sipariş verme yapılmadı.
+- Güvenlik: git geçmişi taraması temiz (yalnız test şifreleri). Canlı Railway
+  adresi `vite-env.d.ts`'ten, gerçek görünen `admin` şifresi test dosyasından
+  kaldırıldı. Canlı DB'den şifre özeti okuyarak doğrulama girişimi izin
+  sistemince reddedildi; kontrol kullanıcıya bırakıldı. `npm audit fix` ile `qs`
+  ve `js-yaml` yükseltildi; kalan açıklar yalnız derleme/test araçlarında.
+- Migration `20260924120000_phase_8_cash_stock`, eski ve yeni şema dosyası
+  arasından `prisma migrate diff` ile veritabanına dokunmadan üretildi; tek açık
+  kasa koşullu index'i ve CHECK kısıtları elle eklendi. DROP/ALTER mevcut tablo
+  yok. Yerel DB'ye `migrate deploy` ile uygulandı; kullanıcı, adisyon ve ürün
+  sayıları önce/sonra aynı.
+- API: kasa (`/api/cash`), stok (`/api/stock`), oturumsuz menü
+  (`/api/public/menu`), rapora `dailySales`. Stok düşümü `closeCheck`
+  transaction'ına bağlandı. Test belleği için `MemoryOperationsStore` eklendi;
+  Prisma ve bellek aynı saf hesaplama fonksiyonlarını kullanır.
+- Web: `/kasa`, `/stok`, `/qr-menu`, ayarlarda yazıcı ve QR bölümü, adisyon ve
+  mutfak fişi yazdırma, günlük ciro grafiği ve tarih ön ayarları, özet kartları,
+  PWA manifest ve ikonları. Yeni bağımlılık: `uqr` (QR matrisi).
+- Gerçek Chrome incelemesinde bulunan ve düzeltilen sorunlar: boş aralıkta
+  anlamsız eksen, dar ekranda çakışan gün etiketleri, sağ kenarda kesilen son
+  etiket, ipucunun panel başlığına taşması, gereksiz geniş eksen üst sınırı.
+- `npm run verify` PASS: 241/241 test (API 164, web 77).

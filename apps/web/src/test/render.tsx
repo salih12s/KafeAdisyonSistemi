@@ -98,6 +98,14 @@ export function stubAppFetch(
     salesReport?: unknown;
     dayEnd?: unknown;
     audit?: unknown;
+    /** null: kasa kapalı. Yazma isteklerinde `cashSessionAfterWrite` döner. */
+    cashSession?: unknown;
+    cashSessionAfterWrite?: unknown;
+    cashSessions?: unknown[];
+    stockItems?: unknown[];
+    stockItem?: unknown;
+    recipe?: unknown;
+    publicMenu?: unknown;
   } = {},
 ): void {
   let currentUser = options.user === undefined ? ownerUser : options.user;
@@ -120,6 +128,35 @@ export function stubAppFetch(
       if (path.startsWith('/api/reports/audit')) {
         return Promise.resolve(
           response(options.audit ?? { entries: [], actions: [], entityTypes: [] }),
+        );
+      }
+
+      if (path.startsWith('/api/cash')) {
+        if (path === '/api/cash/sessions') {
+          return Promise.resolve(response({ sessions: options.cashSessions ?? [] }));
+        }
+        if (isWrite) {
+          return Promise.resolve(
+            response(
+              { session: options.cashSessionAfterWrite ?? null },
+              path.endsWith('/close') ? 200 : 201,
+            ),
+          );
+        }
+        return Promise.resolve(response({ session: options.cashSession ?? null }));
+      }
+      if (path.startsWith('/api/stock')) {
+        if (path.startsWith('/api/stock/recipes')) {
+          return Promise.resolve(response({ recipe: options.recipe ?? null }));
+        }
+        if (path.startsWith('/api/stock/items?')) {
+          return Promise.resolve(response({ items: options.stockItems ?? [] }));
+        }
+        return Promise.resolve(response({ item: options.stockItem ?? null }, isWrite ? 201 : 200));
+      }
+      if (path === '/api/public/menu') {
+        return Promise.resolve(
+          response(options.publicMenu ?? { businessName: 'Joker Cafe', categories: [] }),
         );
       }
 

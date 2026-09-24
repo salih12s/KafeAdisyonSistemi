@@ -41,6 +41,14 @@ export function todayIstanbul(): string {
   return isoDateFormatter.format(new Date());
 }
 
+/** `YYYY-AA-GG` takvim gününü `days` gün kaydırır (negatif geriye). */
+export function shiftIsoDate(date: string, days: number): string {
+  // Öğlen UTC kullanılır; gün sınırında saat dilimi kayması olmaz.
+  const noon = new Date(`${date}T12:00:00Z`);
+  noon.setUTCDate(noon.getUTCDate() + days);
+  return noon.toISOString().slice(0, 10);
+}
+
 export function formatClock(value: Date): string {
   return clockFormatter.format(value);
 }

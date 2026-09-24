@@ -23,6 +23,13 @@ export interface HourlySalesItem {
   totalKurus: Kurus;
 }
 
+export interface DailySalesItem {
+  /** Europe/Istanbul takvim günü, YYYY-AA-GG. */
+  date: string;
+  totalKurus: Kurus;
+  checkCount: number;
+}
+
 export interface SalesReportResponse {
   range: DateRangeResponse;
   revenueKurus: Kurus;
@@ -37,6 +44,8 @@ export interface SalesReportResponse {
   cancelledItemCount: number;
   cancelledItemTotalKurus: Kurus;
   hourlySales: HourlySalesItem[];
+  /** Aralıktaki her gün için bir satır; satış olmayan günler sıfırdır. */
+  dailySales: DailySalesItem[];
 }
 
 export interface DayEndResponse {

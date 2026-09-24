@@ -32,6 +32,16 @@ import {
   type SalesReportResponse,
   type DayEndResponse,
   type AuditLogListResponse,
+  type CashMovementType,
+  type CashSessionResponse,
+  type ManualStockMovementType,
+  type ProductRecipeResponse,
+  type PublicMenuResponse,
+  type StockItemDetailResponse,
+  type StockItemResponse,
+  type StockUnit,
+  STOCK_MOVEMENT_TYPES,
+  STOCK_UNITS,
 } from '@kafe/contracts';
 
 export class ApiError extends Error {
@@ -932,6 +942,14 @@ function isSalesReport(value: unknown): value is SalesReportResponse {
     Array.isArray(value.hourlySales) &&
     value.hourlySales.every(
       (row) => isRecord(row) && typeof row.hour === 'number' && typeof row.totalKurus === 'number',
+    ) &&
+    Array.isArray(value.dailySales) &&
+    value.dailySales.every(
+      (row) =>
+        isRecord(row) &&
+        typeof row.date === 'string' &&
+        typeof row.totalKurus === 'number' &&
+        typeof row.checkCount === 'number',
     )
   );
 }
@@ -1017,4 +1035,245 @@ export async function fetchAuditLogs(input: {
     throw new ApiError('İşlem geçmişi okunamadı.');
   }
   return payload;
+}
+
+function isNullableString(value: unknown): value is string | null {
+  return value === null || typeof value === 'string';
+}
+
+function isNullableNumber(value: unknown): value is number | null {
+  return value === null || typeof value === 'number';
+}
+
+function isCashMovement(value: unknown): value is CashSessionResponse['movements'][number] {
+  return (
+    isRecord(value) &&
+    typeof value.id === 'string' &&
+    (value.type === 'IN' || value.type === 'OUT') &&
+    typeof value.amountKurus === 'number' &&
+    typeof value.reason === 'string' &&
+    typeof value.actorName === 'string' &&
+    typeof value.createdAt === 'string'
+  );
+}
+
+function isCashSession(value: unknown): value is CashSessionResponse {
+  return (
+    isRecord(value) &&
+    typeof value.id === 'string' &&
+    (value.status === 'OPEN' || value.status === 'CLOSED') &&
+    typeof value.openedAt === 'string' &&
+    typeof value.openedByName === 'string' &&
+    typeof value.openingCashKurus === 'number' &&
+    typeof value.cashSalesKurus === 'number' &&
+    typeof value.cashInKurus === 'number' &&
+    typeof value.cashOutKurus === 'number' &&
+    typeof value.expectedCashKurus === 'number' &&
+    isNullableNumber(value.countedCashKurus) &&
+    isNullableNumber(value.differenceKurus) &&
+    isNullableString(value.closedAt) &&
+    isNullableString(value.closedByName) &&
+    isNullableString(value.openingNote) &&
+    isNullableString(value.closingNote) &&
+    Array.isArray(value.movements) &&
+    value.movements.every(isCashMovement)
+  );
+}
+
+function readCashSession(payload: unknown): CashSessionResponse {
+  const session = expectRecord(payload, 'session');
+  if (!isCashSession(session)) throw new ApiError('Kasa bilgisi okunamadı.');
+  return session;
+}
+
+export async function fetchCurrentCashSession(): Promise<CashSessionResponse | null> {
+  const session = expectRecord(await requestPayload('/api/cash/current'), 'session');
+  if (session === null) return null;
+  if (!isCashSession(session)) throw new ApiError('Kasa bilgisi okunamadı.');
+  return session;
+}
+
+export async function fetchCashSessions(): Promise<CashSessionResponse[]> {
+  const rows = expectRecord(await requestPayload('/api/cash/sessions'), 'sessions');
+  if (!Array.isArray(rows) || !rows.every(isCashSession)) {
+    throw new ApiError('Kasa geçmişi okunamadı.');
+  }
+  return rows;
+}
+
+export function openCashSession(input: {
+  openingCashKurus: number;
+  note: string | null;
+}): Promise<CashSessionResponse> {
+  return requestPayload('/api/cash/open', { method: 'POST', body: JSON.stringify(input) }).then(
+    readCashSession,
+  );
+}
+
+export function addCashMovement(input: {
+  type: CashMovementType;
+  amountKurus: number;
+  reason: string;
+}): Promise<CashSessionResponse> {
+  return requestPayload('/api/cash/current/movements', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  }).then(readCashSession);
+}
+
+export function closeCashSession(input: {
+  countedCashKurus: number;
+  note: string | null;
+}): Promise<CashSessionResponse> {
+  return requestPayload('/api/cash/current/close', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  }).then(readCashSession);
+}
+
+function isStockUnit(value: unknown): value is StockUnit {
+  return typeof value === 'string' && STOCK_UNITS.some((unit) => unit === value);
+}
+
+function isStockItem(value: unknown): value is StockItemResponse {
+  return (
+    isRecord(value) &&
+    typeof value.id === 'string' &&
+    typeof value.name === 'string' &&
+    isStockUnit(value.unit) &&
+    typeof value.balance === 'number' &&
+    typeof value.lowStockThreshold === 'number' &&
+    typeof value.isLow === 'boolean' &&
+    typeof value.isActive === 'boolean' &&
+    typeof value.createdAt === 'string' &&
+    typeof value.updatedAt === 'string'
+  );
+}
+
+function isStockItemDetail(value: unknown): value is StockItemDetailResponse {
+  return (
+    isStockItem(value) &&
+    isRecord(value) &&
+    Array.isArray(value.movements) &&
+    value.movements.every(
+      (movement) =>
+        isRecord(movement) &&
+        typeof movement.id === 'string' &&
+        STOCK_MOVEMENT_TYPES.some((type) => type === movement.type) &&
+        typeof movement.quantityDelta === 'number' &&
+        isNullableString(movement.reason) &&
+        isNullableString(movement.checkId) &&
+        typeof movement.actorName === 'string' &&
+        typeof movement.createdAt === 'string',
+    )
+  );
+}
+
+function readStockItemDetail(payload: unknown): StockItemDetailResponse {
+  const item = expectRecord(payload, 'item');
+  if (!isStockItemDetail(item)) throw new ApiError('Stok kalemi okunamadı.');
+  return item;
+}
+
+export async function fetchStockItems(includeInactive = false): Promise<StockItemResponse[]> {
+  const rows = expectRecord(
+    await requestPayload(`/api/stock/items?includeInactive=${String(includeInactive)}`),
+    'items',
+  );
+  if (!Array.isArray(rows) || !rows.every(isStockItem)) {
+    throw new ApiError('Stok listesi okunamadı.');
+  }
+  return rows;
+}
+
+export async function fetchStockItem(id: string): Promise<StockItemDetailResponse> {
+  return readStockItemDetail(await requestPayload(`/api/stock/items/${id}`));
+}
+
+function readStockItem(payload: unknown): StockItemResponse {
+  const item = expectRecord(payload, 'item');
+  if (!isStockItem(item)) throw new ApiError('Stok kalemi okunamadı.');
+  return item;
+}
+
+export function createStockItem(input: {
+  name: string;
+  unit: StockUnit;
+  lowStockThreshold: number;
+}): Promise<StockItemResponse> {
+  return requestPayload('/api/stock/items', { method: 'POST', body: JSON.stringify(input) }).then(
+    readStockItem,
+  );
+}
+
+export function updateStockItem(
+  id: string,
+  input: { name: string; lowStockThreshold: number; isActive: boolean },
+): Promise<StockItemResponse> {
+  return requestPayload(`/api/stock/items/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(input),
+  }).then(readStockItem);
+}
+
+export type StockMovementRequest =
+  | {
+      type: Exclude<ManualStockMovementType, 'ADJUSTMENT'>;
+      quantity: number;
+      reason: string | null;
+    }
+  | { type: 'ADJUSTMENT'; countedQuantity: number; reason: string };
+
+export function addStockMovement(
+  id: string,
+  input: StockMovementRequest,
+): Promise<StockItemDetailResponse> {
+  return requestPayload(`/api/stock/items/${id}/movements`, {
+    method: 'POST',
+    body: JSON.stringify(input),
+  }).then(readStockItemDetail);
+}
+
+function isRecipe(value: unknown): value is ProductRecipeResponse {
+  return (
+    isRecord(value) &&
+    typeof value.productId === 'string' &&
+    Array.isArray(value.lines) &&
+    value.lines.every(
+      (line) =>
+        isRecord(line) &&
+        typeof line.stockItemId === 'string' &&
+        typeof line.stockItemName === 'string' &&
+        isStockUnit(line.unit) &&
+        typeof line.quantityPerUnit === 'number',
+    )
+  );
+}
+
+function readRecipe(payload: unknown): ProductRecipeResponse {
+  const recipe = expectRecord(payload, 'recipe');
+  if (!isRecipe(recipe)) throw new ApiError('Reçete okunamadı.');
+  return recipe;
+}
+
+export async function fetchProductRecipe(productId: string): Promise<ProductRecipeResponse> {
+  return readRecipe(await requestPayload(`/api/stock/recipes/${productId}`));
+}
+
+export function saveProductRecipe(
+  productId: string,
+  lines: Array<{ stockItemId: string; quantityPerUnit: number }>,
+): Promise<ProductRecipeResponse> {
+  return requestPayload(`/api/stock/recipes/${productId}`, {
+    method: 'PUT',
+    body: JSON.stringify({ lines }),
+  }).then(readRecipe);
+}
+
+export async function fetchPublicMenu(): Promise<PublicMenuResponse> {
+  const payload = await requestPayload('/api/public/menu');
+  if (!isRecord(payload) || typeof payload.businessName !== 'string' || !isMenu(payload)) {
+    throw new ApiError('Menü okunamadı.');
+  }
+  return { businessName: payload.businessName, categories: payload.categories };
 }

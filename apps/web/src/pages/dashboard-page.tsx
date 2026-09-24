@@ -1,13 +1,28 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { ArrowRight, ChefHat, Clock3, LayoutGrid, ReceiptText, Wifi } from 'lucide-react';
-import { formatKurus } from '@kafe/contracts';
+import {
+  AlertTriangle,
+  ArrowRight,
+  ChefHat,
+  Clock3,
+  Landmark,
+  LayoutGrid,
+  ReceiptText,
+  Wifi,
+} from 'lucide-react';
+import { formatKurus, formatStockQuantity } from '@kafe/contracts';
 import { Panel } from '../components/ui/panel';
 import { Badge } from '../components/ui/badge';
 import { navigationForRole } from '../config/navigation';
 import { useHealth } from '../hooks/use-health';
 import { useCurrentUser } from '../hooks/use-auth';
-import { fetchKitchenOrders, fetchOperationalFloorPlan } from '../lib/api';
+import {
+  fetchCurrentCashSession,
+  fetchKitchenOrders,
+  fetchOperationalFloorPlan,
+  fetchStockItems,
+} from '../lib/api';
+import { formatTimestamp } from '../lib/datetime';
 import { Skeleton } from '../components/ui/skeleton';
 
 export function DashboardPage(): JSX.Element {
@@ -20,6 +35,19 @@ export function DashboardPage(): JSX.Element {
     enabled: canSeeFloor,
     refetchInterval: 30_000,
   });
+  const canSeeOperations =
+    auth.isSuccess && (auth.data.role === 'OWNER' || auth.data.role === 'CASHIER');
+  const cash = useQuery({
+    queryKey: ['cash', 'current'],
+    queryFn: fetchCurrentCashSession,
+    enabled: canSeeOperations,
+  });
+  const stock = useQuery({
+    queryKey: ['stock', 'items'],
+    queryFn: () => fetchStockItems(true),
+    enabled: canSeeOperations,
+  });
+  const lowStock = stock.data?.filter((item) => item.isLow) ?? [];
   const kitchen = useQuery({
     queryKey: ['kitchen-orders', 'ALL'],
     queryFn: () => fetchKitchenOrders(),
@@ -99,6 +127,68 @@ export function DashboardPage(): JSX.Element {
           loading={kitchen.isPending}
         />
       </section>
+
+      {canSeeOperations ? (
+        <section className="grid gap-4 lg:grid-cols-2" aria-label="Kasa ve stok durumu">
+          <Panel title="Kasa" variant="elevated">
+            <Link to="/kasa" className="flex items-center gap-4 p-4 hover:bg-surface-muted">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-card bg-surface-muted text-primary">
+                <Landmark aria-hidden="true" className="h-5 w-5" />
+              </span>
+              {cash.data === undefined ? (
+                <span className="text-sm text-ink-secondary">Kasa durumu yükleniyor…</span>
+              ) : cash.data === null ? (
+                <span className="min-w-0">
+                  <strong className="block">Kasa kapalı</strong>
+                  <span className="text-sm text-ink-secondary">
+                    Vardiyaya başlarken açılış nakdini girin.
+                  </span>
+                </span>
+              ) : (
+                <span className="min-w-0">
+                  <strong className="tabular block text-lg">
+                    {formatKurus(cash.data.expectedCashKurus)}
+                  </strong>
+                  <span className="text-sm text-ink-secondary">
+                    Çekmecede beklenen · {cash.data.openedByName},{' '}
+                    {formatTimestamp(cash.data.openedAt)}
+                  </span>
+                </span>
+              )}
+            </Link>
+          </Panel>
+          <Panel
+            title="Stok uyarıları"
+            meta={lowStock.length === 0 ? undefined : `${lowStock.length} kalem`}
+            variant={lowStock.length === 0 ? 'elevated' : 'danger'}
+          >
+            {lowStock.length === 0 ? (
+              <p className="p-4 text-sm text-ink-secondary">
+                {stock.isPending ? 'Stok yükleniyor…' : 'Uyarı eşiğinin altında stok yok.'}
+              </p>
+            ) : (
+              <ul aria-label="Azalan stoklar" className="divide-y divide-danger/15">
+                {lowStock.slice(0, 5).map((item) => (
+                  <li key={item.id}>
+                    <Link
+                      to="/stok"
+                      className="flex min-h-touch items-center justify-between gap-3 px-4 py-2 text-sm"
+                    >
+                      <span className="flex items-center gap-2 font-semibold text-ink">
+                        <AlertTriangle aria-hidden="true" className="h-4 w-4 text-danger" />
+                        {item.name}
+                      </span>
+                      <span className="tabular text-ink-secondary">
+                        {formatStockQuantity(item.unit, item.balance)}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Panel>
+        </section>
+      ) : null}
 
       <Panel title="Hızlı işlemler" meta="Rolünüze açık çalışma alanları" variant="elevated">
         <div className="grid gap-px bg-line sm:grid-cols-2 xl:grid-cols-3">

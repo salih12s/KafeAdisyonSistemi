@@ -4,6 +4,7 @@
 // Phase 2: kategori, ürün, ürün seçenek grupları ve seçenek değerleri.
 // Phase 3: masa adisyonları, sipariş kalemleri ve seçenek snapshot'ları.
 // Phase 4: istasyon snapshot'ı ve hazırlık durumu akışı.
+// Phase 8: kasa oturumları ve basit stok (reçete + hareket defteri).
 //
 // Kurallar:
 // - Para alanları her zaman tam sayı kuruş (Int) olarak tutulur, Float kullanılmaz.
@@ -46,6 +47,10 @@ model User {
   complimentaryItems  OrderItem[]     @relation("OrderItemComplimentaryBy")
   appliedDiscounts    CheckDiscount[]
   accountEntries      AccountEntry[]
+  openedCashSessions  CashSession[]   @relation("CashSessionOpenedBy")
+  closedCashSessions  CashSession[]   @relation("CashSessionClosedBy")
+  cashMovements       CashMovement[]
+  stockMovements      StockMovement[]
 
   @@index([role, isActive])
 }
@@ -141,6 +146,7 @@ model Product {
   category        Category             @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   optionGroups    ProductOptionGroup[]
   orderItems      OrderItem[]
+  stockUsages     ProductStockUsage[]
 
   @@unique([categoryId, nameKey])
   @@index([categoryId, isActive, sortOrder])
@@ -236,6 +242,7 @@ model Check {
   accountEntries    AccountEntry[]
   mergedInto        Check?          @relation("CheckMerge", fields: [mergedIntoCheckId], references: [id], onDelete: Restrict)
   mergedSources     Check[]         @relation("CheckMerge")
+  stockMovements    StockMovement[]
 
   @@index([tableId, status])
   @@index([status, openedAt])
@@ -363,4 +370,115 @@ model AuditLog {
 
   @@index([actorUserId, createdAt])
   @@index([entityType, entityId])
+}
+
+enum CashSessionStatus {
+  OPEN
+  CLOSED
+}
+
+enum CashMovementType {
+  IN
+  OUT
+}
+
+// Kasa oturumu (vardiya). Beklenen nakit saklanmaz, ödemelerden türetilir;
+// yalnız kapanışta sayılan ve beklenen tutar o anın kaydı olarak yazılır.
+// Aynı anda tek OPEN oturum koşullu unique index ile korunur (migration SQL).
+model CashSession {
+  id                String            @id @default(uuid()) @db.Uuid
+  status            CashSessionStatus @default(OPEN)
+  openedByUserId    String            @db.Uuid
+  openedAt          DateTime          @default(now())
+  openingCashKurus  Int
+  openingNote       String?
+  closedByUserId    String?           @db.Uuid
+  closedAt          DateTime?
+  countedCashKurus  Int?
+  expectedCashKurus Int?
+  closingNote       String?
+  openedBy          User              @relation("CashSessionOpenedBy", fields: [openedByUserId], references: [id], onDelete: Restrict)
+  closedBy          User?             @relation("CashSessionClosedBy", fields: [closedByUserId], references: [id], onDelete: Restrict)
+  movements         CashMovement[]
+
+  @@index([status, openedAt])
+}
+
+// Satış dışı nakit hareketi (bozuk para ekleme, masraf ödeme). Değiştirilmez.
+model CashMovement {
+  id          String           @id @default(uuid()) @db.Uuid
+  sessionId   String           @db.Uuid
+  type        CashMovementType
+  amountKurus Int
+  reason      String
+  actorUserId String           @db.Uuid
+  createdAt   DateTime         @default(now())
+  session     CashSession      @relation(fields: [sessionId], references: [id], onDelete: Restrict)
+  actor       User             @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@index([sessionId, createdAt])
+}
+
+enum StockUnit {
+  PIECE
+  GRAM
+  MILLILITER
+}
+
+enum StockMovementType {
+  PURCHASE
+  SALE
+  WASTE
+  ADJUSTMENT
+}
+
+// Miktarlar en küçük birimde tam sayıdır. Bakiye mutable kolon değildir;
+// StockMovement hareketlerinin toplamından türetilir (cari ile aynı ilke).
+model StockItem {
+  id                String              @id @default(uuid()) @db.Uuid
+  name              String
+  nameKey           String              @unique
+  unit              StockUnit
+  lowStockThreshold Int                 @default(0)
+  isActive          Boolean             @default(true)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  usages            ProductStockUsage[]
+  movements         StockMovement[]
+
+  @@index([isActive, name])
+}
+
+// Reçete satırı: bir adet ürün satıldığında düşülecek miktar. Satır silinmez,
+// reçeteden çıkarıldığında pasife alınır.
+model ProductStockUsage {
+  id              String    @id @default(uuid()) @db.Uuid
+  productId       String    @db.Uuid
+  stockItemId     String    @db.Uuid
+  quantityPerUnit Int
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  product         Product   @relation(fields: [productId], references: [id], onDelete: Restrict)
+  stockItem       StockItem @relation(fields: [stockItemId], references: [id], onDelete: Restrict)
+
+  @@unique([productId, stockItemId])
+  @@index([stockItemId])
+}
+
+model StockMovement {
+  id            String            @id @default(uuid()) @db.Uuid
+  stockItemId   String            @db.Uuid
+  type          StockMovementType
+  quantityDelta Int
+  reason        String?
+  checkId       String?           @db.Uuid
+  actorUserId   String            @db.Uuid
+  createdAt     DateTime          @default(now())
+  stockItem     StockItem         @relation(fields: [stockItemId], references: [id], onDelete: Restrict)
+  check         Check?            @relation(fields: [checkId], references: [id], onDelete: Restrict)
+  actor         User              @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@index([stockItemId, createdAt])
+  @@index([checkId])
 }

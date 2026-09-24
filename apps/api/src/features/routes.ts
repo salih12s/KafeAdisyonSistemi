@@ -25,6 +25,9 @@ import { createOrderRouter } from './order-routes';
 import type { OrderEventPublisher } from './order-events';
 import { createAccountRouter } from './account-routes';
 import { createReportRouter } from './report-routes';
+import { createCashRouter } from './cash-routes';
+import { createStockRouter } from './stock-routes';
+import { createPublicRouter } from './public-routes';
 
 const usernameSchema = z
   .string()
@@ -321,6 +324,10 @@ export function createPhaseOneRouter(
   router.use('/orders', createOrderRouter(store, authenticate, orderEvents));
   router.use('/accounts', createAccountRouter(store, authenticate, orderEvents));
   router.use('/reports', createReportRouter(store, authenticate));
+  router.use('/cash', createCashRouter(store, authenticate));
+  router.use('/stock', createStockRouter(store, authenticate));
+  // Oturumsuz, yalnız okuma: QR menü.
+  router.use('/public', createPublicRouter(store));
 
   return router;
 }

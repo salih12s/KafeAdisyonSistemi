@@ -11,11 +11,15 @@ import type { MenuStore } from './menu-store';
 import type { OrderStore } from './order-store';
 import type { AccountStore } from './account-store';
 import type { ReportStore } from './report-store';
+import type { CashStore } from './cash-store';
+import type { StockStore } from './stock-store';
 
 export * from './menu-store';
 export * from './order-store';
 export * from './account-store';
 export * from './report-store';
+export * from './cash-store';
+export * from './stock-store';
 
 export interface UserWithPassword extends CurrentUser {
   passwordHash: string;
@@ -102,7 +106,8 @@ export class StoreError extends Error {
   }
 }
 
-export interface AppStore extends MenuStore, OrderStore, AccountStore, ReportStore {
+export interface AppStore
+  extends MenuStore, OrderStore, AccountStore, ReportStore, CashStore, StockStore {
   hasActiveOwner(): Promise<boolean>;
   bootstrapOwner(input: BootstrapOwnerInput): Promise<CurrentUser>;
   findUserByUsername(username: string): Promise<UserWithPassword | null>;

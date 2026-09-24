@@ -18,6 +18,22 @@ function istanbulHour(value: string): number {
   );
 }
 
+const istanbulDateFormat = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'Europe/Istanbul',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+});
+
+/** Aralıktaki her Istanbul takvim gününü sırayla üretir (YYYY-AA-GG). */
+function daysInRange(range: DateRangeInput): string[] {
+  const days: string[] = [];
+  for (let time = range.from.getTime(); time < range.toExclusive.getTime(); time += 86_400_000) {
+    days.push(istanbulDateFormat.format(new Date(time)));
+  }
+  return days;
+}
+
 function addNamed(
   target: Map<string, { id: string; name: string; quantity: number; totalKurus: number }>,
   id: string,
@@ -65,6 +81,7 @@ export function buildSalesReport(
   >();
   const payments = new Map(PAYMENT_METHODS.map((method) => [method, 0]));
   const hourly = new Map<number, number>();
+  const daily = new Map<string, { totalKurus: number; checkCount: number }>();
   let revenueKurus = 0;
   let discountTotalKurus = 0;
   let complimentaryTotalKurus = 0;
@@ -79,6 +96,11 @@ export function buildSalesReport(
     if (check.closedAt !== null) {
       const hour = istanbulHour(check.closedAt);
       hourly.set(hour, (hourly.get(hour) ?? 0) + check.totalKurus);
+      const day = istanbulDateFormat.format(new Date(check.closedAt));
+      const dayRow = daily.get(day) ?? { totalKurus: 0, checkCount: 0 };
+      dayRow.totalKurus += check.totalKurus;
+      dayRow.checkCount += 1;
+      daily.set(day, dayRow);
     }
     for (const item of check.items) {
       if (item.cancelledAt !== null) continue;
@@ -130,6 +152,11 @@ export function buildSalesReport(
     hourlySales: Array.from({ length: 24 }, (_, hour) => ({
       hour,
       totalKurus: hourly.get(hour) ?? 0,
+    })),
+    dailySales: daysInRange(range).map((date) => ({
+      date,
+      totalKurus: daily.get(date)?.totalKurus ?? 0,
+      checkCount: daily.get(date)?.checkCount ?? 0,
     })),
   };
 }

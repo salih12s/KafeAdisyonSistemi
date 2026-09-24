@@ -1,6 +1,8 @@
 import {
   BarChart3,
+  Boxes,
   ChefHat,
+  Landmark,
   LayoutGrid,
   NotebookText,
   Settings,
@@ -61,6 +63,22 @@ export const NAV_ITEMS: readonly NavItem[] = [
     shortLabel: 'Cari',
     description: 'Müşteri cari hesapları, borç ve tahsilat kayıtları.',
     icon: UsersRound,
+    roles: ['OWNER', 'CASHIER'],
+  },
+  {
+    to: '/kasa',
+    label: 'Kasa',
+    shortLabel: 'Kasa',
+    description: 'Kasa açılışı, nakit giriş/çıkış ve vardiya sonu sayım farkı.',
+    icon: Landmark,
+    roles: ['OWNER', 'CASHIER'],
+  },
+  {
+    to: '/stok',
+    label: 'Stok',
+    shortLabel: 'Stok',
+    description: 'Malzeme stoku, alım/fire/sayım hareketleri ve ürün reçeteleri.',
+    icon: Boxes,
     roles: ['OWNER', 'CASHIER'],
   },
   {

@@ -24,6 +24,7 @@ import type {
   UpdateOrderItemStatusInput,
 } from './order-store';
 import { calculatePaymentSplit } from './payment-calculations';
+import { writeSaleStockMovements } from './prisma-stock-store';
 
 const MAX_POSTGRES_INT = 2_147_483_647;
 
@@ -693,6 +694,7 @@ export function createPrismaOrderStore(client: PrismaClient): OrderStore {
           if (updated.count !== 1) {
             throw new StoreError('CONFLICT', 'Adisyon başka bir cihaz tarafından kapatıldı.');
           }
+          await writeSaleStockMovements(transaction, check.id, input.actorUserId);
           await transaction.auditLog.create({
             data: {
               actorUserId: input.actorUserId,

@@ -1,4 +1,4 @@
-# Phase Planı (0–7)
+# Phase Planı (0–8)
 
 Her Phase kendi branch'inde çalışır ve **draft PR** ile kapanır.
 
@@ -22,6 +22,7 @@ Her Phase branch'i bir önceki Phase branch'inden açılır; PR'ı da ona hedefl
 | 5     | Ödeme, hesap bölme ve hesap kapatma                    | Codex           | Tamamlandı — draft PR açık |
 | 6     | Cari hesap, indirim, ikram, masa taşıma ve birleştirme | Codex           | Tamamlandı — draft PR açık |
 | 7     | Raporlar, audit ekranı ve Railway deployment           | Codex           | Tamamlandı — draft PR açık |
+| 8     | Kasa, stok, QR menü, yazıcı, grafikli rapor ve PWA     | Claude          | Tamamlandı — draft PR açık |
 
 **Phase 3'ten itibaren ana geliştirici Codex'tir.**
 
@@ -157,3 +158,22 @@ secret commit edilmemiş, belgeler hazır, draft PR açılmış.
 
 Phase 7 ile geliştirme phase'leri tamamlanır. Sonraki adım yeni özellik geliştirme
 değil, tüm branch zincirini kapsayan kapsamlı final review'dur.
+
+## Phase 8 — Operasyon genişletmesi
+
+**Branch:** `feat/phase-8-operations`
+**Kapsam kararı:** Kullanıcı 2026-09-24'te bu özellikleri açıkça istedi (AGENTS.md
+§13'teki "kullanıcı açıkça istemedikçe" koşulu karşılandı). QR ile sipariş verme
+kullanıcı kararıyla kapsam dışıdır; QR yalnız menü gösterir.
+
+- **Kasa oturumu (vardiya):** açılış nakdi, satış dışı nakit giriş/çıkış,
+  vardiya sonu sayım ve fark. Beklenen nakit ödemelerden türetilir (ADR-021).
+- **Basit stok:** stok kalemi, ürün reçetesi, alım/fire/sayım hareketleri; adisyon
+  kapanışında reçeteye göre otomatik düşüm; eşik altı uyarısı (ADR-022).
+- **QR menü:** oturumsuz, salt okunur `/qr-menu` sayfası ve ayarlarda yazdırılabilir
+  QR kod (ADR-023).
+- **Yazıcı:** tarayıcı yazdırma penceresiyle 80/58 mm adisyon bilgi fişi, mutfak
+  fişi ve QR kartı (ADR-023).
+- **Grafikli rapor:** günlük ciro sütun grafiği ve tarih ön ayarları.
+- **PWA:** manifest ve ikonlarla ana ekrana kurulabilir; offline çalışma yok (ADR-023).
+- Additive migration `20260924120000_phase_8_cash_stock`.

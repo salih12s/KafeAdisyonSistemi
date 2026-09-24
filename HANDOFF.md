@@ -8,45 +8,68 @@ sonraki geliştiriciye devredilir.
 
 ## Aktif durum
 
-**Kod ve güvenlik incelemesi bulgularının düzeltilmesi — draft PR açık**
+**Phase 8 — Kasa, stok, QR menü, yazıcı, grafikli rapor ve PWA — draft PR açık**
 
-| Alan                | Değer                                                   |
-| ------------------- | ------------------------------------------------------- |
-| **Branch**          | `fix/review-findings`                                   |
-| **Base branch**     | `main`                                                  |
-| **Ana geliştirici** | Claude                                                  |
-| **Durum**           | **Tamamlandı — draft PR açık, merge edilmedi**          |
-| **Son commit**      | `fix: harden separate-origin mode and session handling` |
-| **Son güncelleme**  | 2026-09-24                                              |
+| Alan                | Değer                                                       |
+| ------------------- | ----------------------------------------------------------- |
+| **Branch**          | `feat/phase-8-operations`                                   |
+| **Base branch**     | `fix/review-findings`                                       |
+| **Ana geliştirici** | Claude                                                      |
+| **Durum**           | **Tamamlandı — draft PR açık, merge edilmedi**              |
+| **Son commit**      | `feat: add cash sessions, stock, QR menu, printing and PWA` |
+| **Son güncelleme**  | 2026-09-25                                                  |
 
-`069a78b^..2da4006` aralığı için yapılan kod incelemesi ve güvenlik incelemesi
-bulguları işlendi. Prisma şeması, migration ve API sözleşmesi değişmedi.
+Kullanıcı 2026-09-24'te güvenlik kontrollerini ve önerilen yeni özelliklerin
+tamamını istedi. QR ile sipariş verme kullanıcı kararıyla yapılmadı; QR yalnız
+menü gösterir. Kararlar: ADR-021 (kasa), ADR-022 (stok), ADR-023 (QR menü,
+yazdırma, PWA).
 
-- **CSRF (yüksek, yalnız `CORS_ORIGIN` doluyken).** Ayrı barındırmada çerez
-  `SameSite=None` olduğu hâlde CORS katmanı izinsiz origin'den gelen form
-  POST'unu işliyordu; başka bir site, giriş yapmış OWNER adına yeni OWNER
-  hesabı açtırabiliyordu. Artık izinsiz origin'den gelen durum değiştiren
-  istekler `403` alır (`middleware/cors.ts`) ve API form gövdesi ayrıştırmaz
-  (`app.ts`). ADR-020'ye ek not düşüldü.
-- **Socket.IO origin kontrolü.** WebSocket el sıkışması `allowRequest` ile
-  izinli/aynı origin'e sınırlandı (`realtime.ts`).
-- **`Vary: Origin`** CORS açıkken her yanıta eklenir; **`CORS_ORIGIN`** girdileri
-  `new URL().origin` ile normalleştirilir, yol/sorgu içeren değer reddedilir.
-- **Giriş ekranı.** "Çerez saklanmadı" mesajı yalnız `/api/auth/me` 401
-  döndüğünde gösterilir; ağ/sunucu hataları olduğu gibi iletilir. Sabit,
-  import'ların altına taşındı.
-- **401 döngüsü.** `kafe:unauthorized` işleyicisi aynı anda gelen olayları tek
-  işleme indirger, istekleri iptal eder, oturum sorgusunu silmek yerine
-  yeniler ve oturum düştüyse önceki kullanıcının önbelleğini temizler. 401
-  artık yeniden denenmez (`lib/query-client.ts`).
-- **`todayIstanbul()`** üç kopyadan `lib/datetime.ts` içindeki tek fonksiyona
-  indirildi ve `TIME_ZONE` sabitini kullanır.
-- Testler: `cross-origin.test.ts` +9 (CSRF form/JSON, izinli/aynı/originsiz
-  istek, form gövdesi, Socket.IO origin, `Vary`, normalizasyon); yeni
-  `query-client.test.ts` (2) ve `auth.test.tsx` +1. Yeni CSRF/Socket testleri
-  eski koda karşı çalıştırıldığında başarısız oldu (7/19), yeni kodda geçti.
-- `npm run verify` PASS: lint temiz, strict typecheck temiz, **216/216** test
-  (API 151, web 65), build başarılı.
+**Güvenlik kontrolleri (ilk commit)**
+
+- Tüm git geçmişi gizli bilgi için tarandı: yalnız test şifreleri var; gerçek
+  anahtar, token veya bağlantı adresi yok. Hiçbir `.env` dosyası commit edilmemiş.
+- Canlı Railway adresi `vite-env.d.ts` içinden kaldırıldı; `auth.test.tsx`
+  içindeki gerçek görünen `admin` giriş bilgisi nötr test bilgisiyle değiştirildi. Adres ve
+  şifre git geçmişinde (ve append-only `SESSION_LOG.md` içinde adres) kalır.
+- **Açık kontrol:** eski testteki `admin` şifresinin canlıdaki bir hesaba ait olup
+  olmadığı doğrulanamadı; canlı veritabanını okuma izni verilmedi. Repo herkese
+  açılmadan önce kullanıcı canlıdaki yönetici şifresini değiştirmelidir.
+- `npm audit fix`: `qs` 6.16.0 (Express sorgu ayrıştırıcısı), `js-yaml` 4.3.2.
+  Kalan açıklar yalnız derleme/test araçlarında: `deepmerge-ts` (Prisma CLI
+  yapılandırması) ve `vitest` (düzeltme major sürüm ister). Kullanıcı isteği bu
+  koda ulaşmaz.
+
+**Özellikler**
+
+- **Kasa (`/kasa`, OWNER/CASHIER):** açılış nakdi, nakit giriş/çıkış, vardiya
+  sonu sayım; beklenen nakit ödemelerden türetilir, kapanışta sabitlenir. Tek açık
+  kasa `CashSession_one_open_key` koşullu index'iyle korunur.
+- **Stok (`/stok`):** stok kalemi ve reçete (OWNER), alım/fire/sayım (OWNER,
+  CASHIER), bakiye hareketlerden türetilir. Adisyon `PAID` olunca aynı
+  transaction'da reçeteye göre `SALE` hareketi yazılır; iptaller düşülmez.
+- **QR menü:** oturumsuz `GET /api/public/menu` (hız sınırı + 60 sn önbellek) ve
+  `/qr-menu` sayfası; Ayarlar → "Yazıcı ve QR Menü" altında yazdırılabilir QR.
+  QR matrisi `uqr` (MIT, bağımlılıksız) ile üretilir, çizim React SVG'dir.
+- **Yazıcı:** adisyon ekranında "Fiş yazdır", mutfak kartında fiş düğmesi,
+  ayarlarda 80/58 mm seçimi ve deneme fişi. Yazdırırken yalnız fiş görünür.
+- **Grafikli rapor:** günlük ciro sütun grafiği (hover/odak ipucu, en yüksek gün,
+  tablo görünümü), Bugün/Son 7/Son 30 gün ön ayarları; API `dailySales` döndürür.
+- **Özet:** kasa durumu ve azalan stok kartları.
+- **PWA:** `manifest.webmanifest`, 192/512/maskable/apple ikonları. Service
+  worker ve offline yok (ADR-023).
+- Additive migration `20260924120000_phase_8_cash_stock`: 4 enum, 5 tablo,
+  index/foreign key ve CHECK kısıtları; mevcut tablolarda değişiklik yok. Yalnız
+  **yerel** `CafeAdisyon`'a uygulandı (8 migration, şema güncel; veri korundu).
+
+**Kalite kanıtı**
+
+- `npm run verify` PASS: lint temiz, strict typecheck temiz, **241/241** test
+  (API 164, web 77), build başarılı (web ana JS 318,84 kB, gzip 99,71 kB).
+- Yeni testler: API `phase-eight.test.ts` (13), web `phase-eight.test.tsx` (12).
+- Gerçek Chrome'da 1440 ve 390 px: özet, kasa, stok, rapor, ayarlar ve QR menü
+  ekranları; yatay taşma yok, sayfa hatası yok. Grafik, tarayıcı seviyesinde
+  karşılanan 30 günlük örnek veriyle incelendi; yerel DB'ye örnek veri yazılmadı.
+  Yazdırma görünümünde yalnız fiş görünür (print media ile doğrulandı).
 
 ### Yerel geliştirme ortamı
 
@@ -66,17 +89,25 @@ bulguları işlendi. Prisma şeması, migration ve API sözleşmesi değişmedi.
 
 ### Bilinen eksikler ve sonraki iş
 
-- İnceleme bulgusu: `VITE_API_URL` ile mutlak API adresi kullanımı CLAUDE.md §3
-  "göreli `/api`" kuralıyla çelişir. ADR-020 bunu isteğe bağlı kurulum olarak
-  kabul ettiği için kod korunmuştur. Ayrı barındırma kalıcı olarak terk
-  edildiyse (SESSION_LOG 2026-08-13) `VITE_API_URL`, `CORS_ORIGIN` ve CORS
-  katmanının tamamen kaldırılması kullanıcı kararıdır.
-- `scripts/set-local-env.ps1 -Reset` hâlâ `postgres` parolasını sorar ve
-  süper kullanıcı adresi üretir; uygulama rolüyle çalışmak için `-Reset`
-  kullanılmamalıdır.
-- Gerçek tarayıcıda authenticated uçtan uca akış bu turda tekrarlanmadı;
-  davranış HTTP ve jsdom testleriyle doğrulandı.
+- **Canlıya alma uyarısı:** `railway.json` predeploy adımı `prisma migrate deploy`
+  çalıştırır. Bu branch Railway'e alındığında Phase 8 migration'ı canlı
+  veritabanına otomatik uygulanır (additive; yine de önce `pg_dump` yedeği önerilir).
+- Canlıdaki yönetici şifresinin repodaki eski test şifresiyle aynı olup olmadığı
+  kullanıcı tarafından kontrol edilmeli (bkz. güvenlik kontrolleri).
+- Kasa ve stok akışları gerçek tarayıcıda örnek veriyle uçtan uca denenmedi;
+  kullanıcının yerel veritabanına test verisi yazılmadı. Davranış HTTP ve jsdom
+  testleriyle doğrulandı.
+- Termal yazıcı gerçek cihazda denenmedi; yazdırma görünümü tarayıcıda doğrulandı.
+- `VITE_API_URL` / ayrı barındırma kodunun kaldırılması kullanıcı kararıdır.
+- `scripts/set-local-env.ps1 -Reset` `postgres` süper kullanıcı adresi üretir;
+  uygulama rolüyle çalışmak için `-Reset` kullanılmamalıdır.
 - Sonraki geliştiricinin işi: kullanıcının PR/merge kararını beklemek.
+
+### Önceki durum — İnceleme bulgularının düzeltilmesi (Claude, 2026-09-24)
+
+`fix/review-findings` (draft PR #12): ayrı barındırma modunda CSRF koruması,
+Socket.IO origin kontrolü, `Vary: Origin`, `CORS_ORIGIN` normalizasyonu, 401
+döngüsü ve giriş ekranı hata ayrımı. Yerel `kafe_adisyon` PostgreSQL rolü kuruldu.
 
 ### Önceki durum — Final UI polish (Claude, 2026-08-12)
 
@@ -122,6 +153,7 @@ giriş sonrası oturum doğrulaması doğrudan `main` üzerinde yapıldı.
 | 5     | `feat/phase-5-payments`                    | Codex           | Tamamlandı · draft PR açık |
 | 6     | `feat/phase-6-accounts-adjustments-tables` | Codex           | Tamamlandı · draft PR açık |
 | 7     | `feat/phase-7-reports-deployment`          | Codex           | Tamamlandı · draft PR açık |
+| 8     | `feat/phase-8-operations`                  | Claude          | Tamamlandı · draft PR açık |
 
 ---
 

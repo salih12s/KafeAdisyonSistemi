@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   formatKurus,
@@ -20,13 +20,15 @@ import {
   updateOrderItem,
 } from '../lib/api';
 import { formatTimestamp } from '../lib/datetime';
-import { ArrowLeft, Search, ShoppingBag } from 'lucide-react';
+import { ArrowLeft, Printer, Search, ShoppingBag } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Dialog } from '../components/ui/dialog';
 import { SegmentedControl } from '../components/ui/segmented-control';
 import { TextField } from '../components/ui/field';
 import { Badge } from '../components/ui/badge';
 import { cn } from '../lib/cn';
+import { PrintSheet } from '../components/print/print-sheet';
+import { CheckReceipt } from '../components/print/receipts';
 
 type SalesProduct = MenuResponse['categories'][number]['products'][number];
 
@@ -60,6 +62,8 @@ export function CheckView({
   const [selectedCategoryId, setSelectedCategoryId] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<SalesProduct | null>(null);
   const [search, setSearch] = useState('');
+  const [printing, setPrinting] = useState(false);
+  const stopPrinting = useCallback(() => setPrinting(false), []);
 
   useEffect(() => {
     if (
@@ -118,13 +122,30 @@ export function CheckView({
             {formatTimestamp(check.data.openedAt)}
           </p>
         </div>
-        <div className="rounded-card bg-primary px-5 py-3 text-right text-white">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-white/70">
-            Adisyon toplamı
-          </p>
-          <p className="tabular text-2xl font-extrabold">{formatKurus(check.data.totalKurus)}</p>
+        <div className="flex flex-wrap items-center gap-3">
+          {canManageRole ? (
+            <Button
+              type="button"
+              variant="outline"
+              icon={<Printer aria-hidden="true" className="h-4 w-4" />}
+              onClick={() => setPrinting(true)}
+            >
+              Fiş yazdır
+            </Button>
+          ) : null}
+          <div className="rounded-card bg-primary px-5 py-3 text-right text-white">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-white/70">
+              Adisyon toplamı
+            </p>
+            <p className="tabular text-2xl font-extrabold">{formatKurus(check.data.totalKurus)}</p>
+          </div>
         </div>
       </div>
+      {printing ? (
+        <PrintSheet onDone={stopPrinting}>
+          <CheckReceipt check={check.data} />
+        </PrintSheet>
+      ) : null}
 
       <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(24rem,0.65fr)]">
         <Panel title="Menü" meta={`${category?.products.length ?? 0} ürün`} variant="elevated">
@@ -361,7 +382,9 @@ function ProductSelection({
           value={quantityText}
           onChange={(event) => setQuantityText(event.target.value)}
           onFocus={(event) => event.target.select()}
-          error={quantityText.trim().length > 0 && quantity === null ? '1 ile 100 arası' : undefined}
+          error={
+            quantityText.trim().length > 0 && quantity === null ? '1 ile 100 arası' : undefined
+          }
           required
         />
         <TextField

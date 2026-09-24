@@ -31,8 +31,9 @@ import {
 } from '../lib/api';
 import { AuditHistory } from '../components/audit-history';
 import { SegmentedControl } from '../components/ui/segmented-control';
+import { PrinterSection, QrMenuSection } from '../components/settings/device-sections';
 
-type Section = 'staff' | 'areas' | 'audit';
+type Section = 'staff' | 'areas' | 'devices' | 'audit';
 
 /** Kayıtlar fiziksel olarak silinmez; geçmiş adisyon ve raporlar için korunur. */
 const DEACTIVATE_DETAIL =
@@ -147,12 +148,19 @@ export function SettingsPage(): JSX.Element {
         options={[
           { value: 'staff', label: 'Personel' },
           { value: 'areas', label: 'Salonlar ve Masalar' },
+          { value: 'devices', label: 'Yazıcı ve QR Menü' },
           { value: 'audit', label: 'İşlem Geçmişi' },
         ]}
         onChange={setSection}
       />
       {section === 'staff' ? <StaffSection /> : null}
       {section === 'areas' ? <AreasSection /> : null}
+      {section === 'devices' ? (
+        <div className="grid gap-4 xl:grid-cols-2">
+          <PrinterSection />
+          <QrMenuSection />
+        </div>
+      ) : null}
       {section === 'audit' ? <AuditHistory /> : null}
     </div>
   );
@@ -400,7 +408,9 @@ function StaffSection(): JSX.Element {
         open={resetting !== null}
         title="Şifre sıfırla"
         description={
-          resetting === null ? undefined : `${resetting.fullName} için yeni geçici şifre belirleyin.`
+          resetting === null
+            ? undefined
+            : `${resetting.fullName} için yeni geçici şifre belirleyin.`
         }
         onClose={() => setResetting(null)}
         className="sm:max-w-md"
@@ -884,7 +894,9 @@ function AreasSection(): JSX.Element {
       <FormDialog
         open={editingTable !== null}
         title="Masayı düzenle"
-        description={editingTable === null ? undefined : `${editingTable.name} bilgilerini güncelleyin.`}
+        description={
+          editingTable === null ? undefined : `${editingTable.name} bilgilerini güncelleyin.`
+        }
         submitLabel="Kaydet"
         loading={editTableMutation.isPending}
         error={editTableMutation.error}

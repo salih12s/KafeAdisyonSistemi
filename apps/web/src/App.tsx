@@ -6,6 +6,7 @@ import {
   OwnerRoute,
   ProtectedRoute,
   ReportRoute,
+  RoleRoute,
 } from './components/auth/protected-route';
 import { ToastProvider } from './components/ui/toast';
 
@@ -36,6 +37,15 @@ const SettingsPage = lazy(() =>
 const KitchenPage = lazy(() =>
   import('./pages/kitchen-page').then((module) => ({ default: module.KitchenPage })),
 );
+const CashPage = lazy(() =>
+  import('./pages/cash-page').then((module) => ({ default: module.CashPage })),
+);
+const StockPage = lazy(() =>
+  import('./pages/stock-page').then((module) => ({ default: module.StockPage })),
+);
+const QrMenuPage = lazy(() =>
+  import('./pages/qr-menu-page').then((module) => ({ default: module.QrMenuPage })),
+);
 const AccessDeniedPage = lazy(() =>
   import('./pages/access-denied-page').then((module) => ({ default: module.AccessDeniedPage })),
 );
@@ -52,6 +62,8 @@ export function App(): JSX.Element {
       >
         <Routes>
           <Route path="login" element={<LoginPage />} />
+          {/* Oturumsuz, müşteriye açık QR menü. */}
+          <Route path="qr-menu" element={<QrMenuPage />} />
           <Route element={<ProtectedRoute />}>
             <Route element={<AppLayout />}>
               <Route index element={<DashboardPage />} />
@@ -63,6 +75,10 @@ export function App(): JSX.Element {
               </Route>
               <Route element={<ReportRoute />}>
                 <Route path="raporlar" element={<ReportsPage />} />
+              </Route>
+              <Route element={<RoleRoute roles={['OWNER', 'CASHIER']} />}>
+                <Route path="kasa" element={<CashPage />} />
+                <Route path="stok" element={<StockPage />} />
               </Route>
               <Route element={<OwnerRoute />}>
                 <Route path="ayarlar" element={<SettingsPage />} />

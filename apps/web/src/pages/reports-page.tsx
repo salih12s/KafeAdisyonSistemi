@@ -1,10 +1,12 @@
 import { useState, type FormEvent } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { PAYMENT_METHOD_LABELS, formatKurus, type NamedSalesTotal } from '@kafe/contracts';
 import { Panel } from '../components/ui/panel';
 import { fetchDayEnd, fetchSalesReport } from '../lib/api';
 import { Button } from '../components/ui/button';
-import { todayIstanbul } from '../lib/datetime';
+import { shiftIsoDate, todayIstanbul } from '../lib/datetime';
+import { DailySalesChart } from '../components/reports/daily-sales-chart';
+import { cn } from '../lib/cn';
 
 const input = 'min-h-touch rounded-panel border border-line bg-white px-3 text-sm';
 
@@ -58,13 +60,34 @@ export function ReportsPage(): JSX.Element {
   const report = useQuery({
     queryKey: ['sales-report', range],
     queryFn: () => fetchSalesReport(range.from, range.to),
+    // Yeni aralık yüklenirken önceki rapor soluk olarak yerinde kalır.
+    placeholderData: keepPreviousData,
   });
+  const presets = [
+    { label: 'Bugün', from: today },
+    { label: 'Son 7 gün', from: shiftIsoDate(today, -6) },
+    { label: 'Son 30 gün', from: shiftIsoDate(today, -29) },
+  ];
   const dayEnd = useQuery({ queryKey: ['day-end', today], queryFn: () => fetchDayEnd(today) });
   const maxHour = Math.max(1, ...(report.data?.hourlySales.map((row) => row.totalKurus) ?? [0]));
   return (
     <div className="space-y-5">
       <Panel title="Tarih aralığı" variant="elevated">
+        <div className="flex flex-wrap gap-2 border-b border-line px-4 pt-4 pb-3">
+          {presets.map((preset) => (
+            <Button
+              key={preset.label}
+              type="button"
+              variant={range.from === preset.from && range.to === today ? 'subtle' : 'ghost'}
+              aria-pressed={range.from === preset.from && range.to === today}
+              onClick={() => setRange({ from: preset.from, to: today })}
+            >
+              {preset.label}
+            </Button>
+          ))}
+        </div>
         <form
+          key={`${range.from}-${range.to}`}
           aria-label="Rapor tarih filtresi"
           className="flex flex-wrap items-end gap-3 p-4"
           onSubmit={(event: FormEvent<HTMLFormElement>) => {
@@ -116,7 +139,14 @@ export function ReportsPage(): JSX.Element {
           </p>
         </Panel>
       ) : report.data ? (
-        <>
+        <div
+          className={cn('space-y-5 transition-opacity', report.isPlaceholderData && 'opacity-60')}
+        >
+          {report.data.dailySales.length > 1 ? (
+            <Panel title="Günlük ciro" meta="Kapanan adisyonlar">
+              <DailySalesChart rows={report.data.dailySales} />
+            </Panel>
+          ) : null}
           <Panel
             title="Satış özeti"
             meta={`${report.data.range.from} — ${report.data.range.to}`}
@@ -198,7 +228,7 @@ export function ReportsPage(): JSX.Element {
               </ul>
             </Panel>
           </div>
-        </>
+        </div>
       ) : (
         <Panel>
           <p className="p-4 text-sm text-ink-muted">Rapor yükleniyor…</p>

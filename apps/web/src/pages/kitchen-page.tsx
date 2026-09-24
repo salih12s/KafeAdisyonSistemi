@@ -6,14 +6,16 @@ import {
   type OrderItemStatus,
   type PreparationArea,
 } from '@kafe/contracts';
-import { ChefHat, Clock3, Flame, Martini, Wifi } from 'lucide-react';
-import { useState } from 'react';
+import { ChefHat, Clock3, Flame, Martini, Printer, Wifi } from 'lucide-react';
+import { useCallback, useState } from 'react';
 import { ApiError, fetchKitchenOrders, updateOrderItemStatus } from '../lib/api';
 import { SegmentedControl } from '../components/ui/segmented-control';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { ErrorState } from '../components/ui/error-state';
 import { Skeleton } from '../components/ui/skeleton';
+import { PrintSheet } from '../components/print/print-sheet';
+import { KitchenTicket } from '../components/print/receipts';
 
 type StationFilter = 'ALL' | PreparationArea;
 const ACTIVE_STATUSES = ['SENT', 'PREPARING', 'READY'] as const;
@@ -149,6 +151,8 @@ function OrderColumn({
 
 function KitchenOrderCard({ order }: { order: KitchenOrderResponse }): JSX.Element | null {
   const queryClient = useQueryClient();
+  const [printing, setPrinting] = useState(false);
+  const stopPrinting = useCallback(() => setPrinting(false), []);
   const status = isActiveStatus(order.preparationStatus) ? order.preparationStatus : null;
   const mutation = useMutation({
     mutationFn: () => {
@@ -214,16 +218,32 @@ function KitchenOrderCard({ order }: { order: KitchenOrderResponse }): JSX.Eleme
         </div>
       </div>
       <div className="border-t border-kds-line p-3">
-        <Button
-          type="button"
-          variant={status === 'READY' ? 'success' : 'primary'}
-          size="touch"
-          className="w-full"
-          loading={mutation.isPending}
-          onClick={() => mutation.mutate()}
-        >
-          {ACTION_LABEL[status]}
-        </Button>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            aria-label={`${order.productNameSnapshot} fişini yazdır`}
+            title="Fişi yazdır"
+            onClick={() => setPrinting(true)}
+            className="flex min-h-touch w-11 shrink-0 items-center justify-center rounded-input border border-kds-line text-kds-muted transition hover:bg-kds-elevated hover:text-kds-ink"
+          >
+            <Printer aria-hidden="true" className="h-4 w-4" />
+          </button>
+          <Button
+            type="button"
+            variant={status === 'READY' ? 'success' : 'primary'}
+            size="touch"
+            className="flex-1"
+            loading={mutation.isPending}
+            onClick={() => mutation.mutate()}
+          >
+            {ACTION_LABEL[status]}
+          </Button>
+        </div>
+        {printing ? (
+          <PrintSheet onDone={stopPrinting}>
+            <KitchenTicket order={order} />
+          </PrintSheet>
+        ) : null}
         {mutation.isError ? (
           <p role="alert" className="mt-2 text-sm text-danger">
             {mutation.error instanceof ApiError ? mutation.error.message : 'Durum değiştirilemedi.'}

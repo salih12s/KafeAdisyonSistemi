@@ -45,9 +45,18 @@ const ACTION_LABELS: Record<string, string> = {
   CHECK_TRANSFERRED_TO_ACCOUNT: 'Adisyon cariye aktarıldı',
   ACCOUNT_COLLECTION: 'Cari tahsilat kaydedildi',
   ACCOUNT_ENTRY_CREATED: 'Cari hareket kaydedildi',
+  CASH_SESSION_OPENED: 'Kasa açıldı',
+  CASH_MOVEMENT_ADDED: 'Kasa hareketi kaydedildi',
+  CASH_SESSION_CLOSED: 'Kasa kapatıldı',
+  STOCK_ITEM_CREATED: 'Stok kalemi oluşturuldu',
+  STOCK_ITEM_UPDATED: 'Stok kalemi güncellendi',
+  STOCK_MOVEMENT_ADDED: 'Stok hareketi kaydedildi',
+  PRODUCT_RECIPE_UPDATED: 'Ürün reçetesi güncellendi',
 };
 
 const ENTITY_LABELS: Record<string, string> = {
+  CashSession: 'Kasa',
+  StockItem: 'Stok kalemi',
   User: 'Personel',
   BusinessSettings: 'İşletme',
   DiningArea: 'Salon',
