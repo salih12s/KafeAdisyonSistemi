@@ -48,8 +48,8 @@ describe('Frontend authentication', () => {
     const user = userEvent.setup();
     renderWithProviders(<App />, '/login');
 
-    await user.type(await screen.findByLabelText('Kullanıcı adı'), 'admin');
-    await user.type(screen.getByLabelText('Şifre'), 'JokerCafe2026!');
+    await user.type(await screen.findByLabelText('Kullanıcı adı'), 'owner');
+    await user.type(screen.getByLabelText('Şifre'), 'OwnerTest12!');
     await user.click(screen.getByRole('button', { name: 'Giriş yap' }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent(/oturum çerezini saklamadı/i);
