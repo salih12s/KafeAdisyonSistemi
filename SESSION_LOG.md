@@ -1255,3 +1255,17 @@ değiştirilmedi, merge yapılmadı.
   screencast ile çekildi, Pillow + gifsicle ile 5,7 MB'a sıkıştırıldı.
 - `npm run verify` PASS: 248 test (API 166, web 82); `format:check` PASS.
   Veritabanına yazılmadı.
+
+## 2026-09-25 — Codex — PR #18 merge
+
+**Branch:** `main`
+**Sonuç:** Kullanıcının açık isteğiyle PR #18 merge edildi.
+
+- PR #18'in hedefi `main`, kaynağı `feat/qr-menu-showcase` ve durumu birleştirme
+  öncesinde `MERGEABLE` olarak doğrulandı. Merge commit'i
+  `bb4258787956a26063551aba2d6ae69cbcf8caf9`.
+- GitHub Actions anotasyonu işin hesap faturalama kilidi nedeniyle hiç
+  başlamadığını gösterdi. Yerel `npm run verify` PASS: lint, typecheck,
+  248 test (API 166, web 82) ve production build.
+- Yerel `main` `origin/main` ile fast-forward güncellendi. Veritabanına
+  dokunulmadı; uygulama kodu değiştirilmedi.

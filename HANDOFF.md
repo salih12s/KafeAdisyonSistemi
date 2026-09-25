@@ -10,18 +10,20 @@ sonraki geliştiriciye devredilir.
 
 **GitHub vitrini — fotoğraflı müşteri QR menüsü**
 
-| Alan                | Değer                                                    |
-| ------------------- | -------------------------------------------------------- |
-| **Branch**          | `feat/qr-menu-showcase`                                  |
-| **Base branch**     | `main`                                                   |
-| **Ana geliştirici** | Claude                                                   |
-| **Durum**           | **Tamamlandı — PR #18 açık, merge kullanıcıda**          |
-| **Son commit**      | `feat: turn the QR menu into a photo-rich customer page` |
-| **Son güncelleme**  | 2026-09-25                                               |
+| Alan                | Değer                                        |
+| ------------------- | -------------------------------------------- |
+| **Branch**          | `main`                                       |
+| **Base branch**     | —                                            |
+| **Ana geliştirici** | Codex (merge ve devir kaydı)                 |
+| **Durum**           | **Tamamlandı — PR #18 merge edildi**         |
+| **Son commit**      | `docs: record PR #18 merge` (bu devir kaydı) |
+| **Son güncelleme**  | 2026-09-25                                   |
 
 Kullanıcının canlı sunucusu yok; proje GitHub'da vitrin olarak sergilenecek ve
-LinkedIn'de paylaşılacak. Kullanıcı GitHub'daki vitrin işini tamamen devretti ve
-PR'ların `main`'e alınmasına açıkça izin verdi (PR #17 bu izinle merge edildi).
+LinkedIn'de paylaşılacak. Kullanıcının açık isteğiyle PR #18, 2026-09-25'te
+`main`'e merge edildi (`bb4258787956a26063551aba2d6ae69cbcf8caf9`).
+Yerel `npm run verify` geçti: lint, typecheck, 248 test ve build. GitHub CI işi
+hesap faturalama kilidi yüzünden hiç başlamadı.
 
 - **QR menü müşteri sayfası (2026-09-25, ADR-025):** `/qr-menu` personel
   ekranlarından ayrı, fotoğraflı vitrin sayfası oldu: kapak fotoğrafı, işletme
@@ -53,10 +55,11 @@ PR'ların `main`'e alınmasına açıkça izin verdi (PR #17 bu izinle merge edi
   mimari, demo hızlı başlangıç, İngilizce özet). Eski geliştirici README'si
   `docs/DEVELOPMENT.md` oldu (demo verisi bölümü eklendi).
 - **CI:** `.github/workflows/ci.yml` her push/PR'da `npm run verify` çalıştırır.
-- **CI engeli (PR #17):** GitHub Actions işi hiç başlamadı. GitHub anotasyonu:
+- **CI engeli (PR #17 ve #18):** GitHub Actions işi hiç başlamadı. GitHub anotasyonu:
   "The job was not started because your account is locked due to a billing
-  issue." Yerelde `npm run verify` ve `npm run format:check` geçti; GitHub CI
-  hesabın faturalama durumu düzelmeden doğrulanamaz.
+  issue." PR #17'de yerel `npm run verify` ve `npm run format:check`, PR #18'de
+  yerel `npm run verify` geçti; GitHub CI hesabın faturalama durumu düzelmeden
+  doğrulanamaz.
 - **Lisans:** `LICENSE` — tüm hakları saklı, portföy amaçlı görüntüleme.
   Kullanıcı açık kaynak isterse MIT'e çevrilebilir.
 - **Ürün düzeltmesi:** adisyon ekranında ürün araması artık seçili kategoriyle
@@ -108,7 +111,11 @@ PR'ların `main`'e alınmasına açıkça izin verdi (PR #17 bu izinle merge edi
 - `VITE_API_URL` / ayrı barındırma kodunun kaldırılması kullanıcı kararıdır.
 - `scripts/set-local-env.ps1 -Reset` `postgres` süper kullanıcı adresi üretir;
   uygulama rolüyle çalışmak için `-Reset` kullanılmamalıdır.
-- Sonraki geliştiricinin işi: kullanıcının PR/merge kararını beklemek.
+- Sonraki geliştiricinin işi: yeni kullanıcı isteğine göre çalışmak; GitHub
+  Actions faturalama kilidi çözülünce CI'ı yeniden doğrulamak.
+- `npm run format:check`, gitignore'daki kullanıcıya ait
+  `.claude/settings.local.json` biçimi nedeniyle kırmızı; dosyaya dokunulmadı.
+  Devir belgeleri `npx prettier --check HANDOFF.md SESSION_LOG.md` ile geçti.
 
 ### Önceki durum — Phase 8 (Claude, 2026-09-25)
 
