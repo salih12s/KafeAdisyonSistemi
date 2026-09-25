@@ -12,7 +12,7 @@ describe('Frontend authentication', () => {
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Personel girişi' }),
     ).toBeInTheDocument();
-    expect(screen.getByText('Joker Cafe')).toBeInTheDocument();
+    expect(screen.getByText('Saydam Cafe')).toBeInTheDocument();
     expect(await screen.findByText(/npm run setup:owner/)).toBeInTheDocument();
     expect(screen.getByLabelText('Kullanıcı adı')).toBeInTheDocument();
     expect(screen.getByLabelText('Şifre')).toHaveAttribute('type', 'password');

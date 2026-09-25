@@ -1150,3 +1150,19 @@ değiştirilmedi, merge yapılmadı.
 - Eski ffmpeg (2013) palet filtresi içermediği için GIF, scratchpad'e kurulan
   `gifenc` ile saydam fark kareleri kullanılarak üretildi (19 MB → 3,6 MB).
 - `npm run verify` PASS: 243/243 test.
+
+## 2026-09-25 — Claude — Marka "Saydam Cafe" ve kurulumsuz vitrin README'si
+
+**Branch:** `docs/showcase` (PR #15)
+**Sonuç:** Tamamlandı; merge kullanıcıda.
+
+- Kullanıcı GitHub'da eski README'yi gördü: PR #15 merge edilmediği için `main`
+  hâlâ eski README'yi gösteriyor.
+- Kullanıcı isteğiyle tüm "Joker Cafe" adları "Saydam Cafe" yapıldı. CORS
+  yorumlarındaki "joker origin" (`*` anlamında) teknik ifade korundu.
+  Kullanıcının kendi `CafeAdisyon` veritabanındaki işletme adına dokunulmadı;
+  demo veritabanında güncellendi.
+- Ekran görüntüleri, GIF ve paylaşım görseli yeni adla yeniden üretildi.
+- README kurulumsuz vitrin sayfasına çevrildi (proje hakkında, özellikler,
+  ekranlar, teknik öne çıkanlar, mimari, kalite ve süreç, İngilizce özet).
+- `npm run verify` PASS: 243/243 test.

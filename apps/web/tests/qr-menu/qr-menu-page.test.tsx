@@ -8,7 +8,7 @@ describe('QR menü sayfası', () => {
     stubAppFetch({
       user: null,
       publicMenu: {
-        businessName: 'Joker Cafe',
+        businessName: 'Saydam Cafe',
         categories: [
           {
             id: 'c1',
@@ -41,7 +41,7 @@ describe('QR menü sayfası', () => {
       },
     });
     renderWithProviders(<App />, '/qr-menu');
-    expect(await screen.findByRole('heading', { name: 'Joker Cafe' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Saydam Cafe' })).toBeInTheDocument();
     expect(screen.getByText('Latte')).toBeInTheDocument();
     expect(screen.getByText(/120,00/)).toBeInTheDocument();
     // tr-TR para biçimi sembolü sayının önüne koyar: "+₺15,00".

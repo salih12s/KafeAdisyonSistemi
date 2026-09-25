@@ -45,6 +45,13 @@ merge"); bu yüzden tüm iş tek bir PR'da toplandı ve merge kullanıcıya bır
 - **Ürün düzeltmesi:** adisyon ekranında ürün araması artık seçili kategoriyle
   sınırlı değil, tüm menüde arar (testi eklendi).
 - `npm run verify` PASS: **243/243** test (API 164, web 79).
+- **Marka "Saydam Cafe" oldu (2026-09-25):** uygulama adı, sayfa başlığı, PWA
+  manifest, demo verisi, testler, ortam betikleri, README, ekran görüntüleri, GIF
+  ve paylaşım görseli. Kullanıcı repo adını kendisi değiştirecek; README'deki
+  bağlantılar göreli olduğu için etkilenmez.
+- **README yalnız vitrin:** kullanıcı isteğiyle kurulum, komut ve demo hesap
+  bölümleri kaldırıldı; kurulum rehberi `docs/DEVELOPMENT.md` içinde duruyor.
+  Private repoda çalışmayan CI rozeti README'den çıkarıldı (iş akışı duruyor).
 
 ### Yerel geliştirme ortamı
 

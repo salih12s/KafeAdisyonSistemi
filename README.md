@@ -1,18 +1,18 @@
 <div align="center">
 
-<img src="apps/web/public/icons/icon-192.png" alt="Joker Cafe" width="84" />
+<img src="apps/web/public/icons/icon-192.png" alt="Saydam Cafe" width="84" />
 
-# Joker Cafe — Kafe Adisyon Sistemi
+# Saydam Cafe — Kafe Adisyon Sistemi
 
-**Masadan kasaya, tek ekranda.** Masa ve adisyon yönetimi, gerçek zamanlı mutfak
-ekranı, kasa, stok, QR menü ve raporlar için uçtan uca bir satış noktası (POS)
-uygulaması.
+**Masadan kasaya, tek ekranda.** Bir kafenin günlük operasyonunu uçtan uca
+yöneten satış noktası (POS) uygulaması: masa ve adisyon, gerçek zamanlı mutfak
+ekranı, ödeme, kasa, stok, QR menü ve raporlar.
 
-[![CI](https://github.com/salih12s/KafeAdisyonSistemi/actions/workflows/ci.yml/badge.svg)](https://github.com/salih12s/KafeAdisyonSistemi/actions/workflows/ci.yml)
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript&logoColor=white)
 ![React](https://img.shields.io/badge/React-18-149eca?logo=react&logoColor=white)
-![Node.js](https://img.shields.io/badge/Node.js-20%2B-417e38?logo=nodedotjs&logoColor=white)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-336791?logo=postgresql&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-Express%205-417e38?logo=nodedotjs&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Prisma-336791?logo=postgresql&logoColor=white)
+![Socket.IO](https://img.shields.io/badge/Socket.IO-ger%C3%A7ek%20zamanl%C4%B1-010101?logo=socketdotio&logoColor=white)
 ![Testler](https://img.shields.io/badge/testler-243%20ge%C3%A7iyor-2f7d4f)
 
 <img src="docs/screenshots/demo.gif" alt="Masa açma, sipariş, mutfak, ödeme ve rapor akışı" width="880" />
@@ -22,6 +22,14 @@ uygulaması.
 </div>
 
 ---
+
+## Proje hakkında
+
+Garsonun masayı açıp sipariş aldığı, siparişin anında mutfak ve bar ekranına
+düştüğü, kasiyerin ödemeyi alıp vardiyayı kapattığı ve işletme sahibinin günü
+raporlardan izlediği tam bir kafe sistemi. Web arayüzü, REST API, gerçek zamanlı
+olay hattı ve ilişkisel veritabanıyla uçtan uca TypeScript olarak geliştirildi;
+telefon, tablet ve masaüstünde çalışır.
 
 ## Neler yapıyor?
 
@@ -80,7 +88,7 @@ uygulaması.
 
 ## Teknik olarak öne çıkanlar
 
-- **Para her yerde tam sayı kuruş.** `Float` yok; indirim, bölme ve artık
+- **Para her yerde tam sayı kuruş.** `Float` yok; indirim, hesap bölme ve artık
   kuruşlar deterministik dağıtılır.
 - **Fiyat snapshot'ı.** Sipariş anındaki ürün adı, fiyatı ve seçenek farkları
   kaleme yazılır; menü sonradan değişse de geçmiş adisyon ve rapor bozulmaz.
@@ -89,16 +97,16 @@ uygulaması.
 - **Eşzamanlılık güvenliği.** Hesap kapatma, masa birleştirme ve ödeme
   serializable transaction ve satır kilitleriyle korunur. Aynı masada tek açık
   adisyon ve tek açık kasa kuralını veritabanı kendisi garanti eder.
+- **Gerçek zamanlı ama tutarlı.** Socket.IO yalnız "değişti" sinyali taşır;
+  ekranlar veriyi her zaman REST'ten yeniden okur, böylece kaçan bir olay veriyi
+  bozmaz.
 - **Güvenlik.** HttpOnly oturum çerezi, rol bazlı yetki, giriş hız sınırı, CSRF
-  ve WebSocket origin kontrolleri, istemcide ve sunucuda çalışma zamanı tip
+  ve WebSocket origin kontrolleri; istemcide ve sunucuda çalışma zamanı tip
   doğrulaması (zod ve tip koruyucuları).
-- **Hiçbir şey silinmez.** Domain kayıtları fiziksel olarak silinmez; pasife
-  alınır. Tüm migration'lar yalnız ekleme yapar.
-- **Kalite.** Strict TypeScript, ESLint, **243 test** (API 164 + arayüz 79) ve her
-  push'ta çalışan CI. Gerçek veritabanı gerektirmeyen bellek içi store'larla
-  hızlı testler.
-- **Kararlar kayıtlı.** 24 mimari karar kaydı (ADR) gerekçeleriyle
-  [DECISIONS.md](DECISIONS.md) içinde.
+- **Hiçbir şey silinmez.** Domain kayıtları fiziksel olarak silinmez, pasife
+  alınır; tüm veritabanı migration'ları yalnız ekleme yapar.
+- **Europe/Istanbul ve Türkçe.** Tarih/saat hesapları İstanbul saatine, arayüz
+  ve hata mesajları Türkçeye göre tasarlandı.
 
 ## Mimari
 
@@ -123,10 +131,15 @@ flowchart LR
   C -.-> MOD
 ```
 
-Web ve API aynı depoda (npm workspaces) ve aynı origin üzerinden sunulur. Kod
-alana göre modüllenmiştir: arayüzde `apps/web/src/features/<alan>/`, sunucuda
-`apps/api/src/modules/<modül>/`. Ayrıntılı kod haritası ve bir isteğin uçtan uca
-yolculuğu: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+- **Monorepo (npm workspaces):** `apps/web` arayüz, `apps/api` sunucu,
+  `packages/contracts` iki tarafın paylaştığı tipler ve sabitler.
+- **Alan bazlı modüller:** her iş alanı (adisyon, kasa, stok, menü…) arayüzde
+  `features/<alan>/`, sunucuda `modules/<modül>/` altında kendi ekranı, API
+  çağrıları, router'ı, veri erişimi ve iş kurallarıyla durur.
+- **Tek origin:** Express hem API'yi hem React derlemesini sunar.
+
+Ayrıntılı kod haritası ve bir isteğin uçtan uca yolculuğu:
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 
 | Katman     | Teknoloji                                                                |
 | ---------- | ------------------------------------------------------------------------ |
@@ -136,48 +149,20 @@ yolculuğu: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 | Test       | Vitest, Supertest, React Testing Library                                 |
 | Araçlar    | npm workspaces, ESLint, Prettier, GitHub Actions                         |
 
-## Hızlı başlangıç (demo verisiyle)
+## Kalite ve geliştirme süreci
 
-Gereksinimler: **Node.js 20+** ve **PostgreSQL 14+**.
-
-```bash
-git clone https://github.com/salih12s/KafeAdisyonSistemi.git
-cd KafeAdisyonSistemi
-npm install
-
-# Ayrı bir demo veritabanı oluşturun (gerçek verinize dokunmaz)
-createdb -U postgres KafeAdisyonDemo
-export DATABASE_URL="postgresql://postgres:PAROLANIZ@localhost:5432/KafeAdisyonDemo?schema=public"
-# Windows PowerShell: $env:DATABASE_URL = "postgresql://..."
-
-npm run db:migrate:deploy   # şemayı kurar
-npm run demo:seed           # 30 günlük örnek işletme verisi
-npm run dev                 # http://localhost:5173
-```
-
-| Kullanıcı | Rol            | Şifre       |
-| --------- | -------------- | ----------- |
-| `demo`    | İşletme sahibi | `Demo1234!` |
-| `elif`    | Kasiyer        | `Demo1234!` |
-| `mert`    | Garson         | `Demo1234!` |
-| `mutfak`  | Mutfak         | `Demo1234!` |
-
-Demo komutu yalnız adı `demo` içeren boş bir veritabanına yazar. Gerçek işletme
-kurulumu (ilk yönetici, ortam değişkenleri, yedekleme, dağıtım):
-[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
-
-```bash
-npm run verify   # lint → typecheck → test → build
-```
-
-## Geliştirme süreci
-
-Proje, yapay zekâ kodlama ajanlarıyla (Claude ve Codex) **kurallı bir süreçle**
-geliştirildi. Bağlayıcı kurallar [AGENTS.md](AGENTS.md) içindedir: aynı anda tek
-ajan kod yazar, her iş kendi branch'inde ilerler, test geçmeden iş bitmiş sayılmaz,
-veritabanında yıkıcı işlem yasaktır. Her teknik karar [DECISIONS.md](DECISIONS.md)
-içinde gerekçesiyle kayıtlıdır; devir notları [HANDOFF.md](HANDOFF.md), oturum
-kayıtları [SESSION_LOG.md](SESSION_LOG.md) içindedir.
+- **243 otomatik test** (API 164, arayüz 79). İş kuralları gerçek veritabanı
+  gerektirmeyen bellek içi store'larla, ekranlar React Testing Library ile test
+  edilir. Strict TypeScript ve ESLint her değişiklikte zorunlu.
+- **Kod ve güvenlik incelemesi** yapıldı; bulunan her sorun (ör. kasa kapanışı
+  ile ödeme arasındaki yarış durumu, CSRF) regresyon testiyle kapatıldı.
+- **24 mimari karar kaydı (ADR)** gerekçeleriyle [DECISIONS.md](DECISIONS.md)
+  içinde: neden kuruş, neden snapshot, neden türetilen bakiye, neden offline yok.
+- **Yapay zekâ destekli, kurallı süreç.** Geliştirme, yapay zekâ kodlama
+  ajanlarıyla (Claude ve Codex) bağlayıcı kurallar altında yürütüldü
+  ([AGENTS.md](AGENTS.md)): aşama aşama plan, her aşama kendi branch'inde, test
+  geçmeden iş bitmiş sayılmaz, veritabanında yıkıcı işlem yasak, her devir
+  [HANDOFF.md](HANDOFF.md) ve [SESSION_LOG.md](SESSION_LOG.md) ile kayıtlı.
 
 ## Kapsam
 
@@ -189,15 +174,14 @@ offline önbellek bilinçli olarak kullanılmaz.
 
 ## English summary
 
-**Joker Cafe** is a full-stack point-of-sale system for a café: table and check
+**Saydam Cafe** is a full-stack point-of-sale system for a café: table and check
 management with menu options, a real-time kitchen display (Socket.IO), split
 payments, customer accounts, cash-drawer shifts with automatic count variance,
 recipe-based stock deduction, daily revenue charts, a public QR menu and 80/58 mm
 thermal receipts. It is a TypeScript monorepo (React 18 + Vite, Express 5 +
-Prisma + PostgreSQL) with money stored as integer minor units, price snapshots,
-ledger-derived balances, serializable transactions, strict typing and 243
-automated tests. Run it locally with `npm run demo:seed` and log in as
-`demo` / `Demo1234!`.
+Prisma + PostgreSQL) built around integer money, price snapshots, ledger-derived
+balances, serializable transactions and strict typing, covered by 243 automated
+tests.
 
 ## Lisans
 

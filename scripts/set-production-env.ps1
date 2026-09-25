@@ -33,7 +33,7 @@ function Read-CachedUrl([string]$path) {
     return $null
 }
 
-Write-Host 'Joker Cafe - PRODUCTION (Railway) ortamina geciliyor' -ForegroundColor Cyan
+Write-Host 'Saydam Cafe - PRODUCTION (Railway) ortamina geciliyor' -ForegroundColor Cyan
 Write-Host ''
 
 $databaseUrl = $null

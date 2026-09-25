@@ -11,7 +11,7 @@ import { createRealtimeServer } from '../../src/modules/orders/order-realtime';
 import { createTestApp, crossOriginEnv } from '../helpers/test-app';
 import { MemoryStore } from '../helpers/memory-store';
 
-const WEB_ORIGIN = 'https://joker-cafe.example.com';
+const WEB_ORIGIN = 'https://saydam-cafe.example.com';
 const OTHER_ORIGIN = 'https://saldirgan.example.com';
 const OWNER_PASSWORD = 'OwnerTest12!';
 
@@ -66,7 +66,7 @@ describe('Ayrı barındırma — CORS ve çerez politikası', () => {
   it('origin değerini tarayıcının gönderdiği biçime normalleştirir', () => {
     const env = parseEnv({
       ...baseSource,
-      CORS_ORIGIN: 'https://Joker-Cafe.Example.com:443,http://localhost:80/',
+      CORS_ORIGIN: 'https://Saydam-Cafe.Example.com:443,http://localhost:80/',
     });
     expect(env.CORS_ORIGIN).toEqual([WEB_ORIGIN, 'http://localhost']);
   });
@@ -83,7 +83,7 @@ describe('Ayrı barındırma — CORS ve çerez politikası', () => {
   });
 
   it('şema içermeyen origin değerini reddeder', () => {
-    expect(() => parseEnv({ ...baseSource, CORS_ORIGIN: 'joker-cafe.example.com' })).toThrow(
+    expect(() => parseEnv({ ...baseSource, CORS_ORIGIN: 'saydam-cafe.example.com' })).toThrow(
       /CORS_ORIGIN/,
     );
   });
@@ -182,7 +182,7 @@ describe('Ayrı barındırma — CORS ve çerez politikası', () => {
 });
 
 describe('Ayrı barındırma — siteler arası istek sahteciliği (CSRF)', () => {
-  const API_HOST = 'api.joker-cafe.example.com';
+  const API_HOST = 'api.saydam-cafe.example.com';
 
   async function loggedIn(origins: readonly string[]) {
     const store = new MemoryStore();

@@ -35,7 +35,7 @@ export async function fixture(role: UserRole = 'OWNER') {
   const passwordHash = await passwordHashOnce();
   const store = new MemoryStore();
   const owner = await store.bootstrapOwner({
-    businessName: 'Joker Cafe',
+    businessName: 'Saydam Cafe',
     fullName: 'İşletme Sahibi',
     username: 'owner',
     passwordHash,

@@ -304,7 +304,7 @@ function databaseName(url: string): string {
 async function seedPeopleAndPlaces(client: PrismaClient, store: AppStore) {
   const identity = new IdentityService(store);
   const owner = await identity.bootstrapOwner({
-    businessName: 'Joker Cafe',
+    businessName: 'Saydam Cafe',
     fullName: 'Deniz Kaya',
     username: 'demo',
     password: DEMO_PASSWORD,

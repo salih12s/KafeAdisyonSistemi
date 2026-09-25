@@ -14,7 +14,7 @@ describe('QR menü (oturumsuz)', () => {
     });
     const response = await request(input.app).get('/api/public/menu');
     expect(response.status).toBe(200);
-    expect(response.body.businessName).toBe('Joker Cafe');
+    expect(response.body.businessName).toBe('Saydam Cafe');
     expect(response.body.categories.map((category: { id: string }) => category.id)).not.toContain(
       empty.id,
     );
