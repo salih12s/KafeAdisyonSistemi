@@ -17,6 +17,11 @@ const transactionOptions = {
   isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
 } as const;
 
+/** Kapanış satır kilidiyle korunur; bkz. closeCashSession. */
+const closeTransactionOptions = {
+  isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
+} as const;
+
 function isUniqueConstraint(error: unknown): boolean {
   return error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002';
 }
@@ -35,7 +40,9 @@ async function cashSales(reader: Reader, from: Date, to: Date | null): Promise<n
 }
 
 async function toResponse(reader: Reader, row: SessionRow): Promise<CashSessionResponse> {
-  return buildCashSession(toSource(row), await cashSales(reader, row.openedAt, row.closedAt));
+  // Kapanmış oturumun tutarı sabittir; ödemeler yeniden sorgulanmaz.
+  const live = row.status === 'OPEN' ? await cashSales(reader, row.openedAt, null) : 0;
+  return buildCashSession(toSource(row), live);
 }
 
 async function requireOpenSession(transaction: Prisma.TransactionClient): Promise<SessionRow> {
@@ -150,6 +157,11 @@ export function createPrismaCashStore(client: PrismaClient): CashStore {
     closeCashSession(input) {
       return withConflictMessage(() =>
         client.$transaction(async (transaction) => {
+          // Açık kasa satırı özel kilitlenir. Nakit ödeme yazan işlemler aynı satırı
+          // paylaşımlı kilitlediği için kapanış, yarım kalmış ödemelerin bitmesini
+          // bekler; yeni nakit ödemeler de kapanış bitene kadar bekler. Read Committed
+          // sayesinde bekleme sonrasındaki sorgular commit edilmiş ödemeleri görür.
+          await transaction.$queryRaw`SELECT "id" FROM "CashSession" WHERE "status" = 'OPEN' FOR UPDATE`;
           const session = await requireOpenSession(transaction);
           const closedAt = new Date();
           // Beklenen tutar kapanış anında sabitlenir; sonraki ödemeler bu kasaya yazılmaz.
@@ -189,7 +201,7 @@ export function createPrismaCashStore(client: PrismaClient): CashStore {
             include: SESSION_INCLUDE,
           });
           return toResponse(transaction, closed);
-        }, transactionOptions),
+        }, closeTransactionOptions),
       );
     },
   };

@@ -1,13 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { Route, Routes } from 'react-router-dom';
 import { AppLayout } from './components/layout/app-layout';
-import {
-  AccountRoute,
-  OwnerRoute,
-  ProtectedRoute,
-  ReportRoute,
-  RoleRoute,
-} from './components/auth/protected-route';
+import { ProtectedRoute, RoleRoute } from './components/auth/protected-route';
 import { ToastProvider } from './components/ui/toast';
 
 const DashboardPage = lazy(() =>
@@ -70,17 +64,13 @@ export function App(): JSX.Element {
               <Route path="masalar" element={<TablesPage />} />
               <Route path="menu" element={<MenuPage />} />
               <Route path="mutfak" element={<KitchenPage />} />
-              <Route element={<AccountRoute />}>
-                <Route path="cariler" element={<AccountsPage />} />
-              </Route>
-              <Route element={<ReportRoute />}>
-                <Route path="raporlar" element={<ReportsPage />} />
-              </Route>
               <Route element={<RoleRoute roles={['OWNER', 'CASHIER']} />}>
+                <Route path="cariler" element={<AccountsPage />} />
+                <Route path="raporlar" element={<ReportsPage />} />
                 <Route path="kasa" element={<CashPage />} />
                 <Route path="stok" element={<StockPage />} />
               </Route>
-              <Route element={<OwnerRoute />}>
+              <Route element={<RoleRoute roles={['OWNER']} />}>
                 <Route path="ayarlar" element={<SettingsPage />} />
               </Route>
               <Route path="yetkisiz" element={<AccessDeniedPage />} />

@@ -1,6 +1,6 @@
 import type { NextFunction, Request, RequestHandler, Response } from 'express';
 
-const ALLOWED_METHODS = 'GET,POST,PATCH,DELETE,OPTIONS';
+const ALLOWED_METHODS = 'GET,POST,PUT,PATCH,DELETE,OPTIONS';
 const ALLOWED_HEADERS = 'Content-Type,Accept';
 const MAX_AGE_SECONDS = '600';
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);

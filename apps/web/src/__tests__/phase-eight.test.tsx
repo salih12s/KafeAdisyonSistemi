@@ -151,6 +151,20 @@ describe('Phase 8 stok ekranı', () => {
     );
   });
 
+  it('başka kaleme geçince hareket formu sıfırlanır', async () => {
+    const beans = { ...milk, id: 'i2', name: 'Kahve çekirdeği', unit: 'GRAM', isLow: false };
+    stubAppFetch({ stockItems: [milk, beans], stockItem: { ...milk, movements: [] } });
+    const user = userEvent.setup();
+    renderWithProviders(<App />, '/stok');
+    const list = await screen.findByRole('list', { name: 'Stok kalemleri' });
+    await user.click(within(list).getByRole('button', { name: /Süt/ }));
+    const form = await screen.findByRole('form', { name: 'Stok hareketi formu' });
+    await user.type(within(form).getByLabelText('Miktar (ml)'), '2000');
+    await user.click(within(list).getByRole('button', { name: /Kahve çekirdeği/ }));
+    const next = await screen.findByRole('form', { name: 'Stok hareketi formu' });
+    expect(within(next).getByLabelText(/Miktar/)).toHaveValue('');
+  });
+
   it('kasiyer stok kalemi ekleyemez ve reçeteyi düzenleyemez', async () => {
     stubAppFetch({ user: userForRole('CASHIER'), stockItems: [milk] });
     renderWithProviders(<App />, '/stok');
@@ -228,6 +242,10 @@ describe('Phase 8 QR menü', () => {
     await user.click(screen.getByRole('button', { name: 'Deneme fişi yazdır' }));
     await waitFor(() => expect(print).toHaveBeenCalledTimes(1));
     expect(document.querySelector('.print-sheet')?.getAttribute('data-paper')).toBe('58');
+
+    // afterprint gelmese bile ikinci yazdırma çalışır.
+    await user.click(screen.getByRole('button', { name: 'Deneme fişi yazdır' }));
+    await waitFor(() => expect(print).toHaveBeenCalledTimes(2));
   });
 });
 

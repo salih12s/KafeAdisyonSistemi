@@ -603,6 +603,11 @@ export function createPrismaOrderStore(client: PrismaClient): OrderStore {
     async addPayment(input: AddPaymentInput): Promise<CheckResponse> {
       try {
         return await client.$transaction(async (transaction) => {
+          if (input.method === 'CASH') {
+            // Açık kasa paylaşımlı kilitlenir: kasa kapanışı bu ödeme bitene kadar
+            // bekler ve ödemeyi beklenen nakde katar (bkz. ADR-021).
+            await transaction.$queryRaw`SELECT "id" FROM "CashSession" WHERE "status" = 'OPEN' FOR SHARE`;
+          }
           await lockCheck(transaction, input.checkId);
           const check = await requireOpenCheck(transaction, input.checkId);
           const totals = await transaction.payment.aggregate({

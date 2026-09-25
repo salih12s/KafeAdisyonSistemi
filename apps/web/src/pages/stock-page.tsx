@@ -129,7 +129,7 @@ export function StockPage(): JSX.Element {
             />
           </Panel>
         ) : (
-          <StockDetail id={selectedId} canEdit={isOwner} />
+          <StockDetail key={selectedId} id={selectedId} canEdit={isOwner} />
         )}
       </div>
       <RecipePanel canEdit={isOwner} stockItems={items.data ?? []} />
@@ -433,6 +433,11 @@ function RecipePanel({
     onError: (failure) => setError(errorMessage(failure)),
   });
   const activeItems = stockItems.filter((item) => item.isActive);
+  // Reçetede kalan pasif kalemler de seçenek olarak görünür; aksi hâlde satır
+  // "Seçin" gibi görünür ama düşüm sürer.
+  const selectableItems = stockItems.filter(
+    (item) => item.isActive || lines.some((line) => line.stockItemId === item.id),
+  );
   const unitOf = (id: string): string => {
     const found = stockItems.find((item) => item.id === id);
     return found === undefined ? '' : UNIT_SHORT[found.unit];
@@ -498,9 +503,9 @@ function RecipePanel({
                   }
                 >
                   <option value="">Seçin</option>
-                  {activeItems.map((item) => (
+                  {selectableItems.map((item) => (
                     <option key={item.id} value={item.id}>
-                      {item.name}
+                      {item.isActive ? item.name : `${item.name} (pasif)`}
                     </option>
                   ))}
                 </SelectField>

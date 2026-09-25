@@ -133,6 +133,8 @@ describe('Ayrı barındırma — CORS ve çerez politikası', () => {
       .set('Access-Control-Request-Method', 'POST');
     expect(allowed.status).toBe(204);
     expect(allowed.headers['access-control-allow-methods']).toContain('POST');
+    // Reçete kaydı PUT kullanır.
+    expect(allowed.headers['access-control-allow-methods']).toContain('PUT');
     expect(allowed.headers['access-control-allow-headers']).toContain('Content-Type');
 
     const blocked = await request(app)

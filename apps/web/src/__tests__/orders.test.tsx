@@ -248,7 +248,9 @@ describe('Phase 3 masa ve adisyon ekranı', () => {
 
     const mergeForm = await screen.findByRole('form', { name: 'Masa birleştirme formu' });
     expect(within(mergeForm).queryByLabelText('Birleştirilecek masa')).not.toBeInTheDocument();
-    expect(within(mergeForm).getByText(/Birleştirilecek başka açık adisyon yok/)).toBeInTheDocument();
+    expect(
+      within(mergeForm).getByText(/Birleştirilecek başka açık adisyon yok/),
+    ).toBeInTheDocument();
     expect(within(mergeForm).getByRole('button', { name: 'Adisyonları birleştir' })).toBeDisabled();
 
     const moveForm = screen.getByRole('form', { name: 'Masa taşıma formu' });

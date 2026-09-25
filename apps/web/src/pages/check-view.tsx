@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   formatKurus,
@@ -28,6 +28,7 @@ import { TextField } from '../components/ui/field';
 import { Badge } from '../components/ui/badge';
 import { cn } from '../lib/cn';
 import { PrintSheet } from '../components/print/print-sheet';
+import { usePrintJob } from '../components/print/use-print-job';
 import { CheckReceipt } from '../components/print/receipts';
 
 type SalesProduct = MenuResponse['categories'][number]['products'][number];
@@ -62,8 +63,7 @@ export function CheckView({
   const [selectedCategoryId, setSelectedCategoryId] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<SalesProduct | null>(null);
   const [search, setSearch] = useState('');
-  const [printing, setPrinting] = useState(false);
-  const stopPrinting = useCallback(() => setPrinting(false), []);
+  const receipt = usePrintJob();
 
   useEffect(() => {
     if (
@@ -128,7 +128,7 @@ export function CheckView({
               type="button"
               variant="outline"
               icon={<Printer aria-hidden="true" className="h-4 w-4" />}
-              onClick={() => setPrinting(true)}
+              onClick={receipt.print}
             >
               Fiş yazdır
             </Button>
@@ -141,11 +141,11 @@ export function CheckView({
           </div>
         </div>
       </div>
-      {printing ? (
-        <PrintSheet onDone={stopPrinting}>
+      {receipt.job === null ? null : (
+        <PrintSheet key={receipt.job} onDone={receipt.done}>
           <CheckReceipt check={check.data} />
         </PrintSheet>
-      ) : null}
+      )}
 
       <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(24rem,0.65fr)]">
         <Panel title="Menü" meta={`${category?.products.length ?? 0} ürün`} variant="elevated">

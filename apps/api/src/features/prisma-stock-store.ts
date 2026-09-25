@@ -6,6 +6,9 @@ import { StoreError } from './store';
 
 type Reader = PrismaClient | Prisma.TransactionClient;
 
+/** PostgreSQL INTEGER üst sınırı; satış düşümü asla taşma hatasıyla kapanışı durdurmaz. */
+const MAX_INT = 2_147_483_647;
+
 const transactionOptions = {
   isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
 } as const;
@@ -113,7 +116,7 @@ export async function writeSaleStockMovements(
     data: [...consumption].map(([stockItemId, quantity]) => ({
       stockItemId,
       type: 'SALE' as const,
-      quantityDelta: -quantity,
+      quantityDelta: -Math.min(quantity, MAX_INT),
       checkId,
       actorUserId,
     })),
@@ -249,48 +252,55 @@ export function createPrismaStockStore(client: PrismaClient): StockStore {
       if (new Set(stockItemIds).size !== stockItemIds.length) {
         throw new StoreError('VALIDATION', 'Aynı stok kalemi reçetede bir kez yer alabilir.');
       }
-      return client.$transaction(async (transaction) => {
-        const product = await transaction.product.findUnique({
-          where: { id: input.productId },
-          select: { id: true },
-        });
-        if (product === null) throw new StoreError('NOT_FOUND', 'Ürün bulunamadı.');
-        const found = await transaction.stockItem.count({ where: { id: { in: stockItemIds } } });
-        if (found !== stockItemIds.length) {
-          throw new StoreError('VALIDATION', 'Reçetedeki stok kalemlerinden biri bulunamadı.');
-        }
-        // Reçeteden çıkan satırlar silinmez, pasife alınır (ADR-011).
-        await transaction.productStockUsage.updateMany({
-          where: { productId: input.productId, stockItemId: { notIn: stockItemIds } },
-          data: { isActive: false },
-        });
-        for (const line of input.lines) {
-          await transaction.productStockUsage.upsert({
-            where: {
-              productId_stockItemId: {
+      try {
+        return await client.$transaction(async (transaction) => {
+          const product = await transaction.product.findUnique({
+            where: { id: input.productId },
+            select: { id: true },
+          });
+          if (product === null) throw new StoreError('NOT_FOUND', 'Ürün bulunamadı.');
+          const found = await transaction.stockItem.count({ where: { id: { in: stockItemIds } } });
+          if (found !== stockItemIds.length) {
+            throw new StoreError('VALIDATION', 'Reçetedeki stok kalemlerinden biri bulunamadı.');
+          }
+          // Reçeteden çıkan satırlar silinmez, pasife alınır (ADR-011).
+          await transaction.productStockUsage.updateMany({
+            where: { productId: input.productId, stockItemId: { notIn: stockItemIds } },
+            data: { isActive: false },
+          });
+          for (const line of input.lines) {
+            await transaction.productStockUsage.upsert({
+              where: {
+                productId_stockItemId: {
+                  productId: input.productId,
+                  stockItemId: line.stockItemId,
+                },
+              },
+              create: {
                 productId: input.productId,
                 stockItemId: line.stockItemId,
+                quantityPerUnit: line.quantityPerUnit,
               },
+              update: { quantityPerUnit: line.quantityPerUnit, isActive: true },
+            });
+          }
+          await transaction.auditLog.create({
+            data: {
+              actorUserId: input.actorUserId,
+              action: 'PRODUCT_RECIPE_UPDATED',
+              entityType: 'Product',
+              entityId: input.productId,
+              metadata: { lineCount: input.lines.length },
             },
-            create: {
-              productId: input.productId,
-              stockItemId: line.stockItemId,
-              quantityPerUnit: line.quantityPerUnit,
-            },
-            update: { quantityPerUnit: line.quantityPerUnit, isActive: true },
           });
+          return readRecipe(transaction, input.productId);
+        }, transactionOptions);
+      } catch (error) {
+        if (isSerializationConflict(error) || isUniqueConstraint(error)) {
+          throw new StoreError('CONFLICT', 'Reçete başka bir cihazda değişti; yeniden deneyin.');
         }
-        await transaction.auditLog.create({
-          data: {
-            actorUserId: input.actorUserId,
-            action: 'PRODUCT_RECIPE_UPDATED',
-            entityType: 'Product',
-            entityId: input.productId,
-            metadata: { lineCount: input.lines.length },
-          },
-        });
-        return readRecipe(transaction, input.productId);
-      }, transactionOptions);
+        throw error;
+      }
     },
   };
 }

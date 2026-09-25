@@ -169,6 +169,12 @@ describe('Phase 8 kasa oturumu', () => {
     expect(current.body.session).toBeNull();
     const history = await request(input.app).get('/api/cash/sessions').set('Cookie', input.cookie);
     expect(history.body.sessions).toHaveLength(1);
+    // Kapanmış kasanın dökümü sabit beklenen tutarla tutarlıdır.
+    expect(history.body.sessions[0]).toMatchObject({
+      cashSalesKurus: 24_000,
+      expectedCashKurus: 80_000,
+      differenceKurus: -500,
+    });
     expect(input.store.audits.map((entry) => entry.action)).toEqual(
       expect.arrayContaining(['CASH_SESSION_OPENED', 'CASH_MOVEMENT_ADDED', 'CASH_SESSION_CLOSED']),
     );
@@ -311,6 +317,12 @@ describe('Phase 8 stok ve reçete', () => {
         ],
       });
     expect(recipe.status).toBe(400);
+
+    const tooLarge = await request(input.app)
+      .put(`/api/stock/recipes/${input.product.id}`)
+      .set('Cookie', input.cookie)
+      .send({ lines: [{ stockItemId: first.body.item.id, quantityPerUnit: 100_001 }] });
+    expect(tooLarge.status).toBe(400);
   });
 
   it('reçeteden çıkarılan satırı pasife alır, sonraki satışta düşmez', async () => {

@@ -139,7 +139,13 @@ function OpenCashForm(): JSX.Element {
       client.setQueryData(CURRENT_KEY, session);
       notify('Kasa açıldı.');
     },
-    onError: (failure) => setError(errorMessage(failure)),
+    onError: (failure) => {
+      setError(errorMessage(failure));
+      // Kasa başka cihazda açıldıysa ekran açık kasaya geçsin.
+      if (failure instanceof ApiError && failure.statusCode === 409) {
+        void client.invalidateQueries({ queryKey: CURRENT_KEY });
+      }
+    },
   });
   const submit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();

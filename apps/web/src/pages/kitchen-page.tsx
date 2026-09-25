@@ -7,7 +7,7 @@ import {
   type PreparationArea,
 } from '@kafe/contracts';
 import { ChefHat, Clock3, Flame, Martini, Printer, Wifi } from 'lucide-react';
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import { ApiError, fetchKitchenOrders, updateOrderItemStatus } from '../lib/api';
 import { SegmentedControl } from '../components/ui/segmented-control';
 import { Button } from '../components/ui/button';
@@ -15,6 +15,7 @@ import { Badge } from '../components/ui/badge';
 import { ErrorState } from '../components/ui/error-state';
 import { Skeleton } from '../components/ui/skeleton';
 import { PrintSheet } from '../components/print/print-sheet';
+import { usePrintJob } from '../components/print/use-print-job';
 import { KitchenTicket } from '../components/print/receipts';
 
 type StationFilter = 'ALL' | PreparationArea;
@@ -151,8 +152,7 @@ function OrderColumn({
 
 function KitchenOrderCard({ order }: { order: KitchenOrderResponse }): JSX.Element | null {
   const queryClient = useQueryClient();
-  const [printing, setPrinting] = useState(false);
-  const stopPrinting = useCallback(() => setPrinting(false), []);
+  const ticket = usePrintJob();
   const status = isActiveStatus(order.preparationStatus) ? order.preparationStatus : null;
   const mutation = useMutation({
     mutationFn: () => {
@@ -223,7 +223,7 @@ function KitchenOrderCard({ order }: { order: KitchenOrderResponse }): JSX.Eleme
             type="button"
             aria-label={`${order.productNameSnapshot} fişini yazdır`}
             title="Fişi yazdır"
-            onClick={() => setPrinting(true)}
+            onClick={ticket.print}
             className="flex min-h-touch w-11 shrink-0 items-center justify-center rounded-input border border-kds-line text-kds-muted transition hover:bg-kds-elevated hover:text-kds-ink"
           >
             <Printer aria-hidden="true" className="h-4 w-4" />
@@ -239,11 +239,11 @@ function KitchenOrderCard({ order }: { order: KitchenOrderResponse }): JSX.Eleme
             {ACTION_LABEL[status]}
           </Button>
         </div>
-        {printing ? (
-          <PrintSheet onDone={stopPrinting}>
+        {ticket.job === null ? null : (
+          <PrintSheet key={ticket.job} onDone={ticket.done}>
             <KitchenTicket order={order} />
           </PrintSheet>
-        ) : null}
+        )}
         {mutation.isError ? (
           <p role="alert" className="mt-2 text-sm text-danger">
             {mutation.error instanceof ApiError ? mutation.error.message : 'Durum değiştirilemedi.'}

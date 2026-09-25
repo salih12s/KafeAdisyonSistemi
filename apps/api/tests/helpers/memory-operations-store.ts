@@ -275,7 +275,8 @@ export abstract class MemoryOperationsStore
   }
 
   private toCashSession(session: MemoryCashSession): CashSessionResponse {
-    return buildCashSession(session, this.cashSales(session.openedAt, session.closedAt));
+    const live = session.status === 'OPEN' ? this.cashSales(session.openedAt, null) : 0;
+    return buildCashSession(session, live);
   }
 
   private requireOpenCashSession(): MemoryCashSession {

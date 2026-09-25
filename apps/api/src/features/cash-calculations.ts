@@ -18,12 +18,15 @@ export interface CashSessionSource {
 
 /**
  * Beklenen nakit = açılış + oturum süresince alınan nakit ödemeler + girişler − çıkışlar.
- * Kapanmış oturumda kapanış anında yazılan tutar esas alınır; sonradan eklenen
- * geç bir ödeme kapanmış kasanın sonucunu değiştirmez.
+ *
+ * Açık oturumda `liveCashSalesKurus` ödemelerden o an hesaplanır. Kapanmış
+ * oturumda kapanışta yazılan beklenen tutar esastır ve nakit satış ondan geri
+ * türetilir; böylece döküm her zaman toplamla tutarlıdır ve ödemeler yeniden
+ * sorgulanmaz. Kapanmış oturum için `liveCashSalesKurus` kullanılmaz.
  */
 export function buildCashSession(
   source: CashSessionSource,
-  cashSalesKurus: number,
+  liveCashSalesKurus: number,
 ): CashSessionResponse {
   const cashInKurus = source.movements
     .filter((movement) => movement.type === 'IN')
@@ -31,6 +34,10 @@ export function buildCashSession(
   const cashOutKurus = source.movements
     .filter((movement) => movement.type === 'OUT')
     .reduce((total, movement) => total + movement.amountKurus, 0);
+  const cashSalesKurus =
+    source.expectedCashKurus === null
+      ? liveCashSalesKurus
+      : source.expectedCashKurus - source.openingCashKurus - cashInKurus + cashOutKurus;
   const expectedCashKurus =
     source.expectedCashKurus ??
     source.openingCashKurus + cashSalesKurus + cashInKurus - cashOutKurus;

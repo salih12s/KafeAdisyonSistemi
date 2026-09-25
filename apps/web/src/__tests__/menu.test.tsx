@@ -79,7 +79,9 @@ describe('Menü ekranı', () => {
       await screen.findByRole('button', { name: 'Kahveler kategorisini seç' }),
     ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Tatlılar kategorisini seç' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Kahveler kategorisini düzenle' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Kahveler kategorisini düzenle' }),
+    ).toBeInTheDocument();
 
     const row = screen.getByText('Latte').closest('li');
     expect(row).not.toBeNull();

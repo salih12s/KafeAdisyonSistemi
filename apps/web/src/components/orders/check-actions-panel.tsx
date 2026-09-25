@@ -85,9 +85,7 @@ export function CheckActionsPanel({
   });
   const tables = floor.data?.areas.flatMap((area) => area.tables) ?? [];
   const freeTables = tables.filter((t) => t.openCheck === null && t.id !== check.tableId);
-  const mergeableTables = tables.filter(
-    (t) => t.openCheck !== null && t.openCheck.id !== check.id,
-  );
+  const mergeableTables = tables.filter((t) => t.openCheck !== null && t.openCheck.id !== check.id);
   const giftableItems = check.items.filter(
     (i) => i.cancelledAt === null && i.complimentaryAt === null,
   );

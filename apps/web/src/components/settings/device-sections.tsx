@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import { Printer, QrCode as QrIcon } from 'lucide-react';
 import { Panel } from '../ui/panel';
 import { Button } from '../ui/button';
@@ -6,6 +6,7 @@ import { SegmentedControl } from '../ui/segmented-control';
 import { useToast } from '../ui/toast';
 import { QrCode } from '../qr-code';
 import { PrintSheet } from '../print/print-sheet';
+import { usePrintJob } from '../print/use-print-job';
 import { APP_NAME } from '../../config/app-info';
 import { readPaperWidth, savePaperWidth, type PaperWidth } from '../../lib/print-settings';
 
@@ -13,8 +14,7 @@ import { readPaperWidth, savePaperWidth, type PaperWidth } from '../../lib/print
 export function PrinterSection(): JSX.Element {
   const { notify } = useToast();
   const [width, setWidth] = useState<PaperWidth>(readPaperWidth);
-  const [testing, setTesting] = useState(false);
-  const stopTesting = useCallback(() => setTesting(false), []);
+  const testPrint = usePrintJob();
   return (
     <Panel title="Yazıcı" meta="Bu cihaz için">
       <div className="grid gap-4 p-4 sm:p-5">
@@ -40,14 +40,14 @@ export function PrinterSection(): JSX.Element {
           <Button
             variant="outline"
             icon={<Printer aria-hidden="true" className="h-4 w-4" />}
-            onClick={() => setTesting(true)}
+            onClick={testPrint.print}
           >
             Deneme fişi yazdır
           </Button>
         </div>
       </div>
-      {testing ? (
-        <PrintSheet onDone={stopTesting}>
+      {testPrint.job === null ? null : (
+        <PrintSheet key={testPrint.job} onDone={testPrint.done}>
           <article className="receipt">
             <strong className="receipt__title receipt__center">{APP_NAME}</strong>
             <div className="receipt__rule" />
@@ -59,15 +59,14 @@ export function PrinterSection(): JSX.Element {
             <div className="receipt__rule" />
           </article>
         </PrintSheet>
-      ) : null}
+      )}
     </Panel>
   );
 }
 
 /** Masalara konacak QR menü kartı. Adres uygulamanın kendi origin'idir. */
 export function QrMenuSection(): JSX.Element {
-  const [printing, setPrinting] = useState(false);
-  const stopPrinting = useCallback(() => setPrinting(false), []);
+  const card = usePrintJob();
   const menuUrl = `${window.location.origin}/qr-menu`;
   return (
     <Panel title="QR menü" meta="Müşteri yalnız menüyü görür, sipariş veremez">
@@ -94,22 +93,22 @@ export function QrMenuSection(): JSX.Element {
             <Button
               variant="outline"
               icon={<QrIcon aria-hidden="true" className="h-4 w-4" />}
-              onClick={() => setPrinting(true)}
+              onClick={card.print}
             >
               QR kartını yazdır
             </Button>
           </div>
         </div>
       </div>
-      {printing ? (
-        <PrintSheet onDone={stopPrinting}>
+      {card.job === null ? null : (
+        <PrintSheet key={card.job} onDone={card.done}>
           <article className="receipt receipt__center">
             <strong className="receipt__title">{APP_NAME}</strong>
             <div>Menü için okutun</div>
             <QrCode value={menuUrl} label="QR menü kodu" className="mx-auto my-2 w-4/5" />
           </article>
         </PrintSheet>
-      ) : null}
+      )}
     </Panel>
   );
 }

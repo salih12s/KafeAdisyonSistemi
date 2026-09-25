@@ -7,6 +7,8 @@ import type { AppStore } from './store';
 
 /** En küçük birimde üst sınır: 10 ton / 10.000 litre / 10 milyon adet. */
 const MAX_QUANTITY = 10_000_000;
+/** Bir adet ürünün tüketebileceği en fazla miktar: 100 kg / 100 L / 100.000 adet. */
+const MAX_RECIPE_QUANTITY = 100_000;
 const quantity = z.number().int().min(1, 'Miktar sıfırdan büyük olmalıdır.').max(MAX_QUANTITY);
 const uuidParams = z.object({ id: z.string().uuid('Geçerli bir UUID girin.') });
 const reason = z
@@ -31,7 +33,14 @@ const movementBody = z.discriminatedUnion('type', [
   }),
 ]);
 const recipeBody = z.object({
-  lines: z.array(z.object({ stockItemId: z.string().uuid(), quantityPerUnit: quantity })).max(30),
+  lines: z
+    .array(
+      z.object({
+        stockItemId: z.string().uuid(),
+        quantityPerUnit: z.number().int().min(1).max(MAX_RECIPE_QUANTITY),
+      }),
+    )
+    .max(30),
 });
 
 export function createStockRouter(store: AppStore, authenticate: RequestHandler): Router {

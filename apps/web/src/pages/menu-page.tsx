@@ -1,6 +1,13 @@
 import { useState, type FormEvent, type ReactNode } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, ChevronRight, NotebookText, Pencil, Plus, SlidersHorizontal } from 'lucide-react';
+import {
+  ArrowLeft,
+  ChevronRight,
+  NotebookText,
+  Pencil,
+  Plus,
+  SlidersHorizontal,
+} from 'lucide-react';
 import {
   OPTION_SELECTION_TYPES,
   OPTION_SELECTION_TYPE_LABELS,
@@ -332,10 +339,7 @@ function CategoryPanel({
               {categories.map((category) => {
                 const isSelected = category.id === activeCategoryId;
                 return (
-                  <li
-                    key={category.id}
-                    className={isSelected ? 'bg-primary-soft/60' : undefined}
-                  >
+                  <li key={category.id} className={isSelected ? 'bg-primary-soft/60' : undefined}>
                     <div className="flex items-center gap-1 px-2 py-1.5">
                       <button
                         type="button"
@@ -896,11 +900,7 @@ function OptionDialog({
           required
         />
         {value === null ? null : (
-          <ActiveCheckbox
-            name="isActive"
-            defaultChecked={value.isActive}
-            label="Aktif seçenek"
-          />
+          <ActiveCheckbox name="isActive" defaultChecked={value.isActive} label="Aktif seçenek" />
         )}
       </FormDialog>
     );
@@ -970,9 +970,7 @@ function OptionDialog({
                       {index + 1}. {group.name}
                     </h3>
                     <div className="mt-1.5 flex flex-wrap gap-1.5">
-                      <Badge tone="info">
-                        {OPTION_SELECTION_TYPE_LABELS[group.selectionType]}
-                      </Badge>
+                      <Badge tone="info">{OPTION_SELECTION_TYPE_LABELS[group.selectionType]}</Badge>
                       <Badge tone={group.isRequired ? 'warning' : 'neutral'}>
                         {group.isRequired ? 'Zorunlu' : 'İsteğe bağlı'}
                       </Badge>
@@ -1007,7 +1005,9 @@ function OptionDialog({
                         <span className="min-w-0 flex-1">
                           <span className="block truncate text-sm font-medium">{value.name}</span>
                           <span className="block text-[12px] text-ink-secondary">
-                            <span className="tabular">{priceDeltaLabel(value.priceDeltaKurus)}</span>{' '}
+                            <span className="tabular">
+                              {priceDeltaLabel(value.priceDeltaKurus)}
+                            </span>{' '}
                             · Sıra {value.sortOrder}
                           </span>
                         </span>
