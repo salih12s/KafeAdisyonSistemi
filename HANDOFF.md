@@ -16,7 +16,7 @@ sonraki geliştiriciye devredilir.
 | **Base branch**     | `main`                                         |
 | **Ana geliştirici** | Codex                                          |
 | **Durum**           | **Tamamlandı — draft PR açık, merge edilmedi** |
-| **Son commit**      | `docs: walk through every feature with GIFs`   |
+| **Son commit**      | `docs: finalize feature GIF handoff`           |
 | **Son güncelleme**  | 2026-09-25                                     |
 
 Kullanıcının canlı sunucusu yok; proje GitHub'da vitrin olarak sergilenecek ve
