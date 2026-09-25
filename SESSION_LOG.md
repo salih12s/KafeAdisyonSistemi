@@ -1166,3 +1166,16 @@ değiştirilmedi, merge yapılmadı.
 - README kurulumsuz vitrin sayfasına çevrildi (proje hakkında, özellikler,
   ekranlar, teknik öne çıkanlar, mimari, kalite ve süreç, İngilizce özet).
 - `npm run verify` PASS: 243/243 test.
+
+## 2026-09-25 — Claude — Telefon akış GIF'i
+
+**Branch:** `docs/mobile-gif`
+**Sonuç:** README'ye "Telefonda" bölümü eklendi.
+
+- Kullanıcı masaüstü GIF'ini beğendi ve telefon akışının da eklenmesini istedi.
+- 390×844 telefon görünümünde, garson hesabıyla (`mert`) kayıt: boş masayı açma,
+  seçenekli ürün, aramayla tatlı, sipariş kalemleri, mutfak ekranı ve müşterinin
+  QR menüsü. Dokunmalar parmak izi halkasıyla gösterilir.
+  `docs/screenshots/demo-mobile.gif` (3,64 MB).
+- Kayıtların demo veritabanında açtığı Masa 8 her denemeden sonra API ile iptal
+  edilip kapatıldı; kullanıcının veritabanına dokunulmadı.
