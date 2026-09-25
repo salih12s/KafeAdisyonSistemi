@@ -56,6 +56,20 @@ telefon, tablet ve masaüstünde çalışır.
   </tr>
 </table>
 
+## Telefonda
+
+<table>
+  <tr>
+    <td width="42%" align="center"><img src="docs/screenshots/demo-mobile.gif" alt="Telefonda masa açma, sipariş, mutfak ve QR menü" width="300" /></td>
+    <td width="58%" valign="top">
+      <b>Garson telefonu</b> — Masayı telefondan açar, seçenekli ürünü alt panelden ekler, menüde arar ve adisyonun toplamını anında görür.<br /><br />
+      <b>Mutfak tableti</b> — Sipariş, garson "Siparişe ekle"ye bastığı an mutfak ekranına düşer; hazırlık durumu tek dokunuşla ilerler.<br /><br />
+      <b>Müşteri QR menüsü</b> — Masadaki kodu okutan müşteri, giriş yapmadan güncel menüyü, seçenekleri ve fiyatları görür.<br /><br />
+      Tüm ekranlar telefon, tablet ve masaüstüne göre uyarlanır; dokunma hedefleri en az 44 piksel, yatay taşma yoktur. Uygulama telefona ve tablete ana ekran uygulaması olarak kurulabilir.
+    </td>
+  </tr>
+</table>
+
 ## Ekranlar
 
 <table>
