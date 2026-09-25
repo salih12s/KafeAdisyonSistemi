@@ -7,7 +7,8 @@ const FALLBACK_BUSINESS_NAME = 'Menü';
 
 /**
  * Oturum gerektirmeyen uçlar. Yalnız okuma yapar ve yalnız müşteriye zaten
- * açık olan bilgiyi (aktif menü, fiyat, işletme adı) döndürür. QR menü içindir.
+ * açık olan bilgiyi (aktif menü, fiyat, işletme adı, telefon, adres) döndürür.
+ * QR menü içindir.
  */
 export function createPublicMenuRouter(store: AppStore): Router {
   const router = Router();
@@ -22,6 +23,8 @@ export function createPublicMenuRouter(store: AppStore): Router {
     const [menu, business] = await Promise.all([store.getMenu(), store.getBusinessSettings()]);
     const body: PublicMenuResponse = {
       businessName: business?.businessName ?? FALLBACK_BUSINESS_NAME,
+      phone: business?.phone ?? null,
+      address: business?.address ?? null,
       categories: menu.categories.filter((category) => category.products.length > 0),
     };
     // Menü sık değişmez; kısa önbellek aynı masadaki telefonların yükünü azaltır.

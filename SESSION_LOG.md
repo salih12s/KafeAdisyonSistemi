@@ -1230,3 +1230,28 @@ değiştirilmedi, merge yapılmadı.
 - Draft PR #17 açıldı. GitHub Actions hesabın faturalama nedeniyle kilitli
   olması yüzünden işi başlatmadı (check annotation); yerel `npm run verify` ve
   `npm run format:check` geçti. Merge yapılmadı.
+
+## 2026-09-25 — Claude — Fotoğraflı müşteri QR menüsü
+
+**Branch:** `feat/qr-menu-showcase`
+**Sonuç:** Tamamlandı; PR #18 açıldı. Merge izin sistemince reddedildi, kullanıcıya bırakıldı.
+
+- Önce kullanıcının açık izniyle PR #17 (`docs/feature-gifs`) `main`'e alındı.
+- Kullanıcı QR menünün personel ekranlarından ayrı, fotoğraflı ve açıklamalı
+  bir müşteri sayfası olmasını istedi; amaç GitHub vitrininde iyi görünmesi.
+  Görsel depolama ve migration sorulduğunda "migration yok, en hızlı yol,
+  ücretsiz stok fotoğraf" yanıtını verdi.
+- Unsplash arama sayfalarından aday toplandı, 128 aday küçük boyutta indirilip
+  toplu önizlemeyle seçildi; 22 ürün ve 1 kapak fotoğrafı 800×600 / 1600×900
+  WebP'ye kırpıldı. Fotoğrafçı kullanıcı adları indirme yönlendirmesinden alındı.
+- `showcase.ts` katalogu ürün adına göre fotoğraf, açıklama ve "öne çıkan"
+  bilgisini verir; açıklamalar gerçek işletmede yanlış olabilecek somut
+  iddialardan arındırıldı. Katalogda olmayan ürün fotoğrafsız listelenir.
+- Sayfa: kapak, kategori çubuğu (IntersectionObserver ile etkin bölüm), öne
+  çıkanlar şeridi, ürün satırları, ortak `Dialog` ile ürün ayrıntısı, alt bilgi.
+  Public menü ucu telefon/adres döndürür; API testi ve 3 yeni web testi eklendi.
+- Demo sunucusunda (KafeAdisyonDemoVitrin) 390 px telefon ve 1280 px masaüstünde
+  ekran görüntüsüyle doğrulandı: yatay taşma 0, konsol hatası yok. GIF CDP
+  screencast ile çekildi, Pillow + gifsicle ile 5,7 MB'a sıkıştırıldı.
+- `npm run verify` PASS: 248 test (API 166, web 82); `format:check` PASS.
+  Veritabanına yazılmadı.

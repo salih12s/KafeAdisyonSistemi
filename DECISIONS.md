@@ -550,3 +550,30 @@ sahte veri yoktur, gerçek veritabanına yanlışlıkla yazılamaz.
 görüntüleri günün hangi saatinde alınırsa alınsın gün içi bir an gösterir.
 Store'lar üzerinden üretildiği için fiyat, stok düşümü, kasa ve rapor tutarları
 gerçek akışla tutarlıdır.
+
+## ADR-025 — QR menü müşteri vitrinidir; görseller migration'sız statik katalogdan gelir
+
+- **Tarih:** 2026-09-25
+- **Durum:** Kabul edildi
+- **İlgili:** ADR-023 (QR menü oturumsuz), AGENTS.md §9 (migration onayı), §11 (sahte veri yok)
+
+**Karar.** `/qr-menu` personel uygulamasının kabuğundan, gezinmesinden ve oturum
+kontrolünden bağımsız, fotoğraflı ve açıklamalı bir müşteri sayfasıdır: kapak
+fotoğrafı, işletme adı ve adresi, yapışkan kategori çubuğu, "Öne çıkanlar"
+şeridi, fotoğraflı ürün satırları ve seçenek fiyatlarını gösteren ürün ayrıntısı.
+Kullanıcı bu tur migration istemedi; ürün tablosuna görsel/açıklama alanı
+eklenmedi. Fotoğraf ve açıklama `apps/web/src/features/qr-menu/showcase.ts`
+kataloğunda ürün adına göre eşlenir; dosyalar `apps/web/public/menu-photos/`
+altındadır (Unsplash lisansı, kaynaklar `CREDITS.md`). Katalogda olmayan ürün
+fotoğrafsız, yalnız ad ve fiyatla listelenir. `/api/public/menu` işletmenin
+müşteriye açık telefon ve adresini de döndürür.
+
+**Gerekçe.** Amaç GitHub vitrininde müşteri deneyimini gerçekçi göstermektir.
+Menü verisi (ürün, fiyat, seçenek) her zaman API'den gelir; katalog yalnız sunum
+katmanıdır ve fiyat, stok veya ciro üretmez. Açıklamalar gerçek bir işletmede
+yanlış olabilecek somut iddialardan kaçınır; sayfa "ürün fotoğrafları temsilidir"
+notunu gösterir.
+
+**Sonuç.** Gerçek işletme kendi fotoğraflarını kullanmak isterse kalıcı çözüm
+`Product` tablosuna additive `description` ve görsel alanları ile menü
+yönetiminde yükleme ekranıdır; bu, kullanıcı onayıyla ayrı bir iş olarak yapılır.
