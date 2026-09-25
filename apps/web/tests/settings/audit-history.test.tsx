@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { App } from '../../src/app/app';
 import { renderWithProviders, stubAppFetch } from '../helpers/render';
 
-describe('Phase 7 işlem geçmişi', () => {
+describe('İşlem geçmişi', () => {
   it('OWNER güvenli metadata ile salt okunur audit kayıtlarını filtreler', async () => {
     stubAppFetch({
       staff: [

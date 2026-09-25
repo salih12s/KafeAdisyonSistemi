@@ -11,8 +11,8 @@ import { createCorsHandler } from './middleware/cors';
 import { createErrorHandler } from './middleware/error-handler';
 import { createNotFoundHandler } from './middleware/not-found';
 import { createRequestLogger } from './middleware/request-logger';
-import type { AppStore } from './features/store';
-import type { OrderEventPublisher } from './features/order-events';
+import type { AppStore } from './shared/store';
+import type { OrderEventPublisher } from './modules/orders/order-events';
 
 export interface CreateAppOptions {
   env: Env;

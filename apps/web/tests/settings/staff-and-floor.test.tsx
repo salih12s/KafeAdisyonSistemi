@@ -6,7 +6,7 @@ import { recordedRequests, renderWithProviders, stubAppFetch } from '../helpers/
 
 const areaId = '00000000-0000-4000-8000-000000000010';
 
-describe('Phase 1 yönetim ve floor plan', () => {
+describe('Yönetim ve floor plan', () => {
   it('personel listesini ve ekleme formunu gösterir', async () => {
     stubAppFetch({
       staff: [

@@ -1,4 +1,4 @@
-import type { AuthenticatedIdentity } from '../features/identity-service';
+import type { AuthenticatedIdentity } from '../modules/identity/identity-service';
 
 declare global {
   namespace Express {

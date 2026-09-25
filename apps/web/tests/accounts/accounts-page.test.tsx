@@ -28,7 +28,7 @@ const customer = {
   ],
 };
 
-describe('Phase 6 cari ekranı', () => {
+describe('Cari ekranı', () => {
   it('müşteri arama, bakiye ve ekstreyi gösterir', async () => {
     stubAppFetch({ customers: [customer], customer });
     const user = userEvent.setup();

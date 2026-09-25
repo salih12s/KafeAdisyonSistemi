@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { PrismaClient } from '@prisma/client';
-import { createPrismaAccountStore } from '../../apps/api/src/features/prisma-account-store.ts';
+import { createPrismaAccountStore } from '../../apps/api/src/modules/accounts/prisma-account-store.ts';
 
 const baseUrl = process.env.UAT_BASE_URL;
 const databaseUrl = process.env.DATABASE_URL;

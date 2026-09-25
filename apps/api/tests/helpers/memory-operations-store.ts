@@ -21,14 +21,14 @@ import {
   type StockItemUpdateInput,
   type StockMovementInput,
   type StockStore,
-} from '../../src/features/store';
-import { buildCashSession, type CashSessionSource } from '../../src/features/cash-calculations';
+} from '../../src/shared/store';
+import { buildCashSession, type CashSessionSource } from '../../src/modules/cash/cash-calculations';
 import {
   manualMovementDelta,
   saleConsumption,
   toStockItem,
   type StockItemSource,
-} from '../../src/features/stock-calculations';
+} from '../../src/modules/stock/stock-calculations';
 import { MemoryOrderStore } from './memory-order-store';
 
 interface MemoryCashSession extends Omit<CashSessionSource, 'movements'> {

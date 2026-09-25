@@ -3,8 +3,8 @@ import { createApp } from '../../src/app';
 import type { Env } from '../../src/config/env';
 import type { DatabaseProbe } from '../../src/lib/database';
 import { createSilentLogger } from '../../src/lib/logger';
-import type { AppStore } from '../../src/features/store';
-import type { OrderEventPublisher } from '../../src/features/order-events';
+import type { AppStore } from '../../src/shared/store';
+import type { OrderEventPublisher } from '../../src/modules/orders/order-events';
 
 export const testEnv: Env = {
   NODE_ENV: 'test',

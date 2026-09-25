@@ -104,7 +104,7 @@ const kitchenOrders = [
   },
 ];
 
-describe('Phase 4 mutfak ve realtime arayüzü', () => {
+describe('Mutfak ve realtime arayüzü', () => {
   it('siparişleri durum, istasyon, seçenek, not ve bekleme süresiyle gösterir', async () => {
     stubAppFetch({ kitchenOrders });
     renderWithProviders(<App />, '/mutfak');

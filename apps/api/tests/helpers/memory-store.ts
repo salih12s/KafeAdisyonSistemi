@@ -20,7 +20,7 @@ import {
   type TableWriteInput,
   type UpdateStaffInput,
   type UserWithPassword,
-} from '../../src/features/store';
+} from '../../src/shared/store';
 import type { MemoryAuditEntry } from './memory-menu-store';
 import { MemoryOperationsStore } from './memory-operations-store';
 

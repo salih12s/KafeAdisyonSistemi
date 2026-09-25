@@ -142,7 +142,7 @@ const salesMenu = {
   ],
 };
 
-describe('Phase 3 masa ve adisyon ekranı', () => {
+describe('Masa ve adisyon ekranı', () => {
   it('masa kartında açık/boş durumu, toplam ve açık süreyi gösterir', async () => {
     stubAppFetch({ floorPlan: floor() });
     renderWithProviders(<App />, '/masalar');

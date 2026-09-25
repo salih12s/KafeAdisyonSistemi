@@ -43,7 +43,7 @@ const dayEnd = {
   complimentaryTotalKurus: 8_000,
 };
 
-describe('Phase 7 rapor ekranı', () => {
+describe('Rapor ekranı', () => {
   it('gün sonu ve satış kırılımlarını gerçek API verisiyle gösterir', async () => {
     stubAppFetch({ salesReport: report, dayEnd });
     renderWithProviders(<App />, '/raporlar');
