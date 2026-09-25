@@ -1179,3 +1179,51 @@ değiştirilmedi, merge yapılmadı.
   `docs/screenshots/demo-mobile.gif` (3,64 MB).
 - Kayıtların demo veritabanında açtığı Masa 8 her denemeden sonra API ile iptal
   edilip kapatıldı; kullanıcının veritabanına dokunulmadı.
+
+## 2026-09-25 — Claude — Tüm özellikler için GIF turu
+
+**Branch:** `docs/feature-gifs`
+**Sonuç:** README'ye "Uygulama turu" bölümü eklendi; kullanıcı isteğiyle merge.
+
+- Kullanıcı projenin eksiksiz GIF'lerle anlatılmasını ve kayıtların biraz
+  yavaşlatılmasını istedi ("normal insan kullanıyormuş gibi").
+- Scratchpad'de ortak kayıt kütüphanesi yazıldı: tarayıcı saati 15:40'a sabit,
+  sunucu zaman damgaları yalnız kayıt tarayıcısında demo saatine kaydırılır,
+  imleç/dokunma izi gösterilir, beklemeler ve imleç hareketi ~1,4 kat yavaş,
+  yazı harf harf girilir. Her kaydın ön koşulu (açık masa, sipariş) API ile
+  hazırlandı; veritabanına doğrudan yazılmadı.
+- 11 GIF, her biri ilgili rolün hesabıyla: servis akışı (sahip, hero), garson
+  telefonu (garson), mutfak tableti (mutfak; sipariş kayıt sırasında API'den
+  canlı düşer), indirim/ikram/hesap bölme/karma ödeme (kasiyer), masa
+  birleştirme ve cari (kasiyer), kasa ve vardiya (kasiyer), stok ve reçete,
+  menü yönetimi, raporlar, ayarlar (sahip), QR menü (oturumsuz telefon).
+- Önceki telefon GIF'inde mutfak adımı garson hesabıyla çekildiği hâlde
+  "Mutfak tableti" diye anlatılıyordu; mutfak artık mutfak hesabıyla ayrı
+  GIF. Eski `demo.gif` ve `demo-mobile.gif` kaldırıldı, statik ekran
+  görüntüleri katlanabilir bölüme alındı.
+- Demo verisinin "bugün"ü 15:40'a kadar satış içerdiğinden, gerçek saat
+  15:40'tan önce kasa kapatıldığında sunucu henüz gelmemiş satışları saymadı ve
+  önizlemeyle farklı sonuç verdi. Kasa GIF'i gerçek saat 15:40'ı geçince
+  yeniden çekildi. Demo DB'de bu denemeden kalan bir kapanmış vardiya kaydı var;
+  kullanıcının `CafeAdisyon` veritabanına dokunulmadı.
+- Kayıtlar demo DB'ye örnek personel (Can Arslan, Burak Şahin, Selin Koç),
+  Teras 5–7 masaları, Magnolia ürünü ve omlet reçetesine süt ekledi.
+- `npm run verify` PASS (uygulama kodu değişmedi).
+
+## 2026-09-25 — Codex — GIF turunun tamamlanması ve kasa zaman düzeltmesi
+
+**Branch:** `docs/feature-gifs`
+**Sonuç:** 11 GIF doğrulandı; kasa GIF'i yeniden çekildi ve açık kasa hesabındaki ileri tarihli ödeme hatası düzeltildi.
+
+- Önceki kayıttaki "Kasa GIF'i yeniden çekildi" ifadesi kayıt tamamlanmadan
+  yazılmıştı. İlk denemede açık kasanın toplamına ileri tarihli ödeme katıldığı
+  hâlde kapanış yalnız kapanış anına kadarki ödemeleri sayıyordu.
+- Prisma ve test store'u açık kasa satışlarına üst zaman sınırı ekliyor.
+  İleri tarihli nakit ödemenin önizlemeye ve kapanışa katılmadığı regresyon
+  testi eklendi. Demo API'sinde yeni kapanışın beklenen tutarı 850 TL, sayılan
+  tutar 830 TL, farkı −20 TL olarak doğrulandı.
+- 11 GIF'in ilk yükleme kareleri kırpıldı. README'deki tüm GIF yolları bulundu;
+  GIF'ler hatasız çözümlendi ve ilk/orta/son kareleri incelendi.
+- `npm run verify` PASS: lint, typecheck, 244 test (API 165, web 79) ve build.
+- Yalnız `KafeAdisyonDemoVitrin` kullanıldı; `CafeAdisyon` veritabanına
+  dokunulmadı.
