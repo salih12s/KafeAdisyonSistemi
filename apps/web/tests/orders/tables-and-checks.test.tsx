@@ -209,6 +209,40 @@ describe('Masa ve adisyon ekranı', () => {
     });
   });
 
+  it('ürün araması seçili kategoriyle sınırlı kalmaz, tüm menüde arar', async () => {
+    const menuWithDesserts = {
+      categories: [
+        ...salesMenu.categories,
+        {
+          id: '00000000-0000-4000-8000-000000000120',
+          name: 'Tatlılar',
+          sortOrder: 1,
+          products: [
+            {
+              id: '00000000-0000-4000-8000-000000000121',
+              name: 'San Sebastian',
+              priceKurus: 25000,
+              preparationArea: 'KITCHEN',
+              sortOrder: 0,
+              optionGroups: [],
+            },
+          ],
+        },
+      ],
+    };
+    stubAppFetch({ floorPlan: floor(), check, salesMenu: menuWithDesserts });
+    const user = userEvent.setup();
+    renderWithProviders(<App />, '/masalar');
+    await user.click(await screen.findByRole('button', { name: /Masa 1/ }));
+    await screen.findByText('Masa 1 adisyonu');
+    const menuPanel = screen.getByRole('heading', { name: 'Menü' }).closest('section');
+    if (menuPanel === null) throw new Error('Menü paneli bulunamadı.');
+    expect(within(menuPanel).queryByRole('button', { name: /San Sebastian/ })).toBeNull();
+    await user.type(within(menuPanel).getByLabelText('Ürün ara'), 'san');
+    expect(within(menuPanel).getByRole('button', { name: /San Sebastian/ })).toBeInTheDocument();
+    expect(within(menuPanel).queryByRole('button', { name: /Latte/ })).toBeNull();
+  });
+
   it('adet alanı tamamen silinebilir ve yeni adet yazılabilir', async () => {
     stubAppFetch({ floorPlan: floor(), check, salesMenu });
     const user = userEvent.setup();

@@ -69,6 +69,14 @@ export function CheckView({
   }
 
   const category = menu.data.categories.find((entry) => entry.id === selectedCategoryId);
+  // Arama yazıldığında tüm menüde aranır; garson ürünün kategorisini bilmek zorunda kalmaz.
+  const query = search.trim().toLocaleLowerCase('tr');
+  const visibleProducts =
+    query === ''
+      ? (category?.products ?? [])
+      : menu.data.categories
+          .flatMap((entry) => entry.products)
+          .filter((product) => product.name.toLocaleLowerCase('tr').includes(query));
   const canManage = canManageRole && check.data.status === 'OPEN';
 
   return (
@@ -150,25 +158,21 @@ export function CheckView({
                 </label>
               </div>
               <ul className="grid grid-cols-2 gap-3 p-3 sm:grid-cols-3 lg:grid-cols-4">
-                {category?.products
-                  .filter((product) =>
-                    product.name.toLocaleLowerCase('tr').includes(search.toLocaleLowerCase('tr')),
-                  )
-                  .map((product) => (
-                    <li key={product.id}>
-                      <button
-                        type="button"
-                        disabled={!canManage}
-                        onClick={() => setSelectedProduct(product)}
-                        className="interactive-card min-h-28 w-full p-3 text-left hover:border-primary disabled:cursor-default"
-                      >
-                        <span className="block font-semibold">{product.name}</span>
-                        <span className="tabular mt-3 block text-sm font-bold text-primary">
-                          {formatKurus(product.priceKurus)}
-                        </span>
-                      </button>
-                    </li>
-                  ))}
+                {visibleProducts.map((product) => (
+                  <li key={product.id}>
+                    <button
+                      type="button"
+                      disabled={!canManage}
+                      onClick={() => setSelectedProduct(product)}
+                      className="interactive-card min-h-28 w-full p-3 text-left hover:border-primary disabled:cursor-default"
+                    >
+                      <span className="block font-semibold">{product.name}</span>
+                      <span className="tabular mt-3 block text-sm font-bold text-primary">
+                        {formatKurus(product.priceKurus)}
+                      </span>
+                    </button>
+                  </li>
+                ))}
               </ul>
               {!canManage ? (
                 <p className="border-t border-line p-3 text-sm text-ink-muted">
