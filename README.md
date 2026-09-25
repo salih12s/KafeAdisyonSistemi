@@ -25,13 +25,28 @@ uygulaması.
 
 ## Neler yapıyor?
 
-|                                                                                                                                                            |                                                                                                                                                     |
-| ---------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Masa ve adisyon** — Salon bazlı masa planı, açık süre ve tutar; seçenekli ürünler (süt tipi, ekstra shot), not, adet, gerekçeli iptal, ikram ve indirim. | **Gerçek zamanlı mutfak** — Siparişler Socket.IO ile anında mutfak/bar ekranına düşer; Yeni → Hazırlanıyor → Hazır akışı ve bekleme süresi uyarısı. |
-| **Ödeme** — Nakit, kart, karma ödeme; tutara, kaleme veya kişiye göre hesap bölme; para üstü; cariye aktarma.                                              | **Kasa (vardiya)** — Açılış nakdi, nakit giriş/çıkış, vardiya sonu sayım ve **otomatik sayım farkı**.                                               |
-| **Stok ve reçete** — Ürün reçetesine göre satışta otomatik düşüm, alım/fire/sayım hareketleri, eşik altı uyarısı.                                          | **Raporlar** — Gün sonu, günlük ciro grafiği, ödeme türü, ürün/kategori/personel satışları, indirim ve ikram dökümü.                                |
-| **QR menü** — Masadaki koddan açılan, oturumsuz, mobil uyumlu menü; ayarlardan yazdırılabilir QR kartı.                                                    | **Termal fiş** — 80/58 mm adisyon bilgi fişi ve mutfak fişi; ek sürücü gerektirmeden tarayıcıdan.                                                   |
-| **Cari hesap** — Müşteri bazlı borç, tahsilat ve ekstre; bakiye hareketlerden türetilir.                                                                   | **Roller ve güvenlik** — İşletme sahibi, kasiyer, garson ve mutfak rolleri; yönetim ve para işlemleri işlem geçmişine yazılır.                      |
+<table>
+  <tr>
+    <td width="50%" valign="top"><b>Masa ve adisyon</b> — Salon bazlı masa planı, açık süre ve tutar; seçenekli ürünler (süt tipi, ekstra shot), not, adet, gerekçeli iptal, ikram ve indirim.</td>
+    <td width="50%" valign="top"><b>Gerçek zamanlı mutfak</b> — Siparişler Socket.IO ile anında mutfak/bar ekranına düşer; Yeni → Hazırlanıyor → Hazır akışı ve bekleme süresi uyarısı.</td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top"><b>Ödeme</b> — Nakit, kart, karma ödeme; tutara, kaleme veya kişiye göre hesap bölme; para üstü; cariye aktarma.</td>
+    <td width="50%" valign="top"><b>Kasa (vardiya)</b> — Açılış nakdi, nakit giriş/çıkış, vardiya sonu sayım ve <b>otomatik sayım farkı</b>.</td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top"><b>Stok ve reçete</b> — Ürün reçetesine göre satışta otomatik düşüm, alım/fire/sayım hareketleri, eşik altı uyarısı.</td>
+    <td width="50%" valign="top"><b>Raporlar</b> — Gün sonu, günlük ciro grafiği, ödeme türü, ürün/kategori/personel satışları, indirim ve ikram dökümü.</td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top"><b>QR menü</b> — Masadaki koddan açılan, oturumsuz, mobil uyumlu menü; ayarlardan yazdırılabilir QR kartı.</td>
+    <td width="50%" valign="top"><b>Termal fiş</b> — 80/58 mm adisyon bilgi fişi ve mutfak fişi; ek sürücü gerektirmeden tarayıcıdan.</td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top"><b>Cari hesap</b> — Müşteri bazlı borç, tahsilat ve ekstre; bakiye hareketlerden türetilir.</td>
+    <td width="50%" valign="top"><b>Roller ve güvenlik</b> — İşletme sahibi, kasiyer, garson ve mutfak rolleri; yönetim ve para işlemleri işlem geçmişine yazılır.</td>
+  </tr>
+</table>
 
 ## Ekranlar
 
@@ -89,19 +104,21 @@ uygulaması.
 
 ```mermaid
 flowchart LR
-  subgraph Tarayıcı["Tarayıcı / tablet / telefon"]
-    UI["React 18 + TanStack Query<br/>features/&lt;alan&gt;/"]
+  subgraph Client["Tarayıcı · tablet · telefon"]
+    UI["React 18 + TanStack Query<br/>apps/web/src/features/*"]
   end
-  subgraph Sunucu["Node.js — tek origin"]
+  subgraph Server["Node.js · tek origin"]
     API["Express 5<br/>routes/index.ts"]
-    MOD["modules/&lt;modül&gt;<br/>routes · store · calculations"]
+    MOD["modules/*<br/>routes · store · calculations"]
     RT["Socket.IO<br/>sipariş olayları"]
   end
   DB[("PostgreSQL<br/>Prisma")]
   C["packages/contracts<br/>ortak tipler"]
-  UI -- "/api (REST, cookie oturumu)" --> API --> MOD --> DB
-  RT -. "değişiklik sinyali" .-> UI
+  UI -->|"/api · REST · cookie oturumu"| API
+  API --> MOD
+  MOD --> DB
   MOD --> RT
+  RT -.->|değişiklik sinyali| UI
   C -.-> UI
   C -.-> MOD
 ```
