@@ -1234,7 +1234,7 @@ değiştirilmedi, merge yapılmadı.
 ## 2026-09-25 — Claude — Fotoğraflı müşteri QR menüsü
 
 **Branch:** `feat/qr-menu-showcase`
-**Sonuç:** Tamamlandı; kullanıcı izniyle PR açıldı ve merge edildi.
+**Sonuç:** Tamamlandı; PR #18 açıldı. Merge izin sistemince reddedildi, kullanıcıya bırakıldı.
 
 - Önce kullanıcının açık izniyle PR #17 (`docs/feature-gifs`) `main`'e alındı.
 - Kullanıcı QR menünün personel ekranlarından ayrı, fotoğraflı ve açıklamalı

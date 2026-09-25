@@ -15,7 +15,7 @@ sonraki geliştiriciye devredilir.
 | **Branch**          | `feat/qr-menu-showcase`                                  |
 | **Base branch**     | `main`                                                   |
 | **Ana geliştirici** | Claude                                                   |
-| **Durum**           | **Tamamlandı — PR açıldı, kullanıcı izniyle merge**      |
+| **Durum**           | **Tamamlandı — PR #18 açık, merge kullanıcıda**          |
 | **Son commit**      | `feat: turn the QR menu into a photo-rich customer page` |
 | **Son güncelleme**  | 2026-09-25                                               |
 
