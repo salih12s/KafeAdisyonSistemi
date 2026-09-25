@@ -1,47 +1,16 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  ORDER_ITEM_STATUS_LABELS,
-  PREPARATION_AREA_LABELS,
-  type KitchenOrderResponse,
-  type OrderItemStatus,
-  type PreparationArea,
-} from '@kafe/contracts';
-import { ChefHat, Clock3, Flame, Martini, Printer, Wifi } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import type { PreparationArea } from '@kafe/contracts';
+import { ChefHat, Wifi } from 'lucide-react';
 import { useState } from 'react';
-import { ApiError } from '../../../shared/api/http';
-import { fetchKitchenOrders, updateOrderItemStatus } from '../api';
+import { fetchKitchenOrders } from '../api';
 import { SegmentedControl } from '../../../shared/ui/segmented-control';
-import { Button } from '../../../shared/ui/button';
 import { Badge } from '../../../shared/ui/badge';
 import { ErrorState } from '../../../shared/ui/error-state';
 import { Skeleton } from '../../../shared/ui/skeleton';
-import { PrintSheet } from '../../printing/components/print-sheet';
-import { usePrintJob } from '../../printing/hooks/use-print-job';
-import { KitchenTicket } from '../../printing/components/receipts';
+import { OrderColumn } from '../components/order-column';
+import { ACTIVE_STATUSES } from '../kitchen-status';
 
 type StationFilter = 'ALL' | PreparationArea;
-const ACTIVE_STATUSES = ['SENT', 'PREPARING', 'READY'] as const;
-const NEXT_STATUS: Record<(typeof ACTIVE_STATUSES)[number], OrderItemStatus> = {
-  SENT: 'PREPARING',
-  PREPARING: 'READY',
-  READY: 'SERVED',
-};
-const ACTION_LABEL: Record<(typeof ACTIVE_STATUSES)[number], string> = {
-  SENT: 'Hazırlamaya başla',
-  PREPARING: 'Hazır',
-  READY: 'Servis edildi',
-};
-const STATUS_ACCENT = {
-  SENT: 'border-t-kds-info',
-  PREPARING: 'border-t-kds-warning',
-  READY: 'border-t-kds-success',
-} as const;
-
-type ActiveStatus = (typeof ACTIVE_STATUSES)[number];
-
-function isActiveStatus(status: OrderItemStatus): status is ActiveStatus {
-  return ACTIVE_STATUSES.some((candidate) => candidate === status);
-}
 
 export function KitchenPage(): JSX.Element {
   const [filter, setFilter] = useState<StationFilter>('ALL');
@@ -117,147 +86,4 @@ export function KitchenPage(): JSX.Element {
       </div>
     </div>
   );
-}
-
-function OrderColumn({
-  status,
-  orders,
-}: {
-  status: (typeof ACTIVE_STATUSES)[number];
-  orders: KitchenOrderResponse[];
-}): JSX.Element {
-  return (
-    <section aria-labelledby={`kds-${status}`}>
-      <header className="mb-3 flex items-center justify-between px-1">
-        <h2 id={`kds-${status}`} className="text-sm font-extrabold uppercase tracking-[0.12em]">
-          {ORDER_ITEM_STATUS_LABELS[status]}
-        </h2>
-        <span className="tabular rounded-full bg-kds-elevated px-2.5 py-1 text-xs font-bold text-kds-muted">
-          {orders.length}
-        </span>
-      </header>
-      {orders.length === 0 ? (
-        <div className="rounded-card border border-dashed border-kds-line p-8 text-center text-sm text-kds-muted">
-          Bu durumda sipariş yok.
-        </div>
-      ) : (
-        <ul className="grid gap-3">
-          {orders.map((order) => (
-            <KitchenOrderCard key={order.itemId} order={order} />
-          ))}
-        </ul>
-      )}
-    </section>
-  );
-}
-
-function KitchenOrderCard({ order }: { order: KitchenOrderResponse }): JSX.Element | null {
-  const queryClient = useQueryClient();
-  const ticket = usePrintJob();
-  const status = isActiveStatus(order.preparationStatus) ? order.preparationStatus : null;
-  const mutation = useMutation({
-    mutationFn: () => {
-      if (status === null) throw new ApiError('Siparişin hazırlık durumu geçersiz.');
-      return updateOrderItemStatus(order.itemId, NEXT_STATUS[status]);
-    },
-    onSuccess: (check) => {
-      queryClient.setQueryData(['check', check.id], check);
-      void queryClient.invalidateQueries({ queryKey: ['kitchen-orders'] });
-    },
-  });
-  if (status === null) return null;
-  const waitMinutes = Math.max(
-    0,
-    Math.floor((Date.now() - new Date(order.createdAt).getTime()) / 60_000),
-  );
-  const urgency = waitMinutes >= 20 ? 'danger' : waitMinutes >= 10 ? 'warning' : 'neutral';
-
-  return (
-    <li
-      className={`ticket-enter overflow-hidden rounded-card border border-kds-line border-t-4 ${STATUS_ACCENT[status]} bg-kds-surface shadow-card`}
-    >
-      <div className="p-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-lg font-black leading-tight">
-              {order.quantity} × {order.productNameSnapshot}
-            </p>
-            <p className="mt-1 text-sm font-bold text-kds-muted">{order.tableName}</p>
-          </div>
-          <span
-            title={PREPARATION_AREA_LABELS[order.preparationArea]}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-control bg-kds-elevated text-kds-muted"
-          >
-            {order.preparationArea === 'BAR' ? (
-              <Martini className="h-5 w-5" />
-            ) : (
-              <Flame className="h-5 w-5" />
-            )}
-          </span>
-        </div>
-        {order.options.length > 0 ? (
-          <ul className="mt-3 space-y-1 border-l-2 border-kds-line pl-3 text-sm text-kds-muted">
-            {order.options.map((option) => (
-              <li key={`${option.groupNameSnapshot}-${option.valueNameSnapshot}`}>
-                {option.groupNameSnapshot}: {option.valueNameSnapshot}
-              </li>
-            ))}
-          </ul>
-        ) : null}
-        {order.note === null ? null : (
-          <p className="mt-3 rounded-control bg-kds-elevated px-3 py-2 text-sm">
-            <span className="font-bold text-kds-info">Not:</span> {order.note}
-          </p>
-        )}
-        <div className="mt-3 flex items-center justify-between">
-          <Badge tone={urgency} icon={<Clock3 className="h-3.5 w-3.5" />}>
-            Bekleme: {formatWaitTime(order.createdAt)}
-          </Badge>
-          <span className="text-xs text-kds-muted">
-            {PREPARATION_AREA_LABELS[order.preparationArea]}
-          </span>
-        </div>
-      </div>
-      <div className="border-t border-kds-line p-3">
-        <div className="flex gap-2">
-          <button
-            type="button"
-            aria-label={`${order.productNameSnapshot} fişini yazdır`}
-            title="Fişi yazdır"
-            onClick={ticket.print}
-            className="flex min-h-touch w-11 shrink-0 items-center justify-center rounded-input border border-kds-line text-kds-muted transition hover:bg-kds-elevated hover:text-kds-ink"
-          >
-            <Printer aria-hidden="true" className="h-4 w-4" />
-          </button>
-          <Button
-            type="button"
-            variant={status === 'READY' ? 'success' : 'primary'}
-            size="touch"
-            className="flex-1"
-            loading={mutation.isPending}
-            onClick={() => mutation.mutate()}
-          >
-            {ACTION_LABEL[status]}
-          </Button>
-        </div>
-        {ticket.job === null ? null : (
-          <PrintSheet key={ticket.job} onDone={ticket.done}>
-            <KitchenTicket order={order} />
-          </PrintSheet>
-        )}
-        {mutation.isError ? (
-          <p role="alert" className="mt-2 text-sm text-danger">
-            {mutation.error instanceof ApiError ? mutation.error.message : 'Durum değiştirilemedi.'}
-          </p>
-        ) : null}
-      </div>
-    </li>
-  );
-}
-
-function formatWaitTime(createdAt: string): string {
-  const minutes = Math.max(0, Math.floor((Date.now() - new Date(createdAt).getTime()) / 60_000));
-  if (minutes < 1) return '1 dakikadan az';
-  if (minutes < 60) return `${minutes} dk`;
-  return `${Math.floor(minutes / 60)} sa ${minutes % 60} dk`;
 }

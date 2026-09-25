@@ -9,7 +9,6 @@ import {
   type PaymentSplitMode,
   type PaymentSplitResponse,
 } from '@kafe/contracts';
-import { ApiError } from '../../../shared/api/http';
 import { addPayment, closeCheck, previewPaymentSplit } from '../api';
 import { formatTimestamp } from '../../../shared/lib/datetime';
 import { Panel } from '../../../shared/ui/panel';
@@ -17,22 +16,15 @@ import { Banknote, CreditCard, ReceiptText } from 'lucide-react';
 import { Button } from '../../../shared/ui/button';
 import { buttonStyles } from '../../../shared/ui/button-styles';
 import { SegmentedControl } from '../../../shared/ui/segmented-control';
+import { ErrorText } from '../../../shared/ui/error-text';
 
 const inputClass = 'min-h-touch w-full rounded-panel border border-line bg-white px-3 text-sm';
+
 const secondaryButton =
   'min-h-touch rounded-panel border border-line bg-white px-3 text-sm font-medium disabled:opacity-50';
 
 function parseLira(value: string): number {
   return liraToKurus(Number(value.replace(',', '.')));
-}
-
-function ErrorText({ error }: { error: unknown }): JSX.Element | null {
-  if (error === null) return null;
-  return (
-    <p role="alert" className="text-sm text-danger">
-      {error instanceof ApiError ? error.message : 'İşlem tamamlanamadı.'}
-    </p>
-  );
 }
 
 export function CheckPaymentPanel({

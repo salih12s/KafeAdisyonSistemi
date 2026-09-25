@@ -1,29 +1,22 @@
-import { useEffect, useState, type FormEvent } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { Clock3, ReceiptText, UsersRound, UtensilsCrossed } from 'lucide-react';
-import { formatKurus, type OperationalFloorPlanResponse } from '@kafe/contracts';
+import { formatKurus } from '@kafe/contracts';
 import { Panel } from '../../../shared/ui/panel';
 import { useCurrentUser } from '../../auth/hooks/use-auth';
-import { ApiError } from '../../../shared/api/http';
-import { fetchOperationalFloorPlan, openTableCheck } from '../../orders/api';
+import { fetchOperationalFloorPlan } from '../../orders/api';
 import { cn } from '../../../shared/lib/cn';
 import { CheckView } from '../../orders/components/check-view';
 import { SegmentedControl } from '../../../shared/ui/segmented-control';
 import { Dialog } from '../../../shared/ui/dialog';
-import { Button } from '../../../shared/ui/button';
-import { TextField } from '../../../shared/ui/field';
 import { Badge } from '../../../shared/ui/badge';
 import { ErrorState } from '../../../shared/ui/error-state';
 import { PanelSkeleton } from '../../../shared/ui/skeleton';
-
-type OperationalTable = OperationalFloorPlanResponse['areas'][number]['tables'][number];
-
-function elapsed(openedAt: string): string {
-  const minutes = Math.max(0, Math.floor((Date.now() - new Date(openedAt).getTime()) / 60_000));
-  const hours = Math.floor(minutes / 60);
-  return hours === 0 ? `${minutes} dk` : `${hours} sa ${minutes % 60} dk`;
-}
+import { OpenTableForm } from '../components/open-table-form';
+import { Summary } from '../components/table-summary';
+import type { OperationalTable } from '../tables-format';
+import { elapsed } from '../tables-format';
 
 export function TablesPage(): JSX.Element {
   const auth = useCurrentUser();
@@ -186,79 +179,6 @@ export function TablesPage(): JSX.Element {
           />
         )}
       </Dialog>
-    </div>
-  );
-}
-
-function OpenTableForm({
-  table,
-  onOpened,
-  onClose,
-}: {
-  table: OperationalTable;
-  onOpened: (checkId: string) => void;
-  onClose: () => void;
-}): JSX.Element {
-  const queryClient = useQueryClient();
-  const mutation = useMutation({
-    mutationFn: (guestCount: number) => openTableCheck(table.id, guestCount),
-    onSuccess: (check) => {
-      void queryClient.invalidateQueries({ queryKey: ['operational-floor-plan'] });
-      onOpened(check.id);
-      onClose();
-    },
-  });
-  return (
-    <form
-      aria-label="Masa açma formu"
-      className="grid gap-4 p-5"
-      onSubmit={(event: FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-        mutation.mutate(Number(new FormData(event.currentTarget).get('guestCount') ?? 1));
-      }}
-    >
-      <TextField
-        id="guest-count"
-        label="Kişi sayısı"
-        name="guestCount"
-        type="number"
-        min="1"
-        max="50"
-        defaultValue="1"
-        required
-      />
-      <div className="grid grid-cols-2 gap-3">
-        <Button type="button" variant="secondary" onClick={onClose}>
-          Vazgeç
-        </Button>
-        <Button type="submit" loading={mutation.isPending}>
-          Masayı aç
-        </Button>
-      </div>
-      {mutation.error === null ? null : (
-        <p role="alert" className="text-sm text-danger">
-          {mutation.error instanceof ApiError ? mutation.error.message : 'Masa açılamadı.'}
-        </p>
-      )}
-    </form>
-  );
-}
-
-function Summary({
-  label,
-  value,
-  tone = 'neutral',
-  className,
-}: {
-  label: string;
-  value: number;
-  tone?: 'neutral' | 'success' | 'warning';
-  className?: string;
-}): JSX.Element {
-  return (
-    <div className={cn('surface-card flex items-center justify-between px-4 py-3', className)}>
-      <span className="text-sm font-semibold text-ink-secondary">{label}</span>
-      <Badge tone={tone}>{value}</Badge>
     </div>
   );
 }
