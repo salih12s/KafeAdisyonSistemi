@@ -15,7 +15,7 @@ import {
   type OptionValueUpdateInput,
   type OptionValueWriteInput,
   type ProductWriteInput,
-} from '../../src/features/store';
+} from '../../src/shared/store';
 
 interface MemoryCategory extends CategoryResponse {
   nameKey: string;

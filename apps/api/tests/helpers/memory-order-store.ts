@@ -35,14 +35,14 @@ import {
   type SplitPaymentInput,
   type UpdateOrderItemInput,
   type UpdateOrderItemStatusInput,
-} from '../../src/features/store';
-import { calculatePaymentSplit } from '../../src/features/payment-calculations';
+} from '../../src/shared/store';
+import { calculatePaymentSplit } from '../../src/modules/orders/payment-calculations';
 import { MemoryMenuStore } from './memory-menu-store';
 import {
   buildDayEnd,
   buildSalesReport,
   sanitizeAuditMetadata,
-} from '../../src/features/report-calculations';
+} from '../../src/modules/reports/report-calculations';
 
 interface OrderTable {
   id: string;

@@ -209,3 +209,87 @@
     transform: none !important;
   }
 }
+
+/* Termal fiş. Ekranda gizlidir; yazdırırken uygulamanın geri kalanı gizlenir. */
+.print-sheet {
+  display: none;
+}
+
+@media print {
+  body > *:not(.print-sheet) {
+    display: none !important;
+  }
+
+  .print-sheet {
+    display: block;
+    background: #fff;
+    color: #000;
+  }
+}
+
+.print-sheet__content {
+  padding: 2mm 0;
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.print-sheet[data-paper='58'] .print-sheet__content {
+  font-size: 10px;
+}
+
+.receipt + .receipt {
+  margin-top: 6mm;
+  padding-top: 4mm;
+  border-top: 1px dashed #000;
+}
+
+.receipt__center {
+  text-align: center;
+}
+
+.receipt__title {
+  display: block;
+  font-size: 1.35em;
+  font-weight: 700;
+}
+
+.receipt__big {
+  font-size: 1.5em;
+  font-weight: 700;
+}
+
+.receipt__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 2mm;
+}
+
+.receipt__row > span:last-child {
+  flex-shrink: 0;
+  text-align: right;
+}
+
+.receipt__item {
+  margin: 1mm 0;
+}
+
+.receipt__detail {
+  padding-left: 3mm;
+  font-size: 0.9em;
+}
+
+.receipt__note {
+  margin-top: 1mm;
+  font-weight: 700;
+}
+
+.receipt__total {
+  font-size: 1.25em;
+  font-weight: 700;
+}
+
+.receipt__rule {
+  margin: 1.5mm 0;
+  border-top: 1px dashed #000;
+}

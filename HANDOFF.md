@@ -8,68 +8,100 @@ sonraki geliştiriciye devredilir.
 
 ## Aktif durum
 
-**Final UI polish for Joker Cafe deployment — user approval pending**
+**GitHub vitrini — draft PR açık, merge kullanıcıda**
 
-| Alan                  | Değer                                                    |
-| --------------------- | -------------------------------------------------------- |
-| **Branch**            | `feat/final-ui-polish-joker-cafe`                        |
-| **Base branch**       | `review/final-comprehensive-uat`                         |
-| **Ana geliştirici**   | Claude                                                   |
-| **Durum**             | **Tamamlandı — draft PR açık, merge edilmedi**           |
-| **Son commit**        | `feat: polish final UI for Joker Cafe deployment`        |
-| **Son güncelleme**    | 2026-08-12                                               |
+| Alan                | Değer                                               |
+| ------------------- | --------------------------------------------------- |
+| **Branch**          | `docs/showcase`                                     |
+| **Base branch**     | `main` (#12 → #13 → #14 zincirinin tamamını içerir) |
+| **Ana geliştirici** | Claude                                              |
+| **Durum**           | **Tamamlandı — draft PR açık, merge edilmedi**      |
+| **Son commit**      | `docs: turn the repository into a product showcase` |
+| **Son güncelleme**  | 2026-09-25                                          |
 
-Bu görev yeni özellik geliştirmez; yalnız `apps/web` arayüz pürüzlerini giderir.
-Backend, contracts, Prisma şeması, migration ve API sözleşmesi değiştirilmedi.
+Kullanıcının canlı sunucusu yok; proje GitHub'da vitrin olarak sergilenecek ve
+LinkedIn'de paylaşılacak. Kullanıcı GitHub'daki vitrin işini tamamen devretti.
+PR'ları `main`'e merge etme girişimi izin sistemince reddedildi ("incelenmeden
+merge"); bu yüzden tüm iş tek bir PR'da toplandı ve merge kullanıcıya bırakıldı.
 
-- Kullanıcıya görünen işletme markası **Joker Cafe**'dir: kenar çubuğu, mobil
-  "Tüm modüller" çekmecesi, giriş ekranı, `document.title` ve meta açıklama.
-  `Kafe Adisyon` yalnız teknik/dahili adlarda (README, paket adları, Prisma
-  şema yorumu, AGENTS) kalır.
-- `/login` iki kolonlu hero yapısından **tek parça, ortalanmış** bir giriş
-  ekranına indirildi. Auth akışı, şifre göster/gizle, hata, yükleniyor, ilk
-  owner uyarısı ve bağlantı durumu korundu.
-- Sayfa adı artık yalnız `TopBar` `<h1>` içinde yazılır. Özet, Masalar, Menü,
-  Cariler, Raporlar ve Ayarlar sayfalarındaki tekrar eden bölüm etiketi + büyük
-  başlık + ikinci açıklama blokları kaldırıldı (bkz. `docs/UI_GUIDE.md` §6).
-- `/mutfak` artık ayrı fullscreen shell değil; `AppLayout` içerik alanında koyu
-  KDS paneli olarak render edilir. Kenar çubuğu, üst bar ve alt gezinme yerinde
-  kalır; Socket.IO, filtreler ve ticket akışı değişmedi.
-- Kenar çubuğundaki `Frontend redesign · Final review bekliyor` durum metni ve
-  `APP_PHASE_LABEL` sabiti kaldırıldı; altta yalnız kullanıcı adı ve rol kalır.
-- Tanımsız Tailwind tokenları düzeltildi: `bg-kds-bg` → `bg-kds`, `text-kds-new`
-  → `text-kds-info`, `border-t-kds-new/preparing/ready` → `kds-info/warning/
-  success`, `shadow-kds` → `shadow-card`. KDS kolon vurgu renkleri bu düzeltmeden
-  önce hiç render edilmiyordu. Kullanılmayan `.kds-shell` CSS sınıfı silindi.
-- **Yönetim ekranı düzeni (ikinci tur).** Ayarlar ve Menü'de liste ile form
-  ayrıldı: düzenleme artık satıra tıklayınca değil, satırdaki **Düzenle**
-  düğmesiyle açılan dialogda yapılır; ekleme de panel başlığındaki "… ekle"
-  düğmesinin açtığı dialogda. Personel şifre sıfırlama da dialoga taşındı.
-- **Pasife alma.** Personel, salon ve masa için `Pasife al` / `Aktife al`
-  eklendi. API'de DELETE ucu yoktur ve domain kayıtları silinmez (AGENTS §9,
-  ADR-011); işlem mevcut `PATCH … isActive` ucunu kullanır ve onay dialogu
-  kaydın korunduğunu açıkça yazar. Yeni `ConfirmDialog` bileşeni eklendi.
-- **Ayarlar → İşletme bölümü kaldırıldı.** Kullanılmayan `fetchBusinessSettings`
-  / `updateBusinessSettings` istemci fonksiyonları ve `isBusinessSettings` tip
-  koruyucusu `lib/api.ts` içinden silindi. Backend ucu ve contracts tipi durur;
-  işletme adı `npm run setup:owner` ile belirlenir.
-- **Menü seçenekleri.** Ürün seçenekleri sayfa altındaki üç ayrı formdan tek bir
-  açıklamalı dialoga taşındı. Grup = siparişte sorulan soru, seçenek = cevabı
-  biçiminde tanımlanır; grup/seçenek formları ikinci dialog açmaz, aynı
-  pencerede görünüm değiştirir ve **Geri** ile listeye döner.
-- **Kategoriler.** Satırlar alt alta; chevron + hover + `aria-current` ile
-  tıklanabilirlik belli edilir, `Aktif`/`Pasif` rozetinin yanında düzenle düğmesi
-  durur.
-- `Button` `size="small"` yüksekliği 36px'ten `min-h-touch` (44px) değerine
-  çıkarıldı; bu, `check-view` içindeki "Masalara dön" düğmesinin de UI_GUIDE §6
-  dokunma hedefi kuralına uymasını sağladı.
-- `npm run verify` PASS: 23 dosyada **191/191** test (API 132, web 59); web JS
-  310,51 kB, gzip 97,37 kB. Lint 0 hata/0 uyarı, strict typecheck temiz.
-- Gerçek Chrome ile `/login`, `/`, `/masalar`, `/menu`, `/mutfak`, `/cariler`,
-  `/raporlar`, `/ayarlar` rotaları 390/768/1024/1440px'te ölçüldü: 32 görünümde
-  `scrollWidth == clientWidth`, yatay taşma yok. `/mutfak` üzerinde 6 saniyelik
-  bekleme ile konsol temiz. Ölçüm sırasında API çağrıları tarayıcı seviyesinde
-  karşılandı; `CafeAdisyon` veritabanına dokunulmadı.
+- **Demo verisi:** `npm run demo:seed` (ADR-024). Yalnız adı `demo` içeren boş
+  veritabanına yazar; `CafeAdisyon` üzerinde denendi ve yazmadan reddetti.
+  Store fonksiyonlarıyla 30 günlük ~565 satış, açık masalar, mutfak, kasa, cari
+  ve stok üretir; `DEMO_NOW` bugünün saatini sabitler.
+- **Görseller:** `docs/screenshots/` altında 14 ekran görüntüsü (masaüstü 1440 px
+  @1.5x, telefon 390 px @2x) ve `demo.gif` (3,6 MB, 33 sn akış). Görseller yerel
+  `KafeAdisyonDemoVitrin` veritabanından, tarayıcı saati 15:40'a sabitlenerek
+  alındı. GIF kaydında sunucunun o an ürettiği zaman damgaları yalnız kayıt
+  tarayıcısında demo saatine kaydırıldı; veritabanı değiştirilmedi.
+- **Paylaşım görseli:** `docs/social-preview.png` (1280×640). GitHub'da
+  Settings → General → Social preview alanına **kullanıcının elle yüklemesi**
+  gerekir (API yok).
+- **README:** vitrin sayfası (GIF, ekran galerisi, teknik öne çıkanlar, mermaid
+  mimari, demo hızlı başlangıç, İngilizce özet). Eski geliştirici README'si
+  `docs/DEVELOPMENT.md` oldu (demo verisi bölümü eklendi).
+- **CI:** `.github/workflows/ci.yml` her push/PR'da `npm run verify` çalıştırır.
+- **Lisans:** `LICENSE` — tüm hakları saklı, portföy amaçlı görüntüleme.
+  Kullanıcı açık kaynak isterse MIT'e çevrilebilir.
+- **Ürün düzeltmesi:** adisyon ekranında ürün araması artık seçili kategoriyle
+  sınırlı değil, tüm menüde arar (testi eklendi).
+- `npm run verify` PASS: **243/243** test (API 164, web 79).
+- **Marka "Saydam Cafe" oldu (2026-09-25):** uygulama adı, sayfa başlığı, PWA
+  manifest, demo verisi, testler, ortam betikleri, README, ekran görüntüleri, GIF
+  ve paylaşım görseli. Kullanıcı repo adını kendisi değiştirecek; README'deki
+  bağlantılar göreli olduğu için etkilenmez.
+- **README yalnız vitrin:** kullanıcı isteğiyle kurulum, komut ve demo hesap
+  bölümleri kaldırıldı; kurulum rehberi `docs/DEVELOPMENT.md` içinde duruyor.
+  Private repoda çalışmayan CI rozeti README'den çıkarıldı (iş akışı duruyor).
+
+### Yerel geliştirme ortamı
+
+- Yerel PostgreSQL 15'te süper kullanıcı olmayan **`kafe_adisyon`** rolü
+  oluşturuldu (LOGIN; CREATEDB/CREATEROLE yok). Yerel `CafeAdisyon`
+  veritabanının, 18 tablosunun ve 8 enum tipinin sahipliği bu role devredildi;
+  veri silinmedi veya değiştirilmedi. Rol migration çalıştırabilir.
+- Parola rastgele üretildi ve yalnız gitignore'daki `apps/api/.env.local`
+  dosyasında durur; `postgres` bağlantısı aynı dosyada `POSTGRES_ADMIN_URL`
+  olarak saklanır. `scripts/set-local-env` artık bu rolü kullanır.
+- `apps/api/.env` bu oturumdan önce **Railway production** veritabanını
+  gösteriyordu; yerel ortama çevrildi. Production bağlantısı
+  `apps/api/.env.production` içinde durur.
+- `npm run db:check` ve `npm run db:migrate:status` yeni rolle geçti (7
+  migration, şema güncel). `npm run dev` ile `/api/health` 200
+  `database: connected`, arayüz 5173'te 200.
+
+### Bilinen eksikler ve sonraki iş
+
+- **Canlıya alma uyarısı:** `railway.json` predeploy adımı `prisma migrate deploy`
+  çalıştırır. Bu branch Railway'e alındığında Phase 8 migration'ı canlı
+  veritabanına otomatik uygulanır (additive; yine de önce `pg_dump` yedeği önerilir).
+- Canlıdaki yönetici şifresinin repodaki eski test şifresiyle aynı olup olmadığı
+  kullanıcı tarafından kontrol edilmeli (bkz. güvenlik kontrolleri).
+- Kasa ve stok akışları gerçek tarayıcıda örnek veriyle uçtan uca denenmedi;
+  kullanıcının yerel veritabanına test verisi yazılmadı. Davranış HTTP ve jsdom
+  testleriyle doğrulandı.
+- Termal yazıcı gerçek cihazda denenmedi; yazdırma görünümü tarayıcıda doğrulandı.
+- `VITE_API_URL` / ayrı barındırma kodunun kaldırılması kullanıcı kararıdır.
+- `scripts/set-local-env.ps1 -Reset` `postgres` süper kullanıcı adresi üretir;
+  uygulama rolüyle çalışmak için `-Reset` kullanılmamalıdır.
+- Sonraki geliştiricinin işi: kullanıcının PR/merge kararını beklemek.
+
+### Önceki durum — Phase 8 (Claude, 2026-09-25)
+
+`feat/phase-8-operations` (draft PR #13): kasa, stok, QR menü, yazıcı, grafikli
+rapor ve PWA; additive migration `20260924120000_phase_8_cash_stock` yalnız yerel
+veritabanında uygulandı.
+
+### Önceki durum — İnceleme bulgularının düzeltilmesi (Claude, 2026-09-24)
+
+`fix/review-findings` (draft PR #12): ayrı barındırma modunda CSRF koruması,
+Socket.IO origin kontrolü, `Vary: Origin`, `CORS_ORIGIN` normalizasyonu, 401
+döngüsü ve giriş ekranı hata ayrımı. Yerel `kafe_adisyon` PostgreSQL rolü kuruldu.
+
+### Önceki durum — Final UI polish (Claude, 2026-08-12)
+
+`feat/final-ui-polish-joker-cafe` üzerinde Joker Cafe arayüz düzeltmeleri
+tamamlandı ve `main`e alındı; ardından ADR-020 ayrı barındırma desteği ve
+giriş sonrası oturum doğrulaması doğrudan `main` üzerinde yapıldı.
 
 ### Önceki durum — kapsamlı final review (Codex)
 
@@ -86,7 +118,7 @@ Backend, contracts, Prisma şeması, migration ve API sözleşmesi değiştirilm
 - Ayrı security scan çalıştırılmadı; normal baseline kontrolleri geçti.
 - Ayrıntılı kanıt ve kalan kabul sınırları: `docs/FINAL_ACCEPTANCE_REPORT.md`.
 
-### Bilinen eksikler ve sonraki iş
+### Final UI polish turundan kalan eksikler (2026-08-12)
 
 - Bu polish turunda gerçek veritabanı verisiyle authenticated tarayıcı akışı
   tekrarlanmadı; yerleşim ölçümleri tarayıcı seviyesinde karşılanan API
@@ -109,6 +141,7 @@ Backend, contracts, Prisma şeması, migration ve API sözleşmesi değiştirilm
 | 5     | `feat/phase-5-payments`                    | Codex           | Tamamlandı · draft PR açık |
 | 6     | `feat/phase-6-accounts-adjustments-tables` | Codex           | Tamamlandı · draft PR açık |
 | 7     | `feat/phase-7-reports-deployment`          | Codex           | Tamamlandı · draft PR açık |
+| 8     | `feat/phase-8-operations`                  | Claude          | Tamamlandı · draft PR açık |
 
 ---
 
@@ -334,13 +367,14 @@ akışlarını kapsayan tek kapsamlı final review olmalıdır.
 
 ## Devir geçmişi
 
-| Tarih      | Phase   | Devreden | Devralan       | Not                                                                            |
-| ---------- | ------- | -------- | -------------- | ------------------------------------------------------------------------------ |
-| 2026-08-12 | Phase 0 | Claude   | Codex          | Proje temeli tamamlandı.                                                       |
-| 2026-08-12 | Phase 1 | Codex    | Claude         | Kimlik, personel, salon ve masa tamamlandı.                                    |
-| 2026-08-12 | Phase 2 | Claude   | Codex          | Menü, ürün, seçenek ve ekstra yönetimi tamamlandı.                             |
-| 2026-08-12 | Phase 3 | Codex    | Codex          | Masa açma, adisyon ve sipariş tamamlandı; Phase 4 sırada.                      |
-| 2026-08-12 | Phase 4 | Codex    | Codex          | Realtime mutfak/bar tamamlandı; Phase 5 sırada.                                |
-| 2026-08-12 | Phase 5 | Codex    | Codex          | Ödeme ve hesap kapatma tamamlandı; Phase 6 sırada.                             |
-| 2026-08-12 | Phase 6 | Codex    | Codex          | Cari, indirim/ikram ve masa işlemleri tamamlandı; Phase 7 sırada.              |
-| 2026-08-12 | Phase 7 | Codex    | Final reviewer | Raporlar ve production hazırlığı tamamlandı; kapsamlı final review bekleniyor. |
+| Tarih      | Phase    | Devreden | Devralan       | Not                                                                            |
+| ---------- | -------- | -------- | -------------- | ------------------------------------------------------------------------------ |
+| 2026-08-12 | Phase 0  | Claude   | Codex          | Proje temeli tamamlandı.                                                       |
+| 2026-08-12 | Phase 1  | Codex    | Claude         | Kimlik, personel, salon ve masa tamamlandı.                                    |
+| 2026-08-12 | Phase 2  | Claude   | Codex          | Menü, ürün, seçenek ve ekstra yönetimi tamamlandı.                             |
+| 2026-08-12 | Phase 3  | Codex    | Codex          | Masa açma, adisyon ve sipariş tamamlandı; Phase 4 sırada.                      |
+| 2026-08-12 | Phase 4  | Codex    | Codex          | Realtime mutfak/bar tamamlandı; Phase 5 sırada.                                |
+| 2026-08-12 | Phase 5  | Codex    | Codex          | Ödeme ve hesap kapatma tamamlandı; Phase 6 sırada.                             |
+| 2026-08-12 | Phase 6  | Codex    | Codex          | Cari, indirim/ikram ve masa işlemleri tamamlandı; Phase 7 sırada.              |
+| 2026-08-12 | Phase 7  | Codex    | Final reviewer | Raporlar ve production hazırlığı tamamlandı; kapsamlı final review bekleniyor. |
+| 2026-09-24 | Düzeltme | Claude   | Kullanıcı      | İnceleme bulguları düzeltildi; yerel `kafe_adisyon` rolü kuruldu.              |

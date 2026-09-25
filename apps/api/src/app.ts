@@ -11,8 +11,8 @@ import { createCorsHandler } from './middleware/cors';
 import { createErrorHandler } from './middleware/error-handler';
 import { createNotFoundHandler } from './middleware/not-found';
 import { createRequestLogger } from './middleware/request-logger';
-import type { AppStore } from './features/store';
-import type { OrderEventPublisher } from './features/order-events';
+import type { AppStore } from './shared/store';
+import type { OrderEventPublisher } from './modules/orders/order-events';
 
 export interface CreateAppOptions {
   env: Env;
@@ -55,8 +55,10 @@ export function createApp({
     app.use(createCorsHandler(env.CORS_ORIGIN));
   }
 
+  // Arayüz yalnız JSON gönderir. Form gövdesi (urlencoded) bilinçli olarak
+  // ayrıştırılmaz: siteler arası JSON isteği preflight gerektirir, düz HTML formu
+  // ise gerektirmez ve CSRF için en kolay yoldur.
   app.use(express.json({ limit: env.JSON_BODY_LIMIT }));
-  app.use(express.urlencoded({ extended: false, limit: env.JSON_BODY_LIMIT }));
 
   if (env.NODE_ENV === 'development') {
     app.use(createRequestLogger(logger));

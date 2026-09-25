@@ -5,9 +5,9 @@ import { ENV_FILE_PATH, WEB_DIST_PATH } from './config/paths';
 import { EnvValidationError, parseEnv, type Env } from './config/env';
 import { createPrismaLifecycle } from './lib/database';
 import { createLogger } from './lib/logger';
-import { createPrismaStore } from './features/prisma-store';
-import { createOrderEventHub } from './features/order-events';
-import { createRealtimeServer } from './realtime';
+import { createPrismaStore } from './shared/prisma-store';
+import { createOrderEventHub } from './modules/orders/order-events';
+import { createRealtimeServer } from './modules/orders/order-realtime';
 
 dotenv.config({ path: ENV_FILE_PATH });
 

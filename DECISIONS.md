@@ -424,3 +424,129 @@ iki kurulumu da kapsar. Ayrı barındırma seçildiğinde `SameSite=None` nedeni
 CSRF koruması yalnız origin allowlist'ine dayanır; bu yüzden listeye yalnız
 gerçekten sahip olunan alan adları yazılır. Statik sunucuda SPA fallback
 kuralı (`.htaccess` veya eşdeğeri) gereklidir.
+
+**Güncelleme (2026-09-24).** Güvenlik incelemesi, yukarıdaki "CSRF koruması
+origin allowlist'ine dayanır" varsayımının kodda karşılığı olmadığını gösterdi:
+CORS katmanı izinsiz origin'den gelen düz form POST'unu işliyordu ve
+`SameSite=None` çerezi bu isteğe ekleniyordu. Karar korunarak uygulama
+sıkılaştırıldı:
+
+- Ayrı barındırmada izinsiz origin'den gelen durum değiştiren (GET/HEAD/OPTIONS
+  dışı) istekler `403` alır. İzinli origin, API'nin kendi origin'i ve `Origin`
+  başlığı taşımayan istekler kabul edilir.
+- API form gövdesi (`application/x-www-form-urlencoded`) ayrıştırmaz; yalnız
+  JSON kabul edilir. Siteler arası JSON isteği preflight gerektirdiği için
+  izinsiz origin tarafından gönderilemez. Bu kural aynı origin kurulumunda da
+  geçerlidir.
+- Socket.IO el sıkışması aynı origin kontrolünden geçer (`allowRequest`);
+  `cors` seçeneği WebSocket yükseltmesini denetlemez.
+- `CORS_ORIGIN` girdileri tarayıcının gönderdiği biçime normalleştirilir
+  (küçük harf, varsayılan port yok); yol, sorgu veya kullanıcı bilgisi içeren
+  değerler reddedilir. `Vary: Origin` her yanıta eklenir.
+
+---
+
+## ADR-021 — Kasa oturumu beklenen nakdi saklamaz, ödemelerden türetir
+
+- **Tarih:** 2026-09-24
+- **Durum:** Kabul edildi
+- **İlgili:** ADR-008 (kuruş), ADR-016 (immutable ödemeler), ADR-017 (türetilen bakiye)
+
+**Karar.** Kasa bir `CashSession` (vardiya) olarak açılır ve kapanır. Aynı anda
+yalnız bir açık oturum olabilir; bu kural koşullu unique index ile veritabanında
+korunur. Beklenen nakit = açılış + oturum süresince alınan `CASH` ödemeler +
+girişler − çıkışlar. Açık oturumda bu tutar her okumada ödemelerden hesaplanır;
+kapanışta sayılan tutarla birlikte o anki beklenen tutar da yazılır ve sonradan
+değişmez. Satış dışı nakit hareketleri (`CashMovement`) değiştirilemez satırlardır.
+
+**Gerekçe.** Beklenen tutarı mutable bir kolonda tutmak, her ödemede ikinci bir
+yazma ve tutarsızlık riski demektir. Ödemeler zaten immutable olduğu için türetmek
+tek doğru kaynağı korur. Kapanışta tutarın sabitlenmesi, kapandıktan sonra gelen
+geç bir ödemenin geçmiş vardiyanın sonucunu değiştirmesini engeller.
+
+**Sonuç.** Ödeme almak açık kasa gerektirmez; kasa kapalıyken alınan nakit hiçbir
+vardiyaya yazılmaz. Cari tahsilatlar ödeme yöntemi taşımadığı için beklenen nakde
+girmez; nakit tahsilat kasaya elle "giriş" olarak işlenir.
+
+---
+
+## ADR-022 — Stok bakiyesi hareketlerden türetilir, düşüm adisyon kapanışında olur
+
+- **Tarih:** 2026-09-24
+- **Durum:** Kabul edildi
+- **İlgili:** ADR-011 (silme yok), ADR-017
+
+**Karar.** Stok miktarları en küçük birimde tam sayıdır (adet, gram, mililitre).
+Bakiye mutable bir kolon değildir; `StockMovement` hareketlerinin toplamıdır.
+Ürün reçetesi (`ProductStockUsage`) bir adet ürünün tükettiği miktarı tutar;
+reçeteden çıkan satır silinmez, pasife alınır. Satış düşümü adisyon `PAID` olduğunda,
+kapanışla aynı transaction içinde tek `SALE` hareketi olarak yazılır. İptal edilen
+kalemler düşülmez; ikramlar hazırlandığı için düşülür. Stok eksiye düşebilir.
+Birim, stok kalemi oluşturulduktan sonra değiştirilemez.
+
+**Gerekçe.** Sipariş anında düşmek; adet değişimi, iptal, taşıma ve birleştirme
+akışlarının her birine telafi hareketi eklemeyi gerektirirdi. Kapanışta düşmek tek
+noktadır ve birleştirilen adisyonlar doğal olarak bir kez sayılır. Satışın stok
+yüzünden engellenmemesi, kayıt hatası olan bir malzemenin servisi durdurmasını önler.
+
+**Sonuç.** Açık adisyonlardaki ürünler stokta henüz görünmez. Sayım düzeltmesi
+sayılan miktarı alır ve farkı hareket olarak yazar. Stok kalemi ve reçete tanımı
+yalnız OWNER'dadır; kasiyer hareket girebilir ve görüntüleyebilir.
+
+---
+
+## ADR-023 — QR menü oturumsuzdur, yazdırma tarayıcıyla yapılır, PWA offline değildir
+
+- **Tarih:** 2026-09-24
+- **Durum:** Kabul edildi
+- **İlgili:** ADR-004 (aynı origin), AGENTS.md §13
+
+**Karar.**
+
+- `GET /api/public/menu` oturum gerektirmeyen tek veri ucudur. Yalnız aktif menü,
+  fiyat ve işletme adını döndürür; hız sınırı (dakikada 120) ve 60 saniyelik
+  önbellek başlığı vardır. Kullanıcı kararıyla QR üzerinden sipariş verilmez.
+- Fişler tarayıcının yazdırma penceresiyle basılır: termal yazıcı işletim
+  sisteminde yazıcı olarak kurulur, kâğıt genişliği (80/58 mm) cihaz başına
+  tarayıcıda saklanır. ESC/POS sürücüsü, yerel ajan veya WebUSB kullanılmaz.
+  Adisyon fişi "bilgi fişidir, mali değeri yoktur" ibaresi taşır.
+- PWA yalnız kurulabilirlik içindir (manifest, ikonlar, `standalone`). Service
+  worker ve offline önbellek **yoktur**.
+
+**Gerekçe.** Menü zaten müşteriye açık bilgidir; oturumsuz okunması yeni bir veri
+sızıntısı yaratmaz, siparişin kapalı tutulması uzaktan sahte sipariş riskini
+ortadan kaldırır. Tarayıcı yazdırması ek kurulum gerektirmez ve her yazıcıyla
+çalışır. POS verisi canlı olmalıdır; önbellekten eski masa veya ödeme durumu
+göstermek, hiç çalışmamaktan daha tehlikelidir.
+
+**Sonuç.** Yazdırma için yazıcı seçimi tarayıcı penceresinde yapılır; sessiz
+(onaysız) yazdırma yoktur. Bağlantı koptuğunda uygulama çalışmaz, mevcut hata
+ekranlarını gösterir.
+
+---
+
+## ADR-024 — Demo verisi yalnız ayrı bir demo veritabanına yüklenir
+
+- **Tarih:** 2026-09-25
+- **Durum:** Kabul edildi
+- **İlgili:** AGENTS.md §9 (yıkıcı işlem yok), §11 (sahte veri yok)
+
+**Karar.** Proje GitHub'da vitrin olarak sergilendiği için `npm run demo:seed`
+komutu eklenir. Komut menü, masa, personel, son 30 günün satışları, açık masalar,
+mutfak siparişleri, kasa, cari ve stok verisi üretir. Yalnız adı `demo` içeren ve
+**hiç kullanıcısı olmayan** bir veritabanında çalışır; aksi hâlde yazmadan
+reddeder. Veriler doğrudan SQL ile değil uygulamanın store fonksiyonlarıyla
+üretilir; geçmiş tarihli kayıtlar ardından geri tarihlenir. Tüm demo hesaplarının
+şifresi `Demo1234!`'dir ve README'de açıkça yazılıdır.
+
+**Gerekçe.** AGENTS.md §11 uygulama içinde uydurma veriyi (örnek masa listesi,
+sahte ciro) yasaklar; bu kural gerçek işletme ekranlarının yanıltıcı veri
+göstermemesi içindir. Depoyu inceleyen birinin uygulamayı boş ekranlar yerine
+dolu hâliyle görebilmesi ise vitrin için gereklidir. Veriyi ayrı bir komuta ve
+ayrı bir veritabanına koymak iki ihtiyacı birlikte karşılar: uygulama kodunda
+sahte veri yoktur, gerçek veritabanına yanlışlıkla yazılamaz.
+
+**Sonuç.** `DEMO_NOW` ortam değişkeni "bugün"ün saatini sabitler; ekran
+görüntüleri günün hangi saatinde alınırsa alınsın gün içi bir an gösterir.
+Store'lar üzerinden üretildiği için fiyat, stok düşümü, kasa ve rapor tutarları
+gerçek akışla tutarlıdır.

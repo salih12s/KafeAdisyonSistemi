@@ -1045,3 +1045,124 @@ değiştirilmedi, merge yapılmadı.
   operasyon çağrıları 7 istekte 0 adet 401 ile geçti.
 - Hostinger için üretilen dağıtım arşivi silindi; `*.zip` `.gitignore` içinde
   kalıyor, gerekirse `VITE_API_URL` ile yeniden üretilebilir.
+
+## 2026-09-24 — Claude — İnceleme bulgularının düzeltilmesi ve yerel veritabanı rolü
+
+**Branch:** `fix/review-findings` (base `main`)
+**Sonuç:** Tamamlandı; draft PR açık, merge edilmedi.
+
+- `/code-review` ve `/security-review` `069a78b^..2da4006` aralığında çalıştı.
+  Güvenlik incelemesi tek bir yüksek bulgu doğruladı (güven 8/10): `CORS_ORIGIN`
+  doluyken çerez `SameSite=None` olur, CORS katmanı izinsiz origin'e `next()`
+  çağırır ve `express.urlencoded` form gövdesini ayrıştırır; başka bir sitedeki
+  otomatik form `POST /api/staff` ile OWNER hesabı açtırabilir. Production şu
+  an tek origin'de (`CORS_ORIGIN` boş) olduğu için canlıda istismar edilemezdi.
+- Düzeltmeler: izinsiz origin'den mutation `403`; form gövdesi ayrıştırılmaz;
+  Socket.IO `allowRequest` origin kontrolü; `Vary: Origin` her yanıtta;
+  `CORS_ORIGIN` normalizasyonu; giriş ekranında yalnız 401'in "çerez
+  saklanmadı" sayılması; tekilleştirilmiş 401 işleyicisi ve 401'in yeniden
+  denenmemesi; `todayIstanbul()` tek kaynağa indirildi.
+- Yeni testler eski koda karşı çalıştırıldı: 19 testten 7'si başarısız oldu
+  (açık gerçekten yakalanıyor); yeni kodda 19/19.
+- `npm run verify` PASS: 216/216 test (API 151, web 65).
+- Yerel PostgreSQL 15'te `kafe_adisyon` rolü oluşturuldu; yerel `CafeAdisyon`
+  nesnelerinin sahipliği devredildi (18 tablo, 8 enum). Veri değişmedi;
+  `User` tablosunda önce ve sonra 3 kayıt. Parola yalnız gitignore'daki
+  `apps/api/.env.local` içinde.
+- `apps/api/.env` oturum başında Railway production'ı gösteriyordu ve kullanıcının
+  VS Code terminalinde bu ayarla başlamış bir `npm run dev` çalışıyordu. O süreç
+  ağacı durduruldu, `.env` yerel role çevrildi ve sunucular yeniden başlatıldı:
+  `/api/health` 200 `database: connected`, arayüz 200, `/masalar` SPA 200.
+- Kapsam dışı bırakılan: `VITE_API_URL`/ayrı barındırma kodunun tamamen
+  kaldırılması (ADR-020 kullanıcı kararı; HANDOFF'a not düşüldü).
+
+## 2026-09-25 — Claude — Güvenlik kontrolleri ve Phase 8 operasyon özellikleri
+
+**Branch:** `feat/phase-8-operations` (base `fix/review-findings`)
+**Sonuç:** Tamamlandı; draft PR açık, merge edilmedi.
+
+- Kullanıcı önce güvenlik kontrollerini, ardından önerilen yeni özelliklerin
+  tamamını istedi. Migration planı anlatılıp onay alındı (AGENTS.md §9); yalnız
+  yerel veritabanına uygulanması kararlaştırıldı. QR tarafında "yalnız menü"
+  seçildi, sipariş verme yapılmadı.
+- Güvenlik: git geçmişi taraması temiz (yalnız test şifreleri). Canlı Railway
+  adresi `vite-env.d.ts`'ten, gerçek görünen `admin` şifresi test dosyasından
+  kaldırıldı. Canlı DB'den şifre özeti okuyarak doğrulama girişimi izin
+  sistemince reddedildi; kontrol kullanıcıya bırakıldı. `npm audit fix` ile `qs`
+  ve `js-yaml` yükseltildi; kalan açıklar yalnız derleme/test araçlarında.
+- Migration `20260924120000_phase_8_cash_stock`, eski ve yeni şema dosyası
+  arasından `prisma migrate diff` ile veritabanına dokunmadan üretildi; tek açık
+  kasa koşullu index'i ve CHECK kısıtları elle eklendi. DROP/ALTER mevcut tablo
+  yok. Yerel DB'ye `migrate deploy` ile uygulandı; kullanıcı, adisyon ve ürün
+  sayıları önce/sonra aynı.
+- API: kasa (`/api/cash`), stok (`/api/stock`), oturumsuz menü
+  (`/api/public/menu`), rapora `dailySales`. Stok düşümü `closeCheck`
+  transaction'ına bağlandı. Test belleği için `MemoryOperationsStore` eklendi;
+  Prisma ve bellek aynı saf hesaplama fonksiyonlarını kullanır.
+- Web: `/kasa`, `/stok`, `/qr-menu`, ayarlarda yazıcı ve QR bölümü, adisyon ve
+  mutfak fişi yazdırma, günlük ciro grafiği ve tarih ön ayarları, özet kartları,
+  PWA manifest ve ikonları. Yeni bağımlılık: `uqr` (QR matrisi).
+- Gerçek Chrome incelemesinde bulunan ve düzeltilen sorunlar: boş aralıkta
+  anlamsız eksen, dar ekranda çakışan gün etiketleri, sağ kenarda kesilen son
+  etiket, ipucunun panel başlığına taşması, gereksiz geniş eksen üst sınırı.
+- `npm run verify` PASS: 241/241 test (API 164, web 77).
+
+## 2026-09-25 — Claude — Final kod incelemesi ve modüler yapı
+
+**Branch:** `refactor/modular-structure` (base `feat/phase-8-operations`)
+**Sonuç:** Tamamlandı; draft PR açık, merge edilmedi.
+
+- `/code-review` (high) `main...feat/phase-8-operations` aralığında 10 bulgu
+  verdi; hepsi düzeltildi ve regresyon testleriyle kapatıldı (ayrıntı HANDOFF).
+  En önemlileri: CORS'ta eksik `PUT`, kasa kapanışı ile nakit ödeme arasındaki
+  yarış (satır kilidiyle çözüldü), stok formunun kalem değişince taşınan durumu.
+- Kullanıcı düz `pages/` ve `components/ui` yapısını ve `src` içindeki testleri
+  istemedi. Web `app/shared/features`, API `modules/shared` yapısına taşındı.
+  Taşıma bir betikle yapıldı: `git mv` + her göreli import'un eski konuma göre
+  çözülüp yeni konuma göre yazılması; `lib/api.ts` importları sembol bazında
+  alan modüllerine dağıtıldı. Büyük ekranlar ve API router/store dosyaları
+  bölündü; tekrar eden yardımcılar tek kopyaya indirildi.
+- Otomatik import tespitinin üç yanlış eşleşmesi (yorum veya metin içindeki
+  kelime) derleyici hatasıyla yakalanıp elle düzeltildi.
+- `docs/ARCHITECTURE.md` §3 yeni kod haritasıyla yeniden yazıldı: klasör
+  ağaçları, modül dosya kalıbı, bir isteğin yolculuğu ve yeni özellik rehberi.
+- `npm run verify` PASS: 242/242 test (API 164, web 78).
+
+## 2026-09-25 — Claude — GitHub ürün vitrini
+
+**Branch:** `docs/showcase` (base `main`)
+**Sonuç:** Tamamlandı; draft PR açık, merge edilmedi.
+
+- Kullanıcı canlıya almayacağını, projeyi GitHub'da sergileyip LinkedIn'de
+  paylaşacağını belirtti ve vitrini devretti. #12–#14 merge denemesi izin
+  sistemince reddedildi; vitrin branch'i tüm zinciri içerir.
+- Yerelde iki demo veritabanı oluşturuldu (`KafeAdisyonDemo`,
+  `KafeAdisyonDemoVitrin`); kullanıcının `CafeAdisyon` veritabanına yazılmadı.
+  İlki gece saatiyle üretildiği için ikincisi `DEMO_NOW=15:40` ile yeniden
+  üretildi (DROP DATABASE yasağı nedeniyle eskisi silinmedi).
+- Görüntü alırken eski geliştirme sunucusunun alt süreçlerinin portları tuttuğu
+  ve API'nin gerçek veritabanına bağlı kaldığı fark edildi; süreç ağaçları
+  kapatılıp sunucu demo veritabanıyla yeniden başlatıldı. Yalnız bir başarısız
+  giriş denemesi gerçek veritabanına ulaştı; veri yazılmadı.
+- GIF kaydı sırasında ürün aramasının yalnız seçili kategoride çalıştığı
+  bulundu ve düzeltildi. Başarısız kaydın demo DB'de açık bıraktığı Masa 8
+  API ile iptal edilip kapatıldı.
+- Eski ffmpeg (2013) palet filtresi içermediği için GIF, scratchpad'e kurulan
+  `gifenc` ile saydam fark kareleri kullanılarak üretildi (19 MB → 3,6 MB).
+- `npm run verify` PASS: 243/243 test.
+
+## 2026-09-25 — Claude — Marka "Saydam Cafe" ve kurulumsuz vitrin README'si
+
+**Branch:** `docs/showcase` (PR #15)
+**Sonuç:** Tamamlandı; merge kullanıcıda.
+
+- Kullanıcı GitHub'da eski README'yi gördü: PR #15 merge edilmediği için `main`
+  hâlâ eski README'yi gösteriyor.
+- Kullanıcı isteğiyle tüm "Joker Cafe" adları "Saydam Cafe" yapıldı. CORS
+  yorumlarındaki "joker origin" (`*` anlamında) teknik ifade korundu.
+  Kullanıcının kendi `CafeAdisyon` veritabanındaki işletme adına dokunulmadı;
+  demo veritabanında güncellendi.
+- Ekran görüntüleri, GIF ve paylaşım görseli yeni adla yeniden üretildi.
+- README kurulumsuz vitrin sayfasına çevrildi (proje hakkında, özellikler,
+  ekranlar, teknik öne çıkanlar, mimari, kalite ve süreç, İngilizce özet).
+- `npm run verify` PASS: 243/243 test.

@@ -10,6 +10,29 @@ const POSTGRES_URL_PREFIXES = ['postgresql://', 'postgres://'];
 const DEVELOPMENT_HOST = '127.0.0.1';
 const PRODUCTION_HOST = '0.0.0.0';
 
+/**
+ * Tarayıcının `Origin` başlığında gönderdiği biçime çevirir: küçük harf alan
+ * adı, varsayılan port olmadan, yol/sorgu/parça olmadan. Böylece
+ * "https://Ornek.com:443/" ile "https://ornek.com" aynı origin sayılır.
+ * Yalnız kök yolu olan http(s) adresleri kabul edilir.
+ */
+function normalizeOrigin(value: string): string | undefined {
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    return undefined;
+  }
+  const isHttp = url.protocol === 'https:' || url.protocol === 'http:';
+  const hasOnlyOrigin =
+    url.pathname === '/' &&
+    url.search === '' &&
+    url.hash === '' &&
+    url.username === '' &&
+    url.password === '';
+  return isHttp && hasOnlyOrigin ? url.origin : undefined;
+}
+
 export const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().min(1).max(65535).default(3000),
@@ -35,16 +58,23 @@ export const envSchema = z.object({
   CORS_ORIGIN: z
     .string()
     .optional()
-    .transform((value) =>
-      (value ?? '')
-        .split(',')
-        .map((origin) => origin.trim().replace(/\/+$/, ''))
-        .filter((origin) => origin.length > 0),
-    )
-    .refine(
-      (origins) => origins.every((origin) => /^https?:\/\/[^/\s]+$/.test(origin)),
-      'CORS_ORIGIN girdileri "https://alanadi.com" biçiminde olmalıdır (sonda / olmadan).',
-    ),
+    .transform((value, context) => {
+      const origins: string[] = [];
+      for (const entry of (value ?? '').split(',')) {
+        const trimmed = entry.trim();
+        if (trimmed.length === 0) continue;
+        const origin = normalizeOrigin(trimmed);
+        if (origin === undefined) {
+          context.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `CORS_ORIGIN girdisi "https://alanadi.com" biçiminde olmalıdır: ${trimmed}`,
+          });
+          return z.NEVER;
+        }
+        origins.push(origin);
+      }
+      return origins;
+    }),
 });
 
 type RawEnv = z.infer<typeof envSchema>;

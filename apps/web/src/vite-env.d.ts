@@ -3,7 +3,7 @@
 interface ImportMetaEnv {
   /**
    * Arayüz API'den ayrı barındırıldığında kullanılacak mutlak API adresi.
-   * Örnek: https://kafeadisyonsistemi-production.up.railway.app
+   * Örnek: https://api.ornek-kafe.com
    * Boş bırakılırsa aynı origin varsayılır.
    */
   readonly VITE_API_URL?: string;

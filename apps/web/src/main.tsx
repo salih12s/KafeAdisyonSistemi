@@ -2,8 +2,8 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { QueryClientProvider } from '@tanstack/react-query';
-import { App } from './App';
-import { createQueryClient } from './lib/query-client';
+import { App } from './app/app';
+import { createQueryClient } from './app/query-client';
 import './styles/index.css';
 
 const container = document.getElementById('root');

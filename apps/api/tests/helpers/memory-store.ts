@@ -20,9 +20,9 @@ import {
   type TableWriteInput,
   type UpdateStaffInput,
   type UserWithPassword,
-} from '../../src/features/store';
+} from '../../src/shared/store';
 import type { MemoryAuditEntry } from './memory-menu-store';
-import { MemoryOrderStore } from './memory-order-store';
+import { MemoryOperationsStore } from './memory-operations-store';
 
 interface MemoryUser extends UserWithPassword {
   lastLoginAt: Date | null;
@@ -53,7 +53,7 @@ export type MemoryAudit = MemoryAuditEntry;
  * Kimlik/salon/masa store'u. Menü işlemleri `MemoryMenuStore` içindedir ve
  * buradan miras alınır; böylece tek bir `AppStore` uygulaması elde edilir.
  */
-export class MemoryStore extends MemoryOrderStore implements AppStore {
+export class MemoryStore extends MemoryOperationsStore implements AppStore {
   public readonly sessions: MemorySession[] = [];
   private readonly users: MemoryUser[] = [];
   private readonly areas: MemoryArea[] = [];
