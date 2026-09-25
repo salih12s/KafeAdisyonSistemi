@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import request from 'supertest';
 import { fixture, sellAndClose } from '../helpers/operations-fixture';
 
@@ -56,6 +56,55 @@ describe('Kasa oturumu', () => {
     expect(input.store.audits.map((entry) => entry.action)).toEqual(
       expect.arrayContaining(['CASH_SESSION_OPENED', 'CASH_MOVEMENT_ADDED', 'CASH_SESSION_CLOSED']),
     );
+  });
+
+  it('gelecek zaman damgalı nakit ödemeyi açık kasa önizlemesine ve kapanışa katmaz', async () => {
+    const input = await fixture();
+    await input.store.openCashSession({
+      actorUserId: input.owner.id,
+      openingCashKurus: 50_000,
+      note: null,
+    });
+    const check = await input.store.openCheck({
+      actorUserId: input.owner.id,
+      tableId: input.table.id,
+      guestCount: 1,
+    });
+    await input.store.addOrderItem({
+      actorUserId: input.owner.id,
+      checkId: check.id,
+      productId: input.product.id,
+      quantity: 1,
+      note: null,
+      optionValueIds: [],
+    });
+
+    const now = Date.now();
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(now + 60_000);
+    try {
+      await input.store.addPayment({
+        actorUserId: input.owner.id,
+        checkId: check.id,
+        method: 'CASH',
+        amountKurus: 12_000,
+        cashReceivedKurus: 12_000,
+      });
+    } finally {
+      vi.useRealTimers();
+    }
+
+    expect(await input.store.getCurrentCashSession()).toMatchObject({
+      cashSalesKurus: 0,
+      expectedCashKurus: 50_000,
+    });
+    expect(
+      await input.store.closeCashSession({
+        actorUserId: input.owner.id,
+        countedCashKurus: 50_000,
+        note: null,
+      }),
+    ).toMatchObject({ expectedCashKurus: 50_000, differenceKurus: 0 });
   });
 
   it('ikinci açık kasayı, açık kasa yokken hareketi ve geçersiz tutarı reddeder', async () => {

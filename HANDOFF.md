@@ -8,16 +8,16 @@ sonraki geliştiriciye devredilir.
 
 ## Aktif durum
 
-**GitHub vitrini — draft PR açık, merge kullanıcıda**
+**GitHub vitrini — özellik turu GIF'leri**
 
-| Alan                | Değer                                               |
-| ------------------- | --------------------------------------------------- |
-| **Branch**          | `docs/showcase`                                     |
-| **Base branch**     | `main` (#12 → #13 → #14 zincirinin tamamını içerir) |
-| **Ana geliştirici** | Claude                                              |
-| **Durum**           | **Tamamlandı — draft PR açık, merge edilmedi**      |
-| **Son commit**      | `docs: turn the repository into a product showcase` |
-| **Son güncelleme**  | 2026-09-25                                          |
+| Alan                | Değer                                          |
+| ------------------- | ---------------------------------------------- |
+| **Branch**          | `docs/feature-gifs`                            |
+| **Base branch**     | `main`                                         |
+| **Ana geliştirici** | Codex                                          |
+| **Durum**           | **Tamamlandı — draft PR açık, merge edilmedi** |
+| **Son commit**      | `docs: finalize feature GIF handoff`           |
+| **Son güncelleme**  | 2026-09-25                                     |
 
 Kullanıcının canlı sunucusu yok; proje GitHub'da vitrin olarak sergilenecek ve
 LinkedIn'de paylaşılacak. Kullanıcı GitHub'daki vitrin işini tamamen devretti.
@@ -28,11 +28,10 @@ merge"); bu yüzden tüm iş tek bir PR'da toplandı ve merge kullanıcıya bır
   veritabanına yazar; `CafeAdisyon` üzerinde denendi ve yazmadan reddetti.
   Store fonksiyonlarıyla 30 günlük ~565 satış, açık masalar, mutfak, kasa, cari
   ve stok üretir; `DEMO_NOW` bugünün saatini sabitler.
-- **Görseller:** `docs/screenshots/` altında 14 ekran görüntüsü (masaüstü 1440 px
-  @1.5x, telefon 390 px @2x) ve `demo.gif` (3,6 MB, 33 sn akış). Görseller yerel
-  `KafeAdisyonDemoVitrin` veritabanından, tarayıcı saati 15:40'a sabitlenerek
-  alındı. GIF kaydında sunucunun o an ürettiği zaman damgaları yalnız kayıt
-  tarayıcısında demo saatine kaydırıldı; veritabanı değiştirilmedi.
+- **Görseller:** `docs/screenshots/` altında 14 ekran görüntüsü ve 11 özellik
+  turu GIF'i var. GIF'ler yerel `KafeAdisyonDemoVitrin` veritabanından,
+  tarayıcı saati 15:40'a sabitlenerek alındı. Sunucunun o an ürettiği zaman
+  damgaları yalnız kayıt tarayıcısında demo saatine kaydırıldı.
 - **Paylaşım görseli:** `docs/social-preview.png` (1280×640). GitHub'da
   Settings → General → Social preview alanına **kullanıcının elle yüklemesi**
   gerekir (API yok).
@@ -40,18 +39,31 @@ merge"); bu yüzden tüm iş tek bir PR'da toplandı ve merge kullanıcıya bır
   mimari, demo hızlı başlangıç, İngilizce özet). Eski geliştirici README'si
   `docs/DEVELOPMENT.md` oldu (demo verisi bölümü eklendi).
 - **CI:** `.github/workflows/ci.yml` her push/PR'da `npm run verify` çalıştırır.
+- **CI engeli (PR #17):** GitHub Actions işi hiç başlamadı. GitHub anotasyonu:
+  "The job was not started because your account is locked due to a billing
+  issue." Yerelde `npm run verify` ve `npm run format:check` geçti; GitHub CI
+  hesabın faturalama durumu düzelmeden doğrulanamaz.
 - **Lisans:** `LICENSE` — tüm hakları saklı, portföy amaçlı görüntüleme.
   Kullanıcı açık kaynak isterse MIT'e çevrilebilir.
 - **Ürün düzeltmesi:** adisyon ekranında ürün araması artık seçili kategoriyle
   sınırlı değil, tüm menüde arar (testi eklendi).
-- `npm run verify` PASS: **243/243** test (API 164, web 79).
+- `npm run verify` PASS: **244/244** test (API 165, web 79).
 - **Marka "Saydam Cafe" oldu (2026-09-25):** uygulama adı, sayfa başlığı, PWA
   manifest, demo verisi, testler, ortam betikleri, README, ekran görüntüleri, GIF
   ve paylaşım görseli. Kullanıcı repo adını kendisi değiştirecek; README'deki
   bağlantılar göreli olduğu için etkilenmez.
+- **Özellik turu (2026-09-25):** README'deki "Uygulama turu" bölümü her
+  özelliği ilgili rolün hesabıyla çekilmiş bir GIF ile anlatır:
+  `tour-01-servis` (hero) … `tour-11-qr`. Kayıtlar önceki GIF'ten yaklaşık 1,4
+  kat yavaş, insan hızında; ilk yükleme kareleri kırpıldı. Eski `demo.gif` ve
+  `demo-mobile.gif` kaldırıldı; "Mutfak tableti" artık mutfak hesabıyla çekilen
+  ayrı GIF'tir.
+- **Kasa düzeltmesi:** açık kasanın nakit satışları artık yalnız şu ana kadar
+  gerçekleşmiş ödemeleri içeriyor. Demo verisindeki ileri tarihli ödeme,
+  önizleme ile kapanış arasında fark yaratmıyor; regresyon testi eklendi.
 - **README yalnız vitrin:** kullanıcı isteğiyle kurulum, komut ve demo hesap
   bölümleri kaldırıldı; kurulum rehberi `docs/DEVELOPMENT.md` içinde duruyor.
-  Private repoda çalışmayan CI rozeti README'den çıkarıldı (iş akışı duruyor).
+  CI rozeti README'den çıkarıldı (iş akışı duruyor).
 
 ### Yerel geliştirme ortamı
 
@@ -76,9 +88,8 @@ merge"); bu yüzden tüm iş tek bir PR'da toplandı ve merge kullanıcıya bır
   veritabanına otomatik uygulanır (additive; yine de önce `pg_dump` yedeği önerilir).
 - Canlıdaki yönetici şifresinin repodaki eski test şifresiyle aynı olup olmadığı
   kullanıcı tarafından kontrol edilmeli (bkz. güvenlik kontrolleri).
-- Kasa ve stok akışları gerçek tarayıcıda örnek veriyle uçtan uca denenmedi;
-  kullanıcının yerel veritabanına test verisi yazılmadı. Davranış HTTP ve jsdom
-  testleriyle doğrulandı.
+- Kasa ve stok akışları demo veritabanında gerçek tarayıcıyla kaydedildi;
+  kullanıcının `CafeAdisyon` veritabanına test verisi yazılmadı.
 - Termal yazıcı gerçek cihazda denenmedi; yazdırma görünümü tarayıcıda doğrulandı.
 - `VITE_API_URL` / ayrı barındırma kodunun kaldırılması kullanıcı kararıdır.
 - `scripts/set-local-env.ps1 -Reset` `postgres` süper kullanıcı adresi üretir;

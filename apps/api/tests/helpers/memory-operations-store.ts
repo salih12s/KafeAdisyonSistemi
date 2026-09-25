@@ -264,18 +264,18 @@ export abstract class MemoryOperationsStore
     return closed;
   }
 
-  private cashSales(from: Date, to: Date | null): number {
+  private cashSales(from: Date, to: Date): number {
     return this.checks
       .flatMap((check) => check.payments)
       .filter((payment) => {
         const at = new Date(payment.createdAt);
-        return payment.method === 'CASH' && at >= from && (to === null || at < to);
+        return payment.method === 'CASH' && at >= from && at < to;
       })
       .reduce((total, payment) => total + payment.amountKurus, 0);
   }
 
   private toCashSession(session: MemoryCashSession): CashSessionResponse {
-    const live = session.status === 'OPEN' ? this.cashSales(session.openedAt, null) : 0;
+    const live = session.status === 'OPEN' ? this.cashSales(session.openedAt, new Date()) : 0;
     return buildCashSession(session, live);
   }
 

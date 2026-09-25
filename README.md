@@ -13,11 +13,11 @@ ekranı, ödeme, kasa, stok, QR menü ve raporlar.
 ![Node.js](https://img.shields.io/badge/Node.js-Express%205-417e38?logo=nodedotjs&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Prisma-336791?logo=postgresql&logoColor=white)
 ![Socket.IO](https://img.shields.io/badge/Socket.IO-ger%C3%A7ek%20zamanl%C4%B1-010101?logo=socketdotio&logoColor=white)
-![Testler](https://img.shields.io/badge/testler-243%20ge%C3%A7iyor-2f7d4f)
+![Testler](https://img.shields.io/badge/testler-244%20ge%C3%A7iyor-2f7d4f)
 
-<img src="docs/screenshots/demo.gif" alt="Masa açma, sipariş, mutfak, ödeme ve rapor akışı" width="880" />
+<img src="docs/screenshots/tour-01-servis.gif" alt="Giriş, özet, masa açma, sipariş, mutfak, ödeme ve rapor akışı" width="880" />
 
-<sub>Boş masayı açma → seçenekli ürün ekleme → mutfakta hazırlama → kartla ödeme ve hesabı kapatma → 30 günlük ciro grafiği</sub>
+<sub>Giriş → özet ekranı → boş masayı açma → seçenekli ürün ve aramayla tatlı ekleme → mutfakta hazırlama → kartla ödeme ve hesabı kapatma → 30 günlük ciro grafiği</sub>
 
 </div>
 
@@ -56,21 +56,94 @@ telefon, tablet ve masaüstünde çalışır.
   </tr>
 </table>
 
-## Telefonda
+## Uygulama turu
+
+Aşağıdaki kayıtların hepsi uygulamanın kendisinden, demo verisiyle ve ilgili
+rolün hesabıyla alındı. Her biri bir özelliği baştan sona gösterir.
+
+### Garson telefonu ve müşteri QR menüsü
 
 <table>
   <tr>
-    <td width="42%" align="center"><img src="docs/screenshots/demo-mobile.gif" alt="Telefonda masa açma, sipariş, mutfak ve QR menü" width="300" /></td>
-    <td width="58%" valign="top">
-      <b>Garson telefonu</b> — Masayı telefondan açar, seçenekli ürünü alt panelden ekler, menüde arar ve adisyonun toplamını anında görür.<br /><br />
-      <b>Mutfak tableti</b> — Sipariş, garson "Siparişe ekle"ye bastığı an mutfak ekranına düşer; hazırlık durumu tek dokunuşla ilerler.<br /><br />
-      <b>Müşteri QR menüsü</b> — Masadaki kodu okutan müşteri, giriş yapmadan güncel menüyü, seçenekleri ve fiyatları görür.<br /><br />
-      Tüm ekranlar telefon, tablet ve masaüstüne göre uyarlanır; dokunma hedefleri en az 44 piksel, yatay taşma yoktur. Uygulama telefona ve tablete ana ekran uygulaması olarak kurulabilir.
-    </td>
+    <td width="50%" align="center" valign="top"><img src="docs/screenshots/tour-02-garson.gif" alt="Garson telefonda masa açar, sipariş alır ve masayı taşır" width="300" /></td>
+    <td width="50%" align="center" valign="top"><img src="docs/screenshots/tour-11-qr.gif" alt="Müşteri QR menüde kategoriler arasında gezer" width="300" /></td>
+  </tr>
+  <tr>
+    <td valign="top"><b>Garson</b> — Bahçedeki masayı telefondan açar; Türk kahvesini şeker tercihi, adet ve notla, menemeni kategoriden, latteyi aramayla ekler. Müşteri terasa geçmek isteyince adisyonu tek dokunuşla Teras 1'e taşır.</td>
+    <td valign="top"><b>Müşteri</b> — Masadaki QR kodu okutur, giriş yapmadan güncel menüyü, seçenekleri ve fiyat farklarını görür. Menüye yeni eklenen ürün (Magnolia) burada anında listelenir.</td>
   </tr>
 </table>
 
-## Ekranlar
+### Mutfak tableti — gerçek zamanlı sipariş
+
+<img src="docs/screenshots/tour-03-mutfak.gif" alt="Mutfak ekranına canlı sipariş düşer ve durumu ilerletilir" width="880" />
+
+Mutfak hesabıyla açılan tablet: garsonun Teras 2 için girdiği menemen ve tost,
+sayfa yenilenmeden ekrana düşer. Aşçı istasyona göre (Mutfak / Bar) süzer,
+siparişi **Yeni → Hazırlanıyor → Hazır → Servis edildi** olarak ilerletir.
+Mutfak rolü yalnız özet ve mutfak ekranlarını görür.
+
+### İndirim, ikram, hesap bölme ve karma ödeme
+
+<img src="docs/screenshots/tour-04-odeme.gif" alt="Kasiyer indirim ve ikram uygular, hesabı kişiye göre böler, nakit ve kartla tahsil eder" width="880" />
+
+Kasiyer adisyona gerekçeli %10 indirim uygular, tiramisuyu doğum günü ikramı
+yapar; toplam anında güncellenir. Hesap **kişiye göre** ikiye bölünür, ilk pay
+nakit alınır (para üstü hesaplanır), kalan kartla ödenir ve hesap kapanır.
+
+### Masa birleştirme ve cari hesap
+
+<img src="docs/screenshots/tour-05-cari.gif" alt="İki masa birleştirilir, kalan tutar cariye aktarılır ve tahsilat girilir" width="880" />
+
+Bahçe 4'teki adisyon Bahçe 3'e birleştirilir, kalan tutar şirketin cari
+hesabına yazılır ve masa kapanır. Cari ekstrede borç satırı görünür; ay sonu
+havalesi tahsilat olarak girilince bakiye hareketlerden yeniden hesaplanır.
+
+### Kasa ve vardiya sonu
+
+<img src="docs/screenshots/tour-06-kasa.gif" alt="Kasadan nakit çıkışı, sayımla kasa kapanışı ve yeni vardiya açılışı" width="880" />
+
+Çekmeceden süt alımı için nakit çıkışı yapılır; beklenen tutar düşer. Vardiya
+sonunda sayılan nakit girilirken **sayım farkı canlı hesaplanır**, kasa
+gerekçeyle kapatılır, geçmiş tabloya eklenir ve akşam vardiyası yeni açılış
+nakdiyle başlar.
+
+### Stok ve reçete
+
+<img src="docs/screenshots/tour-07-stok.gif" alt="Stok alımı, fire, sayım düzeltmesi ve ürün reçetesi" width="880" />
+
+Azalan limon için alım girilir ve uyarı kalkar; kırılan yumurta fire olarak
+düşülür; akşam sayımında rafta sayılan süt miktarı yazılır, sistem farkı
+düzeltme hareketi olarak kaydeder. Reçeteye malzeme eklenir: adisyon kapandıkça
+stok reçeteye göre otomatik düşer.
+
+### Menü yönetimi
+
+<img src="docs/screenshots/tour-08-menu.gif" alt="Yeni ürün, seçenek grubu ve fiyat farklı seçenekler" width="880" />
+
+Tatlılar kategorisine yeni ürün eklenir; ardından zorunlu, tek seçimli bir
+seçenek grubu ("Meyve") ve fiyat farkıyla birlikte cevapları tanımlanır. Garson
+ekranı bu ürünü eklerken artık meyve seçimini sorar.
+
+### Raporlar
+
+<img src="docs/screenshots/tour-09-rapor.gif" alt="Gün sonu, tarih ön ayarları, günlük ciro grafiği ve satış kırılımları" width="880" />
+
+Gün sonu (nakit, kart, cari, indirim, ikram), saatlik satış dağılımı, son 7 ve
+30 günün günlük ciro grafiği (üzerine gelince gün ayrıntısı, erişilebilir tablo
+görünümü) ile ürün, kategori ve personel bazında satışlar.
+
+### Ayarlar, personel ve işlem geçmişi
+
+<img src="docs/screenshots/tour-10-ayarlar.gif" alt="Personel ekleme, masa ekleme, yazıcı ve QR kartı, işlem geçmişi filtreleri" width="880" />
+
+İşletme sahibi yeni garsonu rolüyle ve geçici şifreyle ekler, terasa masa açar,
+fiş yazıcısının kâğıt genişliğini seçer ve masalara konacak QR menü kartını
+görür. İşlem geçmişinde kimin ne zaman ne yaptığı işlem türüne ve personele göre
+süzülür.
+
+<details>
+<summary><b>Ekran görüntüleri</b></summary>
 
 <table>
   <tr>
@@ -95,10 +168,16 @@ telefon, tablet ve masaüstünde çalışır.
   <tr>
     <td width="25%"><img src="docs/screenshots/mobile-qr-menu.png" alt="QR menü" /><br /><sub><b>QR menü</b> (müşteri)</sub></td>
     <td width="25%"><img src="docs/screenshots/mobile-tables.png" alt="Mobil masa planı" /><br /><sub><b>Garson telefonu</b></sub></td>
-    <td width="25%"><img src="docs/screenshots/mobile-kitchen.png" alt="Mobil mutfak" /><br /><sub><b>Mutfak tableti</b></sub></td>
+    <td width="25%"><img src="docs/screenshots/mobile-kitchen.png" alt="Mobil mutfak" /><br /><sub><b>Mutfak ekranı (telefon)</b></sub></td>
     <td width="25%" valign="top"><img src="docs/screenshots/receipt.png" alt="Termal adisyon fişi" /><br /><sub><b>80 mm termal fiş</b></sub></td>
   </tr>
 </table>
+
+</details>
+
+Tüm ekranlar telefon, tablet ve masaüstüne göre uyarlanır; dokunma hedefleri en
+az 44 piksel, yatay taşma yoktur. Uygulama telefona ve tablete ana ekran
+uygulaması olarak kurulabilir.
 
 ## Teknik olarak öne çıkanlar
 
@@ -165,7 +244,7 @@ Ayrıntılı kod haritası ve bir isteğin uçtan uca yolculuğu:
 
 ## Kalite ve geliştirme süreci
 
-- **243 otomatik test** (API 164, arayüz 79). İş kuralları gerçek veritabanı
+- **244 otomatik test** (API 165, arayüz 79). İş kuralları gerçek veritabanı
   gerektirmeyen bellek içi store'larla, ekranlar React Testing Library ile test
   edilir. Strict TypeScript ve ESLint her değişiklikte zorunlu.
 - **Kod ve güvenlik incelemesi** yapıldı; bulunan her sorun (ör. kasa kapanışı
@@ -194,7 +273,7 @@ payments, customer accounts, cash-drawer shifts with automatic count variance,
 recipe-based stock deduction, daily revenue charts, a public QR menu and 80/58 mm
 thermal receipts. It is a TypeScript monorepo (React 18 + Vite, Express 5 +
 Prisma + PostgreSQL) built around integer money, price snapshots, ledger-derived
-balances, serializable transactions and strict typing, covered by 243 automated
+balances, serializable transactions and strict typing, covered by 244 automated
 tests.
 
 ## Lisans

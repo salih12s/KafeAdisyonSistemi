@@ -24,9 +24,9 @@ const closeTransactionOptions = {
 } as const;
 
 /** Oturum süresince alınan nakit ödemeler; açık oturumda şu ana kadar. */
-async function cashSales(reader: Reader, from: Date, to: Date | null): Promise<number> {
+async function cashSales(reader: Reader, from: Date, to: Date): Promise<number> {
   const result = await reader.payment.aggregate({
-    where: { method: 'CASH', createdAt: { gte: from, ...(to === null ? {} : { lt: to }) } },
+    where: { method: 'CASH', createdAt: { gte: from, lt: to } },
     _sum: { amountKurus: true },
   });
   return result._sum.amountKurus ?? 0;
@@ -34,7 +34,7 @@ async function cashSales(reader: Reader, from: Date, to: Date | null): Promise<n
 
 async function toResponse(reader: Reader, row: SessionRow): Promise<CashSessionResponse> {
   // Kapanmış oturumun tutarı sabittir; ödemeler yeniden sorgulanmaz.
-  const live = row.status === 'OPEN' ? await cashSales(reader, row.openedAt, null) : 0;
+  const live = row.status === 'OPEN' ? await cashSales(reader, row.openedAt, new Date()) : 0;
   return buildCashSession(toSource(row), live);
 }
 
