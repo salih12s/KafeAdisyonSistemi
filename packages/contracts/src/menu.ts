@@ -87,11 +87,14 @@ export interface MenuResponse {
 }
 
 /**
- * QR menü için oturumsuz okunan görünüm. Yalnız aktif menü ve işletme adı
- * döner; fiyat dışında iç bilgi (stok, maliyet, personel) içermez.
+ * QR menü için oturumsuz okunan görünüm. Yalnız aktif menü ile işletmenin
+ * müşteriye açık künyesi (ad, telefon, adres) döner; fiyat dışında iç bilgi
+ * (stok, maliyet, personel) içermez.
  */
 export interface PublicMenuResponse extends MenuResponse {
   businessName: string;
+  phone: string | null;
+  address: string | null;
 }
 
 export function isPreparationArea(value: unknown): value is PreparationArea {

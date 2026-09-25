@@ -13,7 +13,7 @@ ekranı, ödeme, kasa, stok, QR menü ve raporlar.
 ![Node.js](https://img.shields.io/badge/Node.js-Express%205-417e38?logo=nodedotjs&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Prisma-336791?logo=postgresql&logoColor=white)
 ![Socket.IO](https://img.shields.io/badge/Socket.IO-ger%C3%A7ek%20zamanl%C4%B1-010101?logo=socketdotio&logoColor=white)
-![Testler](https://img.shields.io/badge/testler-244%20ge%C3%A7iyor-2f7d4f)
+![Testler](https://img.shields.io/badge/testler-248%20ge%C3%A7iyor-2f7d4f)
 
 <img src="docs/screenshots/tour-01-servis.gif" alt="Giriş, özet, masa açma, sipariş, mutfak, ödeme ve rapor akışı" width="880" />
 
@@ -47,7 +47,7 @@ telefon, tablet ve masaüstünde çalışır.
     <td width="50%" valign="top"><b>Raporlar</b> — Gün sonu, günlük ciro grafiği, ödeme türü, ürün/kategori/personel satışları, indirim ve ikram dökümü.</td>
   </tr>
   <tr>
-    <td width="50%" valign="top"><b>QR menü</b> — Masadaki koddan açılan, oturumsuz, mobil uyumlu menü; ayarlardan yazdırılabilir QR kartı.</td>
+    <td width="50%" valign="top"><b>QR menü</b> — Masadaki koddan açılan, personel ekranlarından ayrı müşteri sayfası: kapak fotoğrafı, öne çıkanlar, fotoğraflı ve açıklamalı ürünler, seçenek fiyatları; ayarlardan yazdırılabilir QR kartı.</td>
     <td width="50%" valign="top"><b>Termal fiş</b> — 80/58 mm adisyon bilgi fişi ve mutfak fişi; ek sürücü gerektirmeden tarayıcıdan.</td>
   </tr>
   <tr>
@@ -66,11 +66,11 @@ rolün hesabıyla alındı. Her biri bir özelliği baştan sona gösterir.
 <table>
   <tr>
     <td width="50%" align="center" valign="top"><img src="docs/screenshots/tour-02-garson.gif" alt="Garson telefonda masa açar, sipariş alır ve masayı taşır" width="300" /></td>
-    <td width="50%" align="center" valign="top"><img src="docs/screenshots/tour-11-qr.gif" alt="Müşteri QR menüde kategoriler arasında gezer" width="300" /></td>
+    <td width="50%" align="center" valign="top"><img src="docs/screenshots/tour-11-qr.gif" alt="Müşteri fotoğraflı QR menüde öne çıkanlara, ürün ayrıntısına ve kategorilere bakar" width="300" /></td>
   </tr>
   <tr>
     <td valign="top"><b>Garson</b> — Bahçedeki masayı telefondan açar; Türk kahvesini şeker tercihi, adet ve notla, menemeni kategoriden, latteyi aramayla ekler. Müşteri terasa geçmek isteyince adisyonu tek dokunuşla Teras 1'e taşır.</td>
-    <td valign="top"><b>Müşteri</b> — Masadaki QR kodu okutur, giriş yapmadan güncel menüyü, seçenekleri ve fiyat farklarını görür. Menüye yeni eklenen ürün (Magnolia) burada anında listelenir.</td>
+    <td valign="top"><b>Müşteri</b> — Masadaki QR kodu okutur ve giriş yapmadan kafenin kendi menü sayfasına düşer. Öne çıkanlara göz atar, Türk kahvesinin ayrıntısında şeker seçeneklerini, serpme kahvaltının fotoğrafını ve açıklamasını görür; kategori çubuğu kaydırdıkça bulunduğu bölümü gösterir. Menü ve fiyatlar personel uygulamasıyla aynı veriden anında gelir.</td>
   </tr>
 </table>
 
@@ -244,7 +244,7 @@ Ayrıntılı kod haritası ve bir isteğin uçtan uca yolculuğu:
 
 ## Kalite ve geliştirme süreci
 
-- **244 otomatik test** (API 165, arayüz 79). İş kuralları gerçek veritabanı
+- **248 otomatik test** (API 166, arayüz 82). İş kuralları gerçek veritabanı
   gerektirmeyen bellek içi store'larla, ekranlar React Testing Library ile test
   edilir. Strict TypeScript ve ESLint her değişiklikte zorunlu.
 - **Kod ve güvenlik incelemesi** yapıldı; bulunan her sorun (ör. kasa kapanışı
@@ -270,12 +270,14 @@ offline önbellek bilinçli olarak kullanılmaz.
 **Saydam Cafe** is a full-stack point-of-sale system for a café: table and check
 management with menu options, a real-time kitchen display (Socket.IO), split
 payments, customer accounts, cash-drawer shifts with automatic count variance,
-recipe-based stock deduction, daily revenue charts, a public QR menu and 80/58 mm
+recipe-based stock deduction, daily revenue charts, a photo-rich public QR menu page and 80/58 mm
 thermal receipts. It is a TypeScript monorepo (React 18 + Vite, Express 5 +
 Prisma + PostgreSQL) built around integer money, price snapshots, ledger-derived
-balances, serializable transactions and strict typing, covered by 244 automated
+balances, serializable transactions and strict typing, covered by 248 automated
 tests.
 
 ## Lisans
 
-Tüm hakları saklıdır — ayrıntı için [LICENSE](LICENSE).
+Tüm hakları saklıdır — ayrıntı için [LICENSE](LICENSE). QR menüdeki ürün fotoğrafları
+[Unsplash Lisansı](https://unsplash.com/license) ile kullanılır; kaynaklar
+[apps/web/public/menu-photos/CREDITS.md](apps/web/public/menu-photos/CREDITS.md).

@@ -260,3 +260,16 @@ Bu eşleme Phase'ler boyunca korunur:
 | Dikkat / seçili / aktif      | Vurgu `#C76B2A`         | Aktif menü, seçili masa       |
 | Hata / kopuk / iptal         | Tehlike `#B83A3A`       | Veritabanı yok, adisyon iptal |
 | Nötr / boş / bekliyor        | İkincil metin `#71675E` | Boş masa, kontrol ediliyor    |
+
+## 11. Müşteri QR menüsü (istisna)
+
+`/qr-menu` bir çalışma ekranı değil, müşterinin masadan açtığı vitrin
+sayfasıdır (ADR-025). Bu sayfada şu farklar bilinçli olarak uygulanır:
+
+- Ürün fotoğrafları ve kısa açıklamalar gösterilir; bilgi yoğunluğu yerine
+  okunaklılık ve iştah açan sunum önceliklidir.
+- Başlıklar `font-display` (sistem serif yığını, indirme yok) ile yazılır.
+- Kapak fotoğrafı üzerindeki metin için alttan koyulaşan perde kullanılır; bu
+  okunabilirlik içindir, dekoratif gradient kuralının istisnası yalnız budur.
+- Renk paleti, 44 px dokunma hedefi, yatay taşma yasağı ve Türkçe metin
+  kuralları aynen geçerlidir; glassmorphism, glow ve pill kullanılmaz.

@@ -8,21 +8,35 @@ sonraki geliştiriciye devredilir.
 
 ## Aktif durum
 
-**GitHub vitrini — özellik turu GIF'leri**
+**GitHub vitrini — fotoğraflı müşteri QR menüsü**
 
-| Alan                | Değer                                          |
-| ------------------- | ---------------------------------------------- |
-| **Branch**          | `docs/feature-gifs`                            |
-| **Base branch**     | `main`                                         |
-| **Ana geliştirici** | Codex                                          |
-| **Durum**           | **Tamamlandı — draft PR açık, merge edilmedi** |
-| **Son commit**      | `docs: finalize feature GIF handoff`           |
-| **Son güncelleme**  | 2026-09-25                                     |
+| Alan                | Değer                                                    |
+| ------------------- | -------------------------------------------------------- |
+| **Branch**          | `feat/qr-menu-showcase`                                  |
+| **Base branch**     | `main`                                                   |
+| **Ana geliştirici** | Claude                                                   |
+| **Durum**           | **Tamamlandı — PR açıldı, kullanıcı izniyle merge**      |
+| **Son commit**      | `feat: turn the QR menu into a photo-rich customer page` |
+| **Son güncelleme**  | 2026-09-25                                               |
 
 Kullanıcının canlı sunucusu yok; proje GitHub'da vitrin olarak sergilenecek ve
-LinkedIn'de paylaşılacak. Kullanıcı GitHub'daki vitrin işini tamamen devretti.
-PR'ları `main`'e merge etme girişimi izin sistemince reddedildi ("incelenmeden
-merge"); bu yüzden tüm iş tek bir PR'da toplandı ve merge kullanıcıya bırakıldı.
+LinkedIn'de paylaşılacak. Kullanıcı GitHub'daki vitrin işini tamamen devretti ve
+PR'ların `main`'e alınmasına açıkça izin verdi (PR #17 bu izinle merge edildi).
+
+- **QR menü müşteri sayfası (2026-09-25, ADR-025):** `/qr-menu` personel
+  ekranlarından ayrı, fotoğraflı vitrin sayfası oldu: kapak fotoğrafı, işletme
+  adı/adresi, yapışkan ve kaydırmayı izleyen kategori çubuğu, "Öne çıkanlar"
+  şeridi, fotoğraflı ve açıklamalı ürün satırları, seçenek fiyatlarını gösteren
+  ürün ayrıntısı ve telefonlu alt bilgi. Kullanıcı migration istemedi; fotoğraf
+  ve açıklamalar `apps/web/src/features/qr-menu/showcase.ts` kataloğunda ürün
+  adına göre eşlenir. 22 ürün + kapak fotoğrafı Unsplash lisanslı, WebP
+  (toplam ~850 KB), kaynaklar `apps/web/public/menu-photos/CREDITS.md`.
+  `/api/public/menu` artık telefon ve adresi de döndürür (sözleşme değişti,
+  veritabanı değişmedi). `tour-11-qr.gif` ve `mobile-qr-menu.png` yeniden
+  çekildi. `npm run verify` PASS: **248/248** test (API 166, web 82).
+- **Kalıcı çözüm notu:** gerçek işletme kendi fotoğraflarını kullanacaksa
+  `Product` tablosuna additive açıklama/görsel alanları ve menü yönetiminde
+  yükleme ekranı gerekir; kullanıcı onayıyla ayrı iş.
 
 - **Demo verisi:** `npm run demo:seed` (ADR-024). Yalnız adı `demo` içeren boş
   veritabanına yazar; `CafeAdisyon` üzerinde denendi ve yazmadan reddetti.

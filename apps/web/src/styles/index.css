@@ -5,6 +5,10 @@
   --font-sans:
     'Inter Variable', Inter, 'Segoe UI Variable', 'Segoe UI', system-ui, -apple-system,
     BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+  /* Yalnız müşteriye açık QR menü başlıkları; indirme yok, sistem serif yığını. */
+  --font-display:
+    'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, 'Times New Roman',
+    serif;
 
   --color-app: #f7f3ee;
   --color-canvas: #f7f3ee;

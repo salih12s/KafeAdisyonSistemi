@@ -156,7 +156,14 @@ export function stubAppFetch(
       }
       if (path === '/api/public/menu') {
         return Promise.resolve(
-          response(options.publicMenu ?? { businessName: 'Saydam Cafe', categories: [] }),
+          response(
+            options.publicMenu ?? {
+              businessName: 'Saydam Cafe',
+              phone: null,
+              address: null,
+              categories: [],
+            },
+          ),
         );
       }
 
