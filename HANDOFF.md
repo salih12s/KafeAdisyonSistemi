@@ -39,6 +39,10 @@ merge"); bu yüzden tüm iş tek bir PR'da toplandı ve merge kullanıcıya bır
   mimari, demo hızlı başlangıç, İngilizce özet). Eski geliştirici README'si
   `docs/DEVELOPMENT.md` oldu (demo verisi bölümü eklendi).
 - **CI:** `.github/workflows/ci.yml` her push/PR'da `npm run verify` çalıştırır.
+- **CI engeli (PR #17):** GitHub Actions işi hiç başlamadı. GitHub anotasyonu:
+  "The job was not started because your account is locked due to a billing
+  issue." Yerelde `npm run verify` ve `npm run format:check` geçti; GitHub CI
+  hesabın faturalama durumu düzelmeden doğrulanamaz.
 - **Lisans:** `LICENSE` — tüm hakları saklı, portföy amaçlı görüntüleme.
   Kullanıcı açık kaynak isterse MIT'e çevrilebilir.
 - **Ürün düzeltmesi:** adisyon ekranında ürün araması artık seçili kategoriyle

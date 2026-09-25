@@ -1227,3 +1227,6 @@ değiştirilmedi, merge yapılmadı.
 - `npm run verify` PASS: lint, typecheck, 244 test (API 165, web 79) ve build.
 - Yalnız `KafeAdisyonDemoVitrin` kullanıldı; `CafeAdisyon` veritabanına
   dokunulmadı.
+- Draft PR #17 açıldı. GitHub Actions hesabın faturalama nedeniyle kilitli
+  olması yüzünden işi başlatmadı (check annotation); yerel `npm run verify` ve
+  `npm run format:check` geçti. Merge yapılmadı.
