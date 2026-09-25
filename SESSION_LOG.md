@@ -1106,3 +1106,24 @@ değiştirilmedi, merge yapılmadı.
   anlamsız eksen, dar ekranda çakışan gün etiketleri, sağ kenarda kesilen son
   etiket, ipucunun panel başlığına taşması, gereksiz geniş eksen üst sınırı.
 - `npm run verify` PASS: 241/241 test (API 164, web 77).
+
+## 2026-09-25 — Claude — Final kod incelemesi ve modüler yapı
+
+**Branch:** `refactor/modular-structure` (base `feat/phase-8-operations`)
+**Sonuç:** Tamamlandı; draft PR açık, merge edilmedi.
+
+- `/code-review` (high) `main...feat/phase-8-operations` aralığında 10 bulgu
+  verdi; hepsi düzeltildi ve regresyon testleriyle kapatıldı (ayrıntı HANDOFF).
+  En önemlileri: CORS'ta eksik `PUT`, kasa kapanışı ile nakit ödeme arasındaki
+  yarış (satır kilidiyle çözüldü), stok formunun kalem değişince taşınan durumu.
+- Kullanıcı düz `pages/` ve `components/ui` yapısını ve `src` içindeki testleri
+  istemedi. Web `app/shared/features`, API `modules/shared` yapısına taşındı.
+  Taşıma bir betikle yapıldı: `git mv` + her göreli import'un eski konuma göre
+  çözülüp yeni konuma göre yazılması; `lib/api.ts` importları sembol bazında
+  alan modüllerine dağıtıldı. Büyük ekranlar ve API router/store dosyaları
+  bölündü; tekrar eden yardımcılar tek kopyaya indirildi.
+- Otomatik import tespitinin üç yanlış eşleşmesi (yorum veya metin içindeki
+  kelime) derleyici hatasıyla yakalanıp elle düzeltildi.
+- `docs/ARCHITECTURE.md` §3 yeni kod haritasıyla yeniden yazıldı: klasör
+  ağaçları, modül dosya kalıbı, bir isteğin yolculuğu ve yeni özellik rehberi.
+- `npm run verify` PASS: 242/242 test (API 164, web 78).

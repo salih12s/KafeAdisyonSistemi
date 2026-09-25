@@ -8,68 +8,61 @@ sonraki geliştiriciye devredilir.
 
 ## Aktif durum
 
-**Phase 8 — Kasa, stok, QR menü, yazıcı, grafikli rapor ve PWA — draft PR açık**
+**Final kod incelemesi düzeltmeleri ve modüler yapı — draft PR açık**
 
-| Alan                | Değer                                                       |
-| ------------------- | ----------------------------------------------------------- |
-| **Branch**          | `feat/phase-8-operations`                                   |
-| **Base branch**     | `fix/review-findings`                                       |
-| **Ana geliştirici** | Claude                                                      |
-| **Durum**           | **Tamamlandı — draft PR açık, merge edilmedi**              |
-| **Son commit**      | `feat: add cash sessions, stock, QR menu, printing and PWA` |
-| **Son güncelleme**  | 2026-09-25                                                  |
+| Alan                | Değer                                          |
+| ------------------- | ---------------------------------------------- |
+| **Branch**          | `refactor/modular-structure`                   |
+| **Base branch**     | `feat/phase-8-operations`                      |
+| **Ana geliştirici** | Claude                                         |
+| **Durum**           | **Tamamlandı — draft PR açık, merge edilmedi** |
+| **Son commit**      | `docs: map the modular structure`              |
+| **Son güncelleme**  | 2026-09-25                                     |
 
-Kullanıcı 2026-09-24'te güvenlik kontrollerini ve önerilen yeni özelliklerin
-tamamını istedi. QR ile sipariş verme kullanıcı kararıyla yapılmadı; QR yalnız
-menü gösterir. Kararlar: ADR-021 (kasa), ADR-022 (stok), ADR-023 (QR menü,
-yazdırma, PWA).
+Kullanıcı son bir kapsamlı kod incelemesi, bulguların raporlanması ve düz
+klasör yapısının (tek `pages/`, tek `components/ui`, `src/__tests__`)
+profesyonel, modüler bir yapıya çevrilmesini istedi. Davranış değişikliği yalnız
+inceleme düzeltmeleri commit'indedir; yeniden yapılanma commit'leri davranış
+değiştirmez.
 
-**Güvenlik kontrolleri (ilk commit)**
+**İnceleme düzeltmeleri (`fix: address final code review findings`)**
 
-- Tüm git geçmişi gizli bilgi için tarandı: yalnız test şifreleri var; gerçek
-  anahtar, token veya bağlantı adresi yok. Hiçbir `.env` dosyası commit edilmemiş.
-- Canlı Railway adresi `vite-env.d.ts` içinden kaldırıldı; `auth.test.tsx`
-  içindeki gerçek görünen `admin` giriş bilgisi nötr test bilgisiyle değiştirildi. Adres ve
-  şifre git geçmişinde (ve append-only `SESSION_LOG.md` içinde adres) kalır.
-- **Açık kontrol:** eski testteki `admin` şifresinin canlıdaki bir hesaba ait olup
-  olmadığı doğrulanamadı; canlı veritabanını okuma izni verilmedi. Repo herkese
-  açılmadan önce kullanıcı canlıdaki yönetici şifresini değiştirmelidir.
-- `npm audit fix`: `qs` 6.16.0 (Express sorgu ayrıştırıcısı), `js-yaml` 4.3.2.
-  Kalan açıklar yalnız derleme/test araçlarında: `deepmerge-ts` (Prisma CLI
-  yapılandırması) ve `vitest` (düzeltme major sürüm ister). Kullanıcı isteği bu
-  koda ulaşmaz.
+- CORS izin listesine `PUT` (ayrı barındırmada reçete kaydı çalışmıyordu).
+- Kasa kapanışı açık kasa satırını `FOR UPDATE` ile kilitler (Read Committed);
+  nakit ödeme aynı satırı `FOR SHARE` ile kilitler. Kapanışla yarışan nakit
+  ödeme ya o vardiyaya sayılır ya kapanışı bekler. Kilit SQL'i yerel PostgreSQL'de
+  geri alınan bir transaction içinde doğrulandı.
+- Kapanmış vardiyada nakit satış sabit beklenen tutardan türetilir: döküm her
+  zaman tutarlı, geçmiş listesi vardiya başına ödeme sorgusu çalıştırmaz.
+- Reçete birim miktarı en fazla 100.000; `SALE` düşümü INTEGER sınırında
+  kırpılır (stok hiçbir zaman hesap kapatmayı engellemez).
+- Reçete kaydında eşzamanlılık hataları 409; stok formu kalem değişince
+  sıfırlanır; kasa zaten açıksa ekran güncel kasayı yeniden okur; yazdırma iş
+  sayacıyla tekrar tetiklenebilir; reçetede pasif kalemler "(pasif)" görünür;
+  `OwnerRoute`/`ReportRoute`/`AccountRoute` yerine tek `RoleRoute`.
 
-**Özellikler**
+**Modüler yapı** — ayrıntılı harita: `docs/ARCHITECTURE.md` §3.
 
-- **Kasa (`/kasa`, OWNER/CASHIER):** açılış nakdi, nakit giriş/çıkış, vardiya
-  sonu sayım; beklenen nakit ödemelerden türetilir, kapanışta sabitlenir. Tek açık
-  kasa `CashSession_one_open_key` koşullu index'iyle korunur.
-- **Stok (`/stok`):** stok kalemi ve reçete (OWNER), alım/fire/sayım (OWNER,
-  CASHIER), bakiye hareketlerden türetilir. Adisyon `PAID` olunca aynı
-  transaction'da reçeteye göre `SALE` hareketi yazılır; iptaller düşülmez.
-- **QR menü:** oturumsuz `GET /api/public/menu` (hız sınırı + 60 sn önbellek) ve
-  `/qr-menu` sayfası; Ayarlar → "Yazıcı ve QR Menü" altında yazdırılabilir QR.
-  QR matrisi `uqr` (MIT, bağımlılıksız) ile üretilir, çizim React SVG'dir.
-- **Yazıcı:** adisyon ekranında "Fiş yazdır", mutfak kartında fiş düğmesi,
-  ayarlarda 80/58 mm seçimi ve deneme fişi. Yazdırırken yalnız fiş görünür.
-- **Grafikli rapor:** günlük ciro sütun grafiği (hover/odak ipucu, en yüksek gün,
-  tablo görünümü), Bugün/Son 7/Son 30 gün ön ayarları; API `dailySales` döndürür.
-- **Özet:** kasa durumu ve azalan stok kartları.
-- **PWA:** `manifest.webmanifest`, 192/512/maskable/apple ikonları. Service
-  worker ve offline yok (ADR-023).
-- Additive migration `20260924120000_phase_8_cash_stock`: 4 enum, 5 tablo,
-  index/foreign key ve CHECK kısıtları; mevcut tablolarda değişiklik yok. Yalnız
-  **yerel** `CafeAdisyon`'a uygulandı (8 migration, şema güncel; veri korundu).
+- Web: `src/app` (iskelet), `src/shared` (ui, http, lib, config, health),
+  `src/features/<alan>/{api.ts,pages,components,hooks}`. 1.280 satırlık
+  `lib/api.ts` alan başına `api.ts`'ye bölündü. Büyük ekranlar sayfa +
+  bileşenlere ayrıldı (en büyük dosya 1.068 → 495 satır). `FormDialog`,
+  `ErrorText`, `StatusBadge`, `errorMessage` tek ortak kopyaya indi.
+- API: `src/modules/<modül>/{*-routes,*-store,prisma-*-store,*-calculations}`.
+  `createPhaseOneRouter` kimlik ve salon/masa router'larına bölündü; tüm router'lar
+  `routes/index.ts`'de bağlanır. `store.ts`/`prisma-store.ts` modüllere ayrıldı,
+  beş kopya Prisma hata kontrolü `shared/prisma-errors.ts`'de tek.
+- Testler kaynak dışında, alan klasörlerinde: `apps/web/tests/<alan>/`,
+  `apps/api/tests/<modül>/`; `phase-N` dosya adları içerik adlarıyla değişti.
+- Dosyalar `git mv` ile taşındı; git geçmişi yeniden adlandırma olarak izlenir.
 
 **Kalite kanıtı**
 
-- `npm run verify` PASS: lint temiz, strict typecheck temiz, **241/241** test
-  (API 164, web 77), build başarılı (web ana JS 318,84 kB, gzip 99,71 kB).
-- Yeni testler: API `phase-eight.test.ts` (13), web `phase-eight.test.tsx` (12).
-- Gerçek Chrome'da 1440 ve 390 px: özet, kasa, stok, rapor, ayarlar ve QR menü
-  ekranları; yatay taşma yok, sayfa hatası yok. Grafik, tarayıcı seviyesinde
-  karşılanan 30 günlük örnek veriyle incelendi; yerel DB'ye örnek veri yazılmadı.
-  Yazdırma görünümünde yalnız fiş görünür (print media ile doğrulandı).
+- `npm run verify` PASS: lint temiz, strict typecheck temiz, **242/242** test
+  (API 164 / 18 dosya, web 78 / 16 dosya), build başarılı.
+- Yeni regresyon testleri: CORS `PUT`, reçete üst sınırı, kapanmış kasanın
+  tutarlı dökümü, ikinci yazdırma, stok formunun sıfırlanması (bu test düzeltme
+  olmadan başarısız olduğu doğrulandı).
 
 ### Yerel geliştirme ortamı
 
@@ -102,6 +95,12 @@ yazdırma, PWA).
 - `scripts/set-local-env.ps1 -Reset` `postgres` süper kullanıcı adresi üretir;
   uygulama rolüyle çalışmak için `-Reset` kullanılmamalıdır.
 - Sonraki geliştiricinin işi: kullanıcının PR/merge kararını beklemek.
+
+### Önceki durum — Phase 8 (Claude, 2026-09-25)
+
+`feat/phase-8-operations` (draft PR #13): kasa, stok, QR menü, yazıcı, grafikli
+rapor ve PWA; additive migration `20260924120000_phase_8_cash_stock` yalnız yerel
+veritabanında uygulandı.
 
 ### Önceki durum — İnceleme bulgularının düzeltilmesi (Claude, 2026-09-24)
 
