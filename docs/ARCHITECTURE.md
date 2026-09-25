@@ -106,7 +106,7 @@ apps/api/
 │   │   ├── cash/             Kasa oturumu (vardiya)
 │   │   ├── stock/            Stok kalemi, reçete, stok hareketi
 │   │   └── public-menu/      Oturumsuz QR menü ucu
-│   ├── scripts/              db:check, setup:owner
+│   ├── scripts/              db:check, setup:owner, demo:seed (yalnız demo DB)
 │   └── types/                Express Request genişletmesi (req.auth)
 └── tests/
     ├── helpers/              Bellek içi store'lar, test uygulaması, ortak kurulumlar

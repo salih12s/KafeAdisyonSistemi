@@ -1,423 +1,187 @@
-# Kafe Adisyon Sistemi
+<div align="center">
 
-Cafe için adisyon ve satış noktası (POS) uygulaması.
+<img src="apps/web/public/icons/icon-192.png" alt="Joker Cafe" width="84" />
 
-Şu anda **yalnızca local geliştirme** yapılmaktadır. Production ortamında
-uygulama bir custom domain üzerinden Railway'de çalışacak; Express hem API'yi
-hem React production build'ini aynı origin üzerinden sunacaktır.
+# Joker Cafe — Kafe Adisyon Sistemi
 
-> **Phase durumu:** Phase 0–7 ve frontend deneyim tasarımı tamamlandı. Uygulama
-> kapsamlı final review ve izole UAT'tan geçti; kullanıcı kabulü ve merge kararı
-> bekleniyor. Kanıtlar: [docs/FINAL_ACCEPTANCE_REPORT.md](docs/FINAL_ACCEPTANCE_REPORT.md)
-> Plan: [docs/PHASES.md](docs/PHASES.md)
+**Masadan kasaya, tek ekranda.** Masa ve adisyon yönetimi, gerçek zamanlı mutfak
+ekranı, kasa, stok, QR menü ve raporlar için uçtan uca bir satış noktası (POS)
+uygulaması.
 
----
+[![CI](https://github.com/salih12s/KafeAdisyonSistemi/actions/workflows/ci.yml/badge.svg)](https://github.com/salih12s/KafeAdisyonSistemi/actions/workflows/ci.yml)
+![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript&logoColor=white)
+![React](https://img.shields.io/badge/React-18-149eca?logo=react&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-20%2B-417e38?logo=nodedotjs&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-336791?logo=postgresql&logoColor=white)
+![Testler](https://img.shields.io/badge/testler-243%20ge%C3%A7iyor-2f7d4f)
 
-## 1. Amaç
+<img src="docs/screenshots/demo.gif" alt="Masa açma, sipariş, mutfak, ödeme ve rapor akışı" width="880" />
 
-Kafede masa açmak, adisyon tutmak, sipariş almak, mutfağa iletmek, hesabı
-kapatmak ve gün sonunu görmek. Kapsamın tamamı:
-[docs/PRODUCT_SCOPE.md](docs/PRODUCT_SCOPE.md)
+<sub>Boş masayı açma → seçenekli ürün ekleme → mutfakta hazırlama → kartla ödeme ve hesabı kapatma → 30 günlük ciro grafiği</sub>
 
----
-
-### Özellikler
-
-- Masa, adisyon ve sipariş; seçenekli ürünler, fiyat snapshot'ı
-- Gerçek zamanlı mutfak/bar ekranı (Socket.IO)
-- Nakit/kart/karma ödeme, hesap bölme, indirim, ikram, masa taşıma/birleştirme
-- Cari hesap (hareket defterinden türetilen bakiye)
-- **Kasa oturumu:** açılış, nakit giriş/çıkış, vardiya sonu sayım farkı
-- **Stok:** reçeteye göre otomatik düşüm, alım/fire/sayım, azalan stok uyarısı
-- **QR menü:** masadaki koddan açılan, oturumsuz salt okunur menü
-- **Yazıcı:** 80/58 mm termal adisyon ve mutfak fişi (tarayıcı yazdırması)
-- Raporlar: gün sonu, günlük ciro grafiği, ürün/kategori/personel satışları
-- İşlem geçmişi (audit), rol bazlı yetki, ana ekrana kurulabilir (PWA)
+</div>
 
 ---
 
-## 2. Teknik yapı
+## Neler yapıyor?
 
-| Katman     | Teknoloji                                                                                |
-| ---------- | ---------------------------------------------------------------------------------------- |
-| Frontend   | React 18, TypeScript, Vite 6, React Router, TanStack Query, Tailwind CSS 4, Lucide React |
-| Backend    | Node.js, Express 5, Socket.IO, TypeScript, Prisma ORM, Zod, Helmet                       |
-| Veritabanı | PostgreSQL                                                                               |
-| Paylaşım   | `packages/contracts` (ortak tipler ve sabitler)                                          |
-| Test       | Vitest, Supertest, React Testing Library                                                 |
-| Depo       | npm workspaces, TypeScript strict, ESLint, Prettier                                      |
+|                                                                                                                                                            |                                                                                                                                                     |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Masa ve adisyon** — Salon bazlı masa planı, açık süre ve tutar; seçenekli ürünler (süt tipi, ekstra shot), not, adet, gerekçeli iptal, ikram ve indirim. | **Gerçek zamanlı mutfak** — Siparişler Socket.IO ile anında mutfak/bar ekranına düşer; Yeni → Hazırlanıyor → Hazır akışı ve bekleme süresi uyarısı. |
+| **Ödeme** — Nakit, kart, karma ödeme; tutara, kaleme veya kişiye göre hesap bölme; para üstü; cariye aktarma.                                              | **Kasa (vardiya)** — Açılış nakdi, nakit giriş/çıkış, vardiya sonu sayım ve **otomatik sayım farkı**.                                               |
+| **Stok ve reçete** — Ürün reçetesine göre satışta otomatik düşüm, alım/fire/sayım hareketleri, eşik altı uyarısı.                                          | **Raporlar** — Gün sonu, günlük ciro grafiği, ödeme türü, ürün/kategori/personel satışları, indirim ve ikram dökümü.                                |
+| **QR menü** — Masadaki koddan açılan, oturumsuz, mobil uyumlu menü; ayarlardan yazdırılabilir QR kartı.                                                    | **Termal fiş** — 80/58 mm adisyon bilgi fişi ve mutfak fişi; ek sürücü gerektirmeden tarayıcıdan.                                                   |
+| **Cari hesap** — Müşteri bazlı borç, tahsilat ve ekstre; bakiye hareketlerden türetilir.                                                                   | **Roller ve güvenlik** — İşletme sahibi, kasiyer, garson ve mutfak rolleri; yönetim ve para işlemleri işlem geçmişine yazılır.                      |
 
+## Ekranlar
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/dashboard.png" alt="Özet ekranı" /><br /><sub><b>Özet</b> — açık masalar, mutfak durumu, çekmecedeki nakit ve azalan stok.</sub></td>
+    <td width="50%"><img src="docs/screenshots/tables.png" alt="Masa planı" /><br /><sub><b>Masalar</b> — salon bazlı plan; açık masanın tutarı ve açık kalma süresi.</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/check.png" alt="Adisyon ekranı" /><br /><sub><b>Adisyon</b> — menüden ürün ekleme, kalem durumları, fiş yazdırma.</sub></td>
+    <td><img src="docs/screenshots/kitchen.png" alt="Mutfak ekranı" /><br /><sub><b>Mutfak</b> — yüksek kontrastlı, gerçek zamanlı hazırlık ekranı.</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/reports.png" alt="Raporlar" /><br /><sub><b>Raporlar</b> — gün sonu ve günlük ciro grafiği.</sub></td>
+    <td><img src="docs/screenshots/cash.png" alt="Kasa" /><br /><sub><b>Kasa</b> — çekmecede olması gereken tutar ve vardiya geçmişi.</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/stock.png" alt="Stok" /><br /><sub><b>Stok</b> — satıştan otomatik düşen malzemeler ve uyarılar.</sub></td>
+    <td><img src="docs/screenshots/menu.png" alt="Menü yönetimi" /><br /><sub><b>Menü</b> — kategori, ürün, fiyat ve seçenek yönetimi.</sub></td>
+  </tr>
+</table>
+
+<table>
+  <tr>
+    <td width="25%"><img src="docs/screenshots/mobile-qr-menu.png" alt="QR menü" /><br /><sub><b>QR menü</b> (müşteri)</sub></td>
+    <td width="25%"><img src="docs/screenshots/mobile-tables.png" alt="Mobil masa planı" /><br /><sub><b>Garson telefonu</b></sub></td>
+    <td width="25%"><img src="docs/screenshots/mobile-kitchen.png" alt="Mobil mutfak" /><br /><sub><b>Mutfak tableti</b></sub></td>
+    <td width="25%" valign="top"><img src="docs/screenshots/receipt.png" alt="Termal adisyon fişi" /><br /><sub><b>80 mm termal fiş</b></sub></td>
+  </tr>
+</table>
+
+## Teknik olarak öne çıkanlar
+
+- **Para her yerde tam sayı kuruş.** `Float` yok; indirim, bölme ve artık
+  kuruşlar deterministik dağıtılır.
+- **Fiyat snapshot'ı.** Sipariş anındaki ürün adı, fiyatı ve seçenek farkları
+  kaleme yazılır; menü sonradan değişse de geçmiş adisyon ve rapor bozulmaz.
+- **Türetilen bakiyeler.** Cari bakiye, stok miktarı ve beklenen kasa nakdi
+  mutable kolon değildir; değiştirilemeyen hareketlerden hesaplanır.
+- **Eşzamanlılık güvenliği.** Hesap kapatma, masa birleştirme ve ödeme
+  serializable transaction ve satır kilitleriyle korunur. Aynı masada tek açık
+  adisyon ve tek açık kasa kuralını veritabanı kendisi garanti eder.
+- **Güvenlik.** HttpOnly oturum çerezi, rol bazlı yetki, giriş hız sınırı, CSRF
+  ve WebSocket origin kontrolleri, istemcide ve sunucuda çalışma zamanı tip
+  doğrulaması (zod ve tip koruyucuları).
+- **Hiçbir şey silinmez.** Domain kayıtları fiziksel olarak silinmez; pasife
+  alınır. Tüm migration'lar yalnız ekleme yapar.
+- **Kalite.** Strict TypeScript, ESLint, **243 test** (API 164 + arayüz 79) ve her
+  push'ta çalışan CI. Gerçek veritabanı gerektirmeyen bellek içi store'larla
+  hızlı testler.
+- **Kararlar kayıtlı.** 24 mimari karar kaydı (ADR) gerekçeleriyle
+  [DECISIONS.md](DECISIONS.md) içinde.
+
+## Mimari
+
+```mermaid
+flowchart LR
+  subgraph Tarayıcı["Tarayıcı / tablet / telefon"]
+    UI["React 18 + TanStack Query<br/>features/&lt;alan&gt;/"]
+  end
+  subgraph Sunucu["Node.js — tek origin"]
+    API["Express 5<br/>routes/index.ts"]
+    MOD["modules/&lt;modül&gt;<br/>routes · store · calculations"]
+    RT["Socket.IO<br/>sipariş olayları"]
+  end
+  DB[("PostgreSQL<br/>Prisma")]
+  C["packages/contracts<br/>ortak tipler"]
+  UI -- "/api (REST, cookie oturumu)" --> API --> MOD --> DB
+  RT -. "değişiklik sinyali" .-> UI
+  MOD --> RT
+  C -.-> UI
+  C -.-> MOD
 ```
-apps/api            → Express sunucusu (production'da React build'ini de sunar)
-apps/web            → React arayüzü
-packages/contracts  → web ve api'nin paylaştığı tipler
-```
 
-### Local geliştirme
+Web ve API aynı depoda (npm workspaces) ve aynı origin üzerinden sunulur. Kod
+alana göre modüllenmiştir: arayüzde `apps/web/src/features/<alan>/`, sunucuda
+`apps/api/src/modules/<modül>/`. Ayrıntılı kod haritası ve bir isteğin uçtan uca
+yolculuğu: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
-```
-Frontend:   http://localhost:5173
-Backend:    http://localhost:3000
-PostgreSQL: localhost:5432/CafeAdisyon
-```
+| Katman     | Teknoloji                                                                |
+| ---------- | ------------------------------------------------------------------------ |
+| Arayüz     | React 18, TypeScript, Vite, React Router, TanStack Query, Tailwind CSS 4 |
+| Sunucu     | Node.js, Express 5, Socket.IO, Prisma ORM, Zod, Helmet                   |
+| Veritabanı | PostgreSQL                                                               |
+| Test       | Vitest, Supertest, React Testing Library                                 |
+| Araçlar    | npm workspaces, ESLint, Prettier, GitHub Actions                         |
 
-### Hedeflenen production yapısı
+## Hızlı başlangıç (demo verisiyle)
 
-```
-Custom domain
-    ↓
-Railway Node.js servisi
-    ├── Express API              → /api/*
-    └── React production build   → /*
-    ↓
-Railway PostgreSQL
-```
+Gereksinimler: **Node.js 20+** ve **PostgreSQL 14+**.
 
-Frontend ve backend production'da **aynı origin** üzerindedir; bu yüzden
-arayüz kodu API adresini hardcode etmez, yalnızca göreli `/api` yollarını
-kullanır. Ayrıntı: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
-
----
-
-## 3. Gereksinimler
-
-| Gereksinim | Sürüm                             |
-| ---------- | --------------------------------- |
-| Node.js    | 20.10 veya üzeri                  |
-| npm        | 10 veya üzeri                     |
-| PostgreSQL | 14 veya üzeri (15 ile doğrulandı) |
-| Git        | güncel                            |
-
-```powershell
-node -v
-npm -v
-git --version
-```
-
----
-
-## 4. Kurulum
-
-### 4.1 Depoyu alın ve bağımlılıkları kurun
-
-```powershell
+```bash
 git clone https://github.com/salih12s/KafeAdisyonSistemi.git
 cd KafeAdisyonSistemi
 npm install
+
+# Ayrı bir demo veritabanı oluşturun (gerçek verinize dokunmaz)
+createdb -U postgres KafeAdisyonDemo
+export DATABASE_URL="postgresql://postgres:PAROLANIZ@localhost:5432/KafeAdisyonDemo?schema=public"
+# Windows PowerShell: $env:DATABASE_URL = "postgresql://..."
+
+npm run db:migrate:deploy   # şemayı kurar
+npm run demo:seed           # 30 günlük örnek işletme verisi
+npm run dev                 # http://localhost:5173
 ```
 
-Kurulum sonunda Prisma client otomatik üretilir.
+| Kullanıcı | Rol            | Şifre       |
+| --------- | -------------- | ----------- |
+| `demo`    | İşletme sahibi | `Demo1234!` |
+| `elif`    | Kasiyer        | `Demo1234!` |
+| `mert`    | Garson         | `Demo1234!` |
+| `mutfak`  | Mutfak         | `Demo1234!` |
 
-### 4.2 Local PostgreSQL kurulumu
+Demo komutu yalnız adı `demo` içeren boş bir veritabanına yazar. Gerçek işletme
+kurulumu (ilk yönetici, ortam değişkenleri, yedekleme, dağıtım):
+[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
 
-PostgreSQL kurulu değilse [postgresql.org](https://www.postgresql.org/download/windows/)
-üzerinden kurun. Kurulumda belirlediğiniz `postgres` parolasını not edin.
-
-Veritabanı adı: **`CafeAdisyon`**
-
-Yoksa pgAdmin ile ya da şu komutla oluşturun:
-
-```powershell
-& "C:\Program Files\PostgreSQL\15\bin\createdb.exe" -U postgres CafeAdisyon
+```bash
+npm run verify   # lint → typecheck → test → build
 ```
 
-> Veritabanı zaten varsa **hiçbir şey yapmayın.** Mevcut veritabanı silinmez
-> veya resetlenmez — bkz. §10.
+## Geliştirme süreci
 
-### 4.3 .env oluşturma
+Proje, yapay zekâ kodlama ajanlarıyla (Claude ve Codex) **kurallı bir süreçle**
+geliştirildi. Bağlayıcı kurallar [AGENTS.md](AGENTS.md) içindedir: aynı anda tek
+ajan kod yazar, her iş kendi branch'inde ilerler, test geçmeden iş bitmiş sayılmaz,
+veritabanında yıkıcı işlem yasaktır. Her teknik karar [DECISIONS.md](DECISIONS.md)
+içinde gerekçesiyle kayıtlıdır; devir notları [HANDOFF.md](HANDOFF.md), oturum
+kayıtları [SESSION_LOG.md](SESSION_LOG.md) içindedir.
 
-En kolayı:
+## Kapsam
 
-```powershell
-npm run setup:env
-```
-
-Betik parolanızı sorar ve `apps/api/.env` dosyasını yazar.
-**Parola betiğin içinde yazılı değildir ve depoya gönderilmez.**
-
-Elle yapmak isterseniz `apps/api/.env.example` dosyasını `apps/api/.env`
-olarak kopyalayın ve `CHANGE_ME` yerine kendi parolanızı yazın:
-
-```env
-NODE_ENV=development
-PORT=3000
-DATABASE_URL=postgresql://postgres:PAROLANIZ@localhost:5432/CafeAdisyon?schema=public
-```
-
-> Parolanızda `@ : / ? # [ ] %` gibi karakterler varsa URL kodlaması gerekir.
-> `npm run setup:env` bunu kendisi yapar.
-
-#### Yerel ve production arasında geçiş
-
-`apps/api/.env` dosyasının hangi veritabanına baktığını iki betik değiştirir:
-
-```powershell
-scripts\set-local-env.bat        # localhost/CafeAdisyon
-scripts\set-production-env.bat   # Railway PostgreSQL
-```
-
-Bağlantı bilgisi **ilk çalıştırmada bir kez** sorulur ve `apps/api/.env.local`
-ile `apps/api/.env.production` dosyalarına kaydedilir; sonraki geçişler soru
-sormadan tamamlanır. Kayıtlı bilgiyi değiştirmek için `-Reset` ekleyin. Bu üç
-dosya da `.gitignore` içindedir; parola depoya gönderilmez.
-
-Betik hangi ortamın aktif olduğunu parolayı maskeleyerek yazar. `db:check`,
-`db:migrate:deploy` ve `setup:owner` komutları o anda aktif olan veritabanına
-bağlanır.
-
-### 4.4 Migration'ı uygulayın ve bağlantıyı doğrulayın
-
-Mevcut veritabanını sıfırlamadan, repodaki additive migration'ları uygulayın:
-
-```powershell
-npm run db:migrate:deploy
-npm run db:migrate:status
-```
-
-Ardından bağlantıyı doğrulayın:
-
-```powershell
-npm run db:check
-```
-
-Beklenen çıktı:
-
-```
-PostgreSQL bağlantısı başarılı (SELECT 1).
-```
-
-`db:check` yalnızca okuma yapar; hiçbir tablo oluşturmaz veya değiştirmez.
-
-### 4.5 İlk işletme sahibini oluşturun
-
-İlk kurulumda bir kez çalıştırın:
-
-```powershell
-npm run setup:owner
-```
-
-Komut işletme adı, ad soyad, kullanıcı adı ve maskeli şifreyi terminalde sorar.
-Aktif bir işletme sahibi zaten varsa yeni kayıt oluşturmayı reddeder. Varsayılan
-veya demo hesap üretilmez.
+Tek şube için tasarlandı. Yazarkasa/ÖKC (mali fiş) entegrasyonu yoktur; fişler
+"bilgi fişi"dir. Uygulama çevrimiçi çalışır; POS verisinin güncelliği için
+offline önbellek bilinçli olarak kullanılmaz.
 
 ---
 
-## 5. Development çalıştırma
+## English summary
 
-```powershell
-npm run dev
-```
+**Joker Cafe** is a full-stack point-of-sale system for a café: table and check
+management with menu options, a real-time kitchen display (Socket.IO), split
+payments, customer accounts, cash-drawer shifts with automatic count variance,
+recipe-based stock deduction, daily revenue charts, a public QR menu and 80/58 mm
+thermal receipts. It is a TypeScript monorepo (React 18 + Vite, Express 5 +
+Prisma + PostgreSQL) with money stored as integer minor units, price snapshots,
+ledger-derived balances, serializable transactions, strict typing and 243
+automated tests. Run it locally with `npm run demo:seed` and log in as
+`demo` / `Demo1234!`.
 
-| Adres                              | Ne                            |
-| ---------------------------------- | ----------------------------- |
-| `http://localhost:5173`            | Arayüz (Vite, anlık yenileme) |
-| `http://localhost:3000/api/health` | API sağlık ucu                |
+## Lisans
 
-Vite, `/api` ve `/socket.io` çağrılarını Express'e iletir; ek yapılandırma gerekmez.
-Local geliştirme servisleri varsayılan olarak bu cihazdan kullanılır. Yerel ağ/IP
-üzerinden erişim bu projenin mevcut kapsamına dahil değildir.
-
----
-
-## 6. Test komutları
-
-| Komut                       | Ne yapar                                                   |
-| --------------------------- | ---------------------------------------------------------- |
-| `npm run lint`              | ESLint                                                     |
-| `npm run typecheck`         | TypeScript tip denetimi (strict)                           |
-| `npm run test`              | API ve web testleri                                        |
-| `npm run build`             | Production derlemesi                                       |
-| `npm run verify`            | lint → typecheck → test → build                            |
-| `npm run db:check`          | Veritabanı bağlantısı (`SELECT 1`)                         |
-| `npm run db:migrate:status` | Uygulanmış/bekleyen Prisma migration durumu                |
-| `npm run db:migrate:deploy` | Repodaki bekleyen additive migration'ları uygular          |
-| `npm run setup:owner`       | İlk işletme sahibi ve işletme kaydını interaktif oluşturur |
-| `npm run format`            | Prettier ile biçimlendirme                                 |
-
-Testler veritabanına bağlanmaz; PostgreSQL kapalıyken de çalışırlar.
-
----
-
-## 7. Production build çalıştırma
-
-```powershell
-npm run build
-npm start
-```
-
-Uygulama **tek adresten** açılır:
-
-```
-http://localhost:3000
-```
-
-Express hem arayüzü hem API'yi aynı porttan sunar; React Router için SPA
-fallback çalışır (örneğin `/masalar` doğrudan açılabilir).
-
-> Konsolda Türkçe karakterler bozuk görünüyorsa terminalin kod sayfasını
-> değiştirin: `chcp 65001`. Sorun çıktıda değil, terminaldedir.
-
----
-
-## 8. Railway deployment
-
-Repo kökündeki `railway.json`, Railpack ile `npm ci && npm run build` çalıştırır,
-deployment başlamadan önce yalnız güvenli `prisma migrate deploy` komutunu uygular
-ve servisi `npm start` ile açar. Health check yolu `/api/health`'tir.
-
-### 8.1 Proje ve PostgreSQL
-
-1. Railway'de yeni proje oluşturup bu GitHub reposunu Node.js servisi olarak ekleyin.
-2. Aynı projeye PostgreSQL servisi ekleyin.
-3. Node.js servisinde `DATABASE_URL` değişkenini PostgreSQL servisinin sağladığı
-   bağlantı değişkenine reference olarak bağlayın. Değeri README'ye veya GitHub'a
-   kopyalamayın.
-4. Aşağıdaki production değişkenlerini tanımlayın:
-
-| Değişken          | Değer / kaynak                                            |
-| ----------------- | --------------------------------------------------------- |
-| `NODE_ENV`        | `production`                                              |
-| `DATABASE_URL`    | Railway PostgreSQL reference                              |
-| `PORT`            | Railway otomatik sağlar; elle sabitlemeyin                |
-| `HOST`            | İsteğe bağlı; verilmezse production varsayılanı `0.0.0.0` |
-| `LOG_LEVEL`       | `info` veya ihtiyaca göre `warn`                          |
-| `JSON_BODY_LIMIT` | `1mb`                                                     |
-| `CORS_ORIGIN`     | Boş; yalnız arayüz ayrı barındırılıyorsa doldurulur       |
-
-### 8.1.1 Arayüzü ayrı barındırma (isteğe bağlı)
-
-Varsayılan kurulumda Express hem API'yi hem arayüzü sunar ve ek yapılandırma
-gerekmez. Arayüzü statik bir barındırmada (örneğin paylaşımlı hosting)
-yayımlamak isterseniz iki tarafı da bildirmeniz gerekir (bkz. ADR-020):
-
-```powershell
-# 1) Arayüzü API'nin mutlak adresiyle derleyin
-$env:VITE_API_URL = "https://<railway-adresiniz>"
-npm run build -w @kafe/web
-# apps/web/dist icerigini statik sunucunun kok klasorune yukleyin
-```
-
-```
-# 2) API tarafında izin verilen origin'i tanımlayın
-CORS_ORIGIN=https://<arayuzun-adresi>
-```
-
-Bu kurulumda oturum çerezi `SameSite=None; Secure` olur; **her iki taraf da
-HTTPS olmalıdır.** Statik sunucuda SPA fallback kuralı gerekir (Apache için
-`.htaccess` içinde bilinmeyen yolları `index.html`'e yönlendirin), aksi hâlde
-`/masalar` gibi adresler doğrudan açıldığında 404 döner.
-
-Railway pre-deploy adımı her release'te `npm run db:migrate:deploy` çalıştırır.
-Bu komut yalnız repodaki bekleyen migration'ları uygular; `migrate reset`, `DROP`
-ve `TRUNCATE` kullanılmaz. Migration başarısızsa yeni deployment başlamaz.
-
-### 8.2 Tek servis ve custom domain
-
-Express aynı process/port üzerinde `/api`, `/socket.io` ve React production
-build'ini sunar. Frontend göreli `/api` ve `/socket.io` yollarını kullandığından
-hardcoded localhost veya CORS gerekmez; cookie production'da HttpOnly, Secure ve
-SameSite=Strict'tir.
-
-Deployment sağlıklı olduktan sonra Railway servisinin Networking/Custom Domain
-bölümünden domaini ekleyin ve Railway'in gösterdiği DNS kaydını sağlayıcınızda
-tanımlayın. Domain hazır olduğunda `/api/health`, `/masalar` doğrudan SPA açılışı
-ve Socket.IO bağlantısını aynı HTTPS origin üzerinden kontrol edin.
-
-### 8.3 Manuel doğrulama
-
-Railway ile aynı akışı yerelde doğrulamak için:
-
-```powershell
-npm ci
-npm run build
-npm run db:migrate:deploy
-$env:NODE_ENV="production"
-npm start
-```
-
-`PORT` verilmezse 3000, `HOST` verilmezse production'da `0.0.0.0` kullanılır.
-
-### 8.4 PostgreSQL backup ve restore
-
-Backup dosyasını uygulama sunucusunda değil güvenli, erişimi sınırlı bir konumda
-tutun. Railway PostgreSQL bağlantı adresini terminal ortam değişkeni olarak verin;
-komut geçmişine açık parola yazmayın.
-
-Custom-format backup:
-
-```powershell
-$env:PGDATABASE_URL="RAILWAY_DATABASE_URL"
-pg_dump --format=custom --no-owner --no-acl --file=kafe-adisyon.dump $env:PGDATABASE_URL
-```
-
-Boş ve doğrulanmış hedef veritabanına custom-format restore:
-
-```powershell
-pg_restore --no-owner --no-acl --dbname=$env:PGDATABASE_URL kafe-adisyon.dump
-```
-
-Plain SQL tercih edilirse:
-
-```powershell
-pg_dump --no-owner --no-acl --file=kafe-adisyon.sql $env:PGDATABASE_URL
-psql $env:PGDATABASE_URL --file=kafe-adisyon.sql
-```
-
-Restore mevcut veriyi etkileyebilir. Önce hedefi ve backup tarihini doğrulayın,
-bakım penceresi belirleyin ve production restore işleminden önce ayrı bir test
-veritabanında geri yükleme denemesi yapın.
-
----
-
-## 9. Gizli bilgi güvenliği
-
-- `apps/api/.env` **asla commit edilmez**; `.gitignore` içindedir.
-- Depoda yalnızca `.env.example` ve `.env.test.example` bulunur; içlerinde
-  gerçek değer değil `CHANGE_ME` yer alır.
-- PostgreSQL parolanız bu README'de, dokümanlarda veya kodda yazılı değildir.
-- `scripts/set-local-env.ps1` parolayı içinde tutmaz; çalışırken sorar.
-- Commit öncesi diff gizli bilgi taramasından geçirilir
-  (bkz. [AGENTS.md](AGENTS.md) §8).
-
-Parolanız sızdıysa PostgreSQL'de değiştirin ve `.env` dosyasını güncelleyin.
-
----
-
-## 10. Mevcut veritabanı resetlenmez
-
-Bu depoda aşağıdakiler **yasaktır** ve hiçbir script bunları çalıştırmaz:
-
-- `DROP DATABASE`, `DROP TABLE`, `TRUNCATE`
-- `prisma migrate reset`
-- `prisma db push --force-reset`
-- Tüm tabloları silen veya boşaltan scriptler
-- Onay alınmadan çalıştırılan destructive migration
-
-Mevcut `CafeAdisyon` veritabanı korunur; silinmez, resetlenmez, yeniden
-oluşturulmaz. Bağlantı doğrulaması yalnızca `SELECT 1` ile yapılır. Domain
-kayıtları ileride de fiziksel olarak silinmez; iptal ve pasife alma alanları
-kullanılır (bkz. [DECISIONS.md](DECISIONS.md) ADR-011).
-
-Yeni migration gerektiren bir değişiklikte SQL önce create-only üretilir ve
-baştan sona incelenir. Phase 0–7 boyunca eklenen yedi migration additive olarak
-tasarlanmıştır; final kabulde tamamen boş izole veritabanına sırasıyla uygulanmış
-ve destructive SQL içermedikleri doğrulanmıştır.
-
----
-
-## 11. Proje belgeleri
-
-| Belge                                                              | İçerik                                  |
-| ------------------------------------------------------------------ | --------------------------------------- |
-| [AGENTS.md](AGENTS.md)                                             | Claude ve Codex için bağlayıcı kurallar |
-| [CLAUDE.md](CLAUDE.md)                                             | Claude'un çalışma başlangıcı            |
-| [HANDOFF.md](HANDOFF.md)                                           | Aktif Phase, branch ve devir kaydı      |
-| [DECISIONS.md](DECISIONS.md)                                       | Kalıcı teknik kararlar (ADR)            |
-| [WORKFLOW.md](WORKFLOW.md)                                         | Phase çalışma düzeni                    |
-| [SESSION_LOG.md](SESSION_LOG.md)                                   | Oturum kayıtları (append-only)          |
-| [docs/PHASES.md](docs/PHASES.md)                                   | Phase 0–7 planı                         |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)                       | Mimari                                  |
-| [docs/PRODUCT_SCOPE.md](docs/PRODUCT_SCOPE.md)                     | Ürün kapsamı                            |
-| [docs/UI_GUIDE.md](docs/UI_GUIDE.md)                               | Arayüz rehberi                          |
-| [docs/FINAL_ACCEPTANCE_REPORT.md](docs/FINAL_ACCEPTANCE_REPORT.md) | Final review ve UAT kanıtları           |
-| [scripts/qa/README.md](scripts/qa/README.md)                       | Tekrarlanabilir final UAT yardımcıları  |
+Tüm hakları saklıdır — ayrıntı için [LICENSE](LICENSE).

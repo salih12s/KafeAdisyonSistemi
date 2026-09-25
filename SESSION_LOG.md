@@ -1127,3 +1127,26 @@ değiştirilmedi, merge yapılmadı.
 - `docs/ARCHITECTURE.md` §3 yeni kod haritasıyla yeniden yazıldı: klasör
   ağaçları, modül dosya kalıbı, bir isteğin yolculuğu ve yeni özellik rehberi.
 - `npm run verify` PASS: 242/242 test (API 164, web 78).
+
+## 2026-09-25 — Claude — GitHub ürün vitrini
+
+**Branch:** `docs/showcase` (base `main`)
+**Sonuç:** Tamamlandı; draft PR açık, merge edilmedi.
+
+- Kullanıcı canlıya almayacağını, projeyi GitHub'da sergileyip LinkedIn'de
+  paylaşacağını belirtti ve vitrini devretti. #12–#14 merge denemesi izin
+  sistemince reddedildi; vitrin branch'i tüm zinciri içerir.
+- Yerelde iki demo veritabanı oluşturuldu (`KafeAdisyonDemo`,
+  `KafeAdisyonDemoVitrin`); kullanıcının `CafeAdisyon` veritabanına yazılmadı.
+  İlki gece saatiyle üretildiği için ikincisi `DEMO_NOW=15:40` ile yeniden
+  üretildi (DROP DATABASE yasağı nedeniyle eskisi silinmedi).
+- Görüntü alırken eski geliştirme sunucusunun alt süreçlerinin portları tuttuğu
+  ve API'nin gerçek veritabanına bağlı kaldığı fark edildi; süreç ağaçları
+  kapatılıp sunucu demo veritabanıyla yeniden başlatıldı. Yalnız bir başarısız
+  giriş denemesi gerçek veritabanına ulaştı; veri yazılmadı.
+- GIF kaydı sırasında ürün aramasının yalnız seçili kategoride çalıştığı
+  bulundu ve düzeltildi. Başarısız kaydın demo DB'de açık bıraktığı Masa 8
+  API ile iptal edilip kapatıldı.
+- Eski ffmpeg (2013) palet filtresi içermediği için GIF, scratchpad'e kurulan
+  `gifenc` ile saydam fark kareleri kullanılarak üretildi (19 MB → 3,6 MB).
+- `npm run verify` PASS: 243/243 test.

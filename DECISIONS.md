@@ -522,3 +522,31 @@ göstermek, hiç çalışmamaktan daha tehlikelidir.
 **Sonuç.** Yazdırma için yazıcı seçimi tarayıcı penceresinde yapılır; sessiz
 (onaysız) yazdırma yoktur. Bağlantı koptuğunda uygulama çalışmaz, mevcut hata
 ekranlarını gösterir.
+
+---
+
+## ADR-024 — Demo verisi yalnız ayrı bir demo veritabanına yüklenir
+
+- **Tarih:** 2026-09-25
+- **Durum:** Kabul edildi
+- **İlgili:** AGENTS.md §9 (yıkıcı işlem yok), §11 (sahte veri yok)
+
+**Karar.** Proje GitHub'da vitrin olarak sergilendiği için `npm run demo:seed`
+komutu eklenir. Komut menü, masa, personel, son 30 günün satışları, açık masalar,
+mutfak siparişleri, kasa, cari ve stok verisi üretir. Yalnız adı `demo` içeren ve
+**hiç kullanıcısı olmayan** bir veritabanında çalışır; aksi hâlde yazmadan
+reddeder. Veriler doğrudan SQL ile değil uygulamanın store fonksiyonlarıyla
+üretilir; geçmiş tarihli kayıtlar ardından geri tarihlenir. Tüm demo hesaplarının
+şifresi `Demo1234!`'dir ve README'de açıkça yazılıdır.
+
+**Gerekçe.** AGENTS.md §11 uygulama içinde uydurma veriyi (örnek masa listesi,
+sahte ciro) yasaklar; bu kural gerçek işletme ekranlarının yanıltıcı veri
+göstermemesi içindir. Depoyu inceleyen birinin uygulamayı boş ekranlar yerine
+dolu hâliyle görebilmesi ise vitrin için gereklidir. Veriyi ayrı bir komuta ve
+ayrı bir veritabanına koymak iki ihtiyacı birlikte karşılar: uygulama kodunda
+sahte veri yoktur, gerçek veritabanına yanlışlıkla yazılamaz.
+
+**Sonuç.** `DEMO_NOW` ortam değişkeni "bugün"ün saatini sabitler; ekran
+görüntüleri günün hangi saatinde alınırsa alınsın gün içi bir an gösterir.
+Store'lar üzerinden üretildiği için fiyat, stok düşümü, kasa ve rapor tutarları
+gerçek akışla tutarlıdır.

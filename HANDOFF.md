@@ -8,61 +8,43 @@ sonraki geliştiriciye devredilir.
 
 ## Aktif durum
 
-**Final kod incelemesi düzeltmeleri ve modüler yapı — draft PR açık**
+**GitHub vitrini — draft PR açık, merge kullanıcıda**
 
-| Alan                | Değer                                          |
-| ------------------- | ---------------------------------------------- |
-| **Branch**          | `refactor/modular-structure`                   |
-| **Base branch**     | `feat/phase-8-operations`                      |
-| **Ana geliştirici** | Claude                                         |
-| **Durum**           | **Tamamlandı — draft PR açık, merge edilmedi** |
-| **Son commit**      | `docs: map the modular structure`              |
-| **Son güncelleme**  | 2026-09-25                                     |
+| Alan                | Değer                                               |
+| ------------------- | --------------------------------------------------- |
+| **Branch**          | `docs/showcase`                                     |
+| **Base branch**     | `main` (#12 → #13 → #14 zincirinin tamamını içerir) |
+| **Ana geliştirici** | Claude                                              |
+| **Durum**           | **Tamamlandı — draft PR açık, merge edilmedi**      |
+| **Son commit**      | `docs: turn the repository into a product showcase` |
+| **Son güncelleme**  | 2026-09-25                                          |
 
-Kullanıcı son bir kapsamlı kod incelemesi, bulguların raporlanması ve düz
-klasör yapısının (tek `pages/`, tek `components/ui`, `src/__tests__`)
-profesyonel, modüler bir yapıya çevrilmesini istedi. Davranış değişikliği yalnız
-inceleme düzeltmeleri commit'indedir; yeniden yapılanma commit'leri davranış
-değiştirmez.
+Kullanıcının canlı sunucusu yok; proje GitHub'da vitrin olarak sergilenecek ve
+LinkedIn'de paylaşılacak. Kullanıcı GitHub'daki vitrin işini tamamen devretti.
+PR'ları `main`'e merge etme girişimi izin sistemince reddedildi ("incelenmeden
+merge"); bu yüzden tüm iş tek bir PR'da toplandı ve merge kullanıcıya bırakıldı.
 
-**İnceleme düzeltmeleri (`fix: address final code review findings`)**
-
-- CORS izin listesine `PUT` (ayrı barındırmada reçete kaydı çalışmıyordu).
-- Kasa kapanışı açık kasa satırını `FOR UPDATE` ile kilitler (Read Committed);
-  nakit ödeme aynı satırı `FOR SHARE` ile kilitler. Kapanışla yarışan nakit
-  ödeme ya o vardiyaya sayılır ya kapanışı bekler. Kilit SQL'i yerel PostgreSQL'de
-  geri alınan bir transaction içinde doğrulandı.
-- Kapanmış vardiyada nakit satış sabit beklenen tutardan türetilir: döküm her
-  zaman tutarlı, geçmiş listesi vardiya başına ödeme sorgusu çalıştırmaz.
-- Reçete birim miktarı en fazla 100.000; `SALE` düşümü INTEGER sınırında
-  kırpılır (stok hiçbir zaman hesap kapatmayı engellemez).
-- Reçete kaydında eşzamanlılık hataları 409; stok formu kalem değişince
-  sıfırlanır; kasa zaten açıksa ekran güncel kasayı yeniden okur; yazdırma iş
-  sayacıyla tekrar tetiklenebilir; reçetede pasif kalemler "(pasif)" görünür;
-  `OwnerRoute`/`ReportRoute`/`AccountRoute` yerine tek `RoleRoute`.
-
-**Modüler yapı** — ayrıntılı harita: `docs/ARCHITECTURE.md` §3.
-
-- Web: `src/app` (iskelet), `src/shared` (ui, http, lib, config, health),
-  `src/features/<alan>/{api.ts,pages,components,hooks}`. 1.280 satırlık
-  `lib/api.ts` alan başına `api.ts`'ye bölündü. Büyük ekranlar sayfa +
-  bileşenlere ayrıldı (en büyük dosya 1.068 → 495 satır). `FormDialog`,
-  `ErrorText`, `StatusBadge`, `errorMessage` tek ortak kopyaya indi.
-- API: `src/modules/<modül>/{*-routes,*-store,prisma-*-store,*-calculations}`.
-  `createPhaseOneRouter` kimlik ve salon/masa router'larına bölündü; tüm router'lar
-  `routes/index.ts`'de bağlanır. `store.ts`/`prisma-store.ts` modüllere ayrıldı,
-  beş kopya Prisma hata kontrolü `shared/prisma-errors.ts`'de tek.
-- Testler kaynak dışında, alan klasörlerinde: `apps/web/tests/<alan>/`,
-  `apps/api/tests/<modül>/`; `phase-N` dosya adları içerik adlarıyla değişti.
-- Dosyalar `git mv` ile taşındı; git geçmişi yeniden adlandırma olarak izlenir.
-
-**Kalite kanıtı**
-
-- `npm run verify` PASS: lint temiz, strict typecheck temiz, **242/242** test
-  (API 164 / 18 dosya, web 78 / 16 dosya), build başarılı.
-- Yeni regresyon testleri: CORS `PUT`, reçete üst sınırı, kapanmış kasanın
-  tutarlı dökümü, ikinci yazdırma, stok formunun sıfırlanması (bu test düzeltme
-  olmadan başarısız olduğu doğrulandı).
+- **Demo verisi:** `npm run demo:seed` (ADR-024). Yalnız adı `demo` içeren boş
+  veritabanına yazar; `CafeAdisyon` üzerinde denendi ve yazmadan reddetti.
+  Store fonksiyonlarıyla 30 günlük ~565 satış, açık masalar, mutfak, kasa, cari
+  ve stok üretir; `DEMO_NOW` bugünün saatini sabitler.
+- **Görseller:** `docs/screenshots/` altında 14 ekran görüntüsü (masaüstü 1440 px
+  @1.5x, telefon 390 px @2x) ve `demo.gif` (3,6 MB, 33 sn akış). Görseller yerel
+  `KafeAdisyonDemoVitrin` veritabanından, tarayıcı saati 15:40'a sabitlenerek
+  alındı. GIF kaydında sunucunun o an ürettiği zaman damgaları yalnız kayıt
+  tarayıcısında demo saatine kaydırıldı; veritabanı değiştirilmedi.
+- **Paylaşım görseli:** `docs/social-preview.png` (1280×640). GitHub'da
+  Settings → General → Social preview alanına **kullanıcının elle yüklemesi**
+  gerekir (API yok).
+- **README:** vitrin sayfası (GIF, ekran galerisi, teknik öne çıkanlar, mermaid
+  mimari, demo hızlı başlangıç, İngilizce özet). Eski geliştirici README'si
+  `docs/DEVELOPMENT.md` oldu (demo verisi bölümü eklendi).
+- **CI:** `.github/workflows/ci.yml` her push/PR'da `npm run verify` çalıştırır.
+- **Lisans:** `LICENSE` — tüm hakları saklı, portföy amaçlı görüntüleme.
+  Kullanıcı açık kaynak isterse MIT'e çevrilebilir.
+- **Ürün düzeltmesi:** adisyon ekranında ürün araması artık seçili kategoriyle
+  sınırlı değil, tüm menüde arar (testi eklendi).
+- `npm run verify` PASS: **243/243** test (API 164, web 79).
 
 ### Yerel geliştirme ortamı
 
