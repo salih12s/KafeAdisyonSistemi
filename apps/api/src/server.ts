@@ -8,6 +8,7 @@ import { createLogger } from './lib/logger';
 import { createPrismaStore } from './shared/prisma-store';
 import { createOrderEventHub } from './modules/orders/order-events';
 import { createRealtimeServer } from './modules/orders/order-realtime';
+import { createPrismaDemoMaintenance } from './modules/demo/demo-maintenance';
 
 dotenv.config({ path: ENV_FILE_PATH });
 
@@ -39,6 +40,13 @@ function start(): void {
   const database = createPrismaLifecycle(env.DATABASE_URL, logger);
   const store = createPrismaStore(database.client);
   const orderEvents = createOrderEventHub();
+  const demoMaintenance = env.DEMO_MODE
+    ? createPrismaDemoMaintenance({
+        client: database.client,
+        databaseUrl: env.DATABASE_URL,
+        logger,
+      })
+    : undefined;
 
   const app = createApp({
     env,
@@ -46,6 +54,7 @@ function start(): void {
     database: database.probe,
     store,
     orderEvents,
+    ...(demoMaintenance === undefined ? {} : { demoMaintenance }),
     ...(env.NODE_ENV === 'production' ? { webDistPath: WEB_DIST_PATH } : {}),
   });
 
@@ -62,12 +71,14 @@ function start(): void {
 
     void database.probe.ping().then((connected) => {
       if (connected) {
-        logger.info('PostgreSQL bağlantısı doğrulandı.');
+        logger.info('Veritabanı bağlantısı doğrulandı.');
+        // Demo veritabanı boşsa (ilk yayın) veya bayatsa veri hemen üretilir.
+        demoMaintenance?.poke();
         return;
       }
 
       logger.warn(
-        'PostgreSQL bağlantısı kurulamadı. Uygulama çalışıyor, /api/health "degraded" döner.',
+        'Veritabanı bağlantısı kurulamadı. Uygulama çalışıyor, /api/health "degraded" döner.',
       );
     });
   });
@@ -100,6 +111,7 @@ function start(): void {
     }, 10_000);
 
     forceExit.unref();
+    demoMaintenance?.stop();
 
     void realtime
       .close()

@@ -218,7 +218,7 @@ export function DashboardPage(): JSX.Element {
           <p className="p-4 text-sm leading-6 text-danger">
             {health.isError
               ? 'API sunucusuna ulaşılamıyor. Yerel sunucunun çalıştığını doğrulayıp yeniden deneyin.'
-              : 'Sunucu açık ancak PostgreSQL bağlantısı kurulamıyor. Yerel veritabanı servisini kontrol edin.'}
+              : 'Sunucu açık ancak veritabanı bağlantısı kurulamıyor. Veritabanı servisini kontrol edin.'}
           </p>
         </Panel>
       ) : null}

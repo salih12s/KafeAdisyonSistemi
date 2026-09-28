@@ -4,7 +4,7 @@ import {
   type Product,
   type ProductOptionGroup,
   type ProductOptionValue,
-} from '@prisma/client';
+} from '../../generated/prisma/client';
 import type {
   CategoryResponse,
   MenuResponse,
@@ -68,7 +68,7 @@ function toOptionGroup(
   };
 }
 
-/** Menü verisini PostgreSQL üzerinde yöneten store. Hiçbir kayıt silinmez. */
+/** Menü verisini veritabanında yöneten store. Hiçbir kayıt silinmez. */
 export function createPrismaMenuStore(client: PrismaClient): MenuStore {
   return {
     async listCategories(includeInactive: boolean): Promise<CategoryResponse[]> {

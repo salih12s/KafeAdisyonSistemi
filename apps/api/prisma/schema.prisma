@@ -1,4 +1,4 @@
-// Kafe Adisyon Sistemi — Prisma şeması
+// Kafe Adisyon Sistemi — Prisma şeması (MySQL/MariaDB)
 //
 // Phase 1: kimlik, işletme, salon, masa ve audit altyapısı.
 // Phase 2: kategori, ürün, ürün seçenek grupları ve seçenek değerleri.
@@ -12,12 +12,17 @@
 // - Domain kayıtları fiziksel olarak silinmez; ileride iptal/pasif alanları kullanılır.
 
 generator client {
-  provider = "prisma-client-js"
+  provider               = "prisma-client"
+  output                 = "../src/generated/prisma"
+  runtime                = "nodejs"
+  moduleFormat           = "cjs"
+  generatedFileExtension = "ts"
 }
 
+// MySQL/MariaDB (Hostinger, ADR-026). Bağlantı adresi CLI için prisma.config.ts,
+// uygulama için lib/database.ts içindeki MariaDB adapter'ından gelir.
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "mysql"
 }
 
 enum UserRole {
@@ -28,7 +33,7 @@ enum UserRole {
 }
 
 model User {
-  id                  String          @id @default(uuid()) @db.Uuid
+  id                  String          @id @default(uuid()) @db.VarChar(36)
   fullName            String
   username            String          @unique
   passwordHash        String
@@ -56,8 +61,8 @@ model User {
 }
 
 model Session {
-  id         String   @id @default(uuid()) @db.Uuid
-  userId     String   @db.Uuid
+  id         String   @id @default(uuid()) @db.VarChar(36)
+  userId     String   @db.VarChar(36)
   tokenHash  String   @unique
   expiresAt  DateTime
   createdAt  DateTime @default(now())
@@ -72,13 +77,13 @@ model BusinessSettings {
   id           String   @id @default("business")
   businessName String
   phone        String?
-  address      String?
+  address      String? @db.VarChar(500)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
 
 model DiningArea {
-  id        String      @id @default(uuid()) @db.Uuid
+  id        String      @id @default(uuid()) @db.VarChar(36)
   name      String
   nameKey   String      @unique
   sortOrder Int         @default(0)
@@ -91,8 +96,8 @@ model DiningArea {
 }
 
 model CafeTable {
-  id        String     @id @default(uuid()) @db.Uuid
-  areaId    String     @db.Uuid
+  id        String     @id @default(uuid()) @db.VarChar(36)
+  areaId    String     @db.VarChar(36)
   name      String
   nameKey   String
   capacity  Int?
@@ -118,7 +123,7 @@ enum OptionSelectionType {
 }
 
 model Category {
-  id        String    @id @default(uuid()) @db.Uuid
+  id        String    @id @default(uuid()) @db.VarChar(36)
   name      String
   // nameKey: tr-TR küçük harfe indirgenmiş ad; aynı isim tekrarını engeller.
   nameKey   String    @unique
@@ -132,8 +137,8 @@ model Category {
 }
 
 model Product {
-  id              String               @id @default(uuid()) @db.Uuid
-  categoryId      String               @db.Uuid
+  id              String               @id @default(uuid()) @db.VarChar(36)
+  categoryId      String               @db.VarChar(36)
   name            String
   nameKey         String
   // Fiyat her zaman tam sayı kuruş; Float kullanılmaz.
@@ -153,8 +158,8 @@ model Product {
 }
 
 model ProductOptionGroup {
-  id               String               @id @default(uuid()) @db.Uuid
-  productId        String               @db.Uuid
+  id               String               @id @default(uuid()) @db.VarChar(36)
+  productId        String               @db.VarChar(36)
   name             String
   nameKey          String
   selectionType    OptionSelectionType
@@ -172,8 +177,8 @@ model ProductOptionGroup {
 }
 
 model ProductOptionValue {
-  id               String             @id @default(uuid()) @db.Uuid
-  groupId          String             @db.Uuid
+  id               String             @id @default(uuid()) @db.VarChar(36)
+  groupId          String             @db.VarChar(36)
   name             String
   nameKey          String
   // Ürün fiyatına eklenen fark; indirim için negatif olabilir.
@@ -222,18 +227,22 @@ enum OrderItemStatus {
 }
 
 model Check {
-  id                String          @id @default(uuid()) @db.Uuid
-  tableId           String          @db.Uuid
-  openedByUserId    String          @db.Uuid
+  id                String          @id @default(uuid()) @db.VarChar(36)
+  tableId           String          @db.VarChar(36)
+  openedByUserId    String          @db.VarChar(36)
   guestCount        Int
   status            CheckStatus     @default(OPEN)
   openedAt          DateTime        @default(now())
   closedAt          DateTime?
-  closedByUserId    String?         @db.Uuid
-  mergedIntoCheckId String?         @db.Uuid
+  closedByUserId    String?         @db.VarChar(36)
+  mergedIntoCheckId String?         @db.VarChar(36)
   totalKurus        Int             @default(0)
   updatedAt         DateTime        @updatedAt
-  table             CafeTable       @relation(fields: [tableId], references: [id], onDelete: Restrict)
+  // MySQL'de kısmi unique index yoktur. "Masa başına tek açık adisyon" kuralı bu
+  // generated kolonla korunur: status OPEN iken tableId, değilse NULL (unique
+  // index birden çok NULL'a izin verir). Değeri veritabanı hesaplar; uygulama yazmaz.
+  openTableKey      String?         @unique(map: "Check_one_open_per_table_key") @db.VarChar(36)
+  table             CafeTable       @relation(fields: [tableId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   openedBy          User            @relation("CheckOpenedBy", fields: [openedByUserId], references: [id], onDelete: Restrict)
   closedBy          User?           @relation("CheckClosedBy", fields: [closedByUserId], references: [id], onDelete: Restrict)
   items             OrderItem[]
@@ -249,11 +258,11 @@ model Check {
 }
 
 model Payment {
-  id               String        @id @default(uuid()) @db.Uuid
-  checkId          String        @db.Uuid
+  id               String        @id @default(uuid()) @db.VarChar(36)
+  checkId          String        @db.VarChar(36)
   method           PaymentMethod
   amountKurus      Int
-  receivedByUserId String        @db.Uuid
+  receivedByUserId String        @db.VarChar(36)
   createdAt        DateTime      @default(now())
   check            Check         @relation(fields: [checkId], references: [id], onDelete: Restrict)
   receivedBy       User          @relation("PaymentReceivedBy", fields: [receivedByUserId], references: [id], onDelete: Restrict)
@@ -263,13 +272,13 @@ model Payment {
 }
 
 model CheckDiscount {
-  id              String       @id @default(uuid()) @db.Uuid
-  checkId         String       @db.Uuid
+  id              String       @id @default(uuid()) @db.VarChar(36)
+  checkId         String       @db.VarChar(36)
   type            DiscountType
   value           Int
   amountKurus     Int
-  reason          String
-  appliedByUserId String       @db.Uuid
+  reason          String @db.VarChar(500)
+  appliedByUserId String       @db.VarChar(36)
   createdAt       DateTime     @default(now())
   check           Check        @relation(fields: [checkId], references: [id], onDelete: Restrict)
   appliedBy       User         @relation(fields: [appliedByUserId], references: [id], onDelete: Restrict)
@@ -278,10 +287,10 @@ model CheckDiscount {
 }
 
 model Customer {
-  id        String         @id @default(uuid()) @db.Uuid
+  id        String         @id @default(uuid()) @db.VarChar(36)
   name      String
-  phone     String?
-  note      String?
+  phone     String? @db.VarChar(500)
+  note      String? @db.VarChar(500)
   isActive  Boolean        @default(true)
   createdAt DateTime       @default(now())
   updatedAt DateTime       @updatedAt
@@ -291,13 +300,13 @@ model Customer {
 }
 
 model AccountEntry {
-  id          String           @id @default(uuid()) @db.Uuid
-  customerId  String           @db.Uuid
+  id          String           @id @default(uuid()) @db.VarChar(36)
+  customerId  String           @db.VarChar(36)
   type        AccountEntryType
   amountKurus Int
-  description String
-  checkId     String?          @db.Uuid
-  actorUserId String           @db.Uuid
+  description String @db.VarChar(500)
+  checkId     String?          @db.VarChar(36)
+  actorUserId String           @db.VarChar(36)
   createdAt   DateTime         @default(now())
   customer    Customer         @relation(fields: [customerId], references: [id], onDelete: Restrict)
   check       Check?           @relation(fields: [checkId], references: [id], onDelete: Restrict)
@@ -308,32 +317,32 @@ model AccountEntry {
 }
 
 model OrderItem {
-  id                      String            @id @default(uuid()) @db.Uuid
-  checkId                 String            @db.Uuid
-  productId               String            @db.Uuid
+  id                      String            @id @default(uuid()) @db.VarChar(36)
+  checkId                 String            @db.VarChar(36)
+  productId               String            @db.VarChar(36)
   productNameSnapshot     String
-  categoryIdSnapshot      String            @db.Uuid
+  categoryIdSnapshot      String            @db.VarChar(36)
   categoryNameSnapshot    String
   unitPriceKurusSnapshot  Int
   preparationAreaSnapshot PreparationArea
   preparationStatus       OrderItemStatus   @default(SENT)
   quantity                Int
-  note                    String?
+  note                    String? @db.VarChar(500)
   lineTotalKurus          Int
-  createdByUserId         String            @db.Uuid
+  createdByUserId         String            @db.VarChar(36)
   createdAt               DateTime          @default(now())
   updatedAt               DateTime          @updatedAt
-  cancellationReason      String?
-  cancelledByUserId       String?           @db.Uuid
+  cancellationReason      String? @db.VarChar(500)
+  cancelledByUserId       String?           @db.VarChar(36)
   cancelledAt             DateTime?
-  complimentaryReason     String?
-  complimentaryByUserId   String?           @db.Uuid
+  complimentaryReason     String? @db.VarChar(500)
+  complimentaryByUserId   String?           @db.VarChar(36)
   complimentaryAt         DateTime?
   check                   Check             @relation(fields: [checkId], references: [id], onDelete: Restrict)
   product                 Product           @relation(fields: [productId], references: [id], onDelete: Restrict)
   createdBy               User              @relation("OrderItemCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict)
-  cancelledBy             User?             @relation("OrderItemCancelledBy", fields: [cancelledByUserId], references: [id], onDelete: Restrict)
-  complimentaryBy         User?             @relation("OrderItemComplimentaryBy", fields: [complimentaryByUserId], references: [id], onDelete: Restrict)
+  cancelledBy             User?             @relation("OrderItemCancelledBy", fields: [cancelledByUserId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  complimentaryBy         User?             @relation("OrderItemComplimentaryBy", fields: [complimentaryByUserId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   options                 OrderItemOption[]
 
   @@index([checkId, createdAt])
@@ -342,10 +351,10 @@ model OrderItem {
 }
 
 model OrderItemOption {
-  id                      String             @id @default(uuid()) @db.Uuid
-  orderItemId             String             @db.Uuid
-  optionGroupId           String             @db.Uuid
-  optionValueId           String             @db.Uuid
+  id                      String             @id @default(uuid()) @db.VarChar(36)
+  orderItemId             String             @db.VarChar(36)
+  optionGroupId           String             @db.VarChar(36)
+  optionValueId           String             @db.VarChar(36)
   groupNameSnapshot       String
   valueNameSnapshot       String
   priceDeltaKurusSnapshot Int
@@ -359,8 +368,8 @@ model OrderItemOption {
 }
 
 model AuditLog {
-  id          String   @id @default(uuid()) @db.Uuid
-  actorUserId String   @db.Uuid
+  id          String   @id @default(uuid()) @db.VarChar(36)
+  actorUserId String   @db.VarChar(36)
   action      String
   entityType  String
   entityId    String
@@ -384,19 +393,22 @@ enum CashMovementType {
 
 // Kasa oturumu (vardiya). Beklenen nakit saklanmaz, ödemelerden türetilir;
 // yalnız kapanışta sayılan ve beklenen tutar o anın kaydı olarak yazılır.
-// Aynı anda tek OPEN oturum koşullu unique index ile korunur (migration SQL).
+// Aynı anda tek OPEN oturum `openKey` generated kolonunun unique index'iyle korunur.
 model CashSession {
-  id                String            @id @default(uuid()) @db.Uuid
+  id                String            @id @default(uuid()) @db.VarChar(36)
   status            CashSessionStatus @default(OPEN)
-  openedByUserId    String            @db.Uuid
+  openedByUserId    String            @db.VarChar(36)
   openedAt          DateTime          @default(now())
   openingCashKurus  Int
-  openingNote       String?
-  closedByUserId    String?           @db.Uuid
+  openingNote       String? @db.VarChar(500)
+  closedByUserId    String?           @db.VarChar(36)
   closedAt          DateTime?
   countedCashKurus  Int?
   expectedCashKurus Int?
-  closingNote       String?
+  closingNote       String? @db.VarChar(500)
+  // Aynı anda tek OPEN oturum: status OPEN iken 'OPEN', değilse NULL (generated
+  // kolon, bkz. Check.openTableKey). Uygulama yazmaz.
+  openKey           String?           @unique(map: "CashSession_one_open_key") @db.VarChar(4)
   openedBy          User              @relation("CashSessionOpenedBy", fields: [openedByUserId], references: [id], onDelete: Restrict)
   closedBy          User?             @relation("CashSessionClosedBy", fields: [closedByUserId], references: [id], onDelete: Restrict)
   movements         CashMovement[]
@@ -406,12 +418,12 @@ model CashSession {
 
 // Satış dışı nakit hareketi (bozuk para ekleme, masraf ödeme). Değiştirilmez.
 model CashMovement {
-  id          String           @id @default(uuid()) @db.Uuid
-  sessionId   String           @db.Uuid
+  id          String           @id @default(uuid()) @db.VarChar(36)
+  sessionId   String           @db.VarChar(36)
   type        CashMovementType
   amountKurus Int
-  reason      String
-  actorUserId String           @db.Uuid
+  reason      String @db.VarChar(500)
+  actorUserId String           @db.VarChar(36)
   createdAt   DateTime         @default(now())
   session     CashSession      @relation(fields: [sessionId], references: [id], onDelete: Restrict)
   actor       User             @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
@@ -435,7 +447,7 @@ enum StockMovementType {
 // Miktarlar en küçük birimde tam sayıdır. Bakiye mutable kolon değildir;
 // StockMovement hareketlerinin toplamından türetilir (cari ile aynı ilke).
 model StockItem {
-  id                String              @id @default(uuid()) @db.Uuid
+  id                String              @id @default(uuid()) @db.VarChar(36)
   name              String
   nameKey           String              @unique
   unit              StockUnit
@@ -452,9 +464,9 @@ model StockItem {
 // Reçete satırı: bir adet ürün satıldığında düşülecek miktar. Satır silinmez,
 // reçeteden çıkarıldığında pasife alınır.
 model ProductStockUsage {
-  id              String    @id @default(uuid()) @db.Uuid
-  productId       String    @db.Uuid
-  stockItemId     String    @db.Uuid
+  id              String    @id @default(uuid()) @db.VarChar(36)
+  productId       String    @db.VarChar(36)
+  stockItemId     String    @db.VarChar(36)
   quantityPerUnit Int
   isActive        Boolean   @default(true)
   createdAt       DateTime  @default(now())
@@ -467,13 +479,13 @@ model ProductStockUsage {
 }
 
 model StockMovement {
-  id            String            @id @default(uuid()) @db.Uuid
-  stockItemId   String            @db.Uuid
+  id            String            @id @default(uuid()) @db.VarChar(36)
+  stockItemId   String            @db.VarChar(36)
   type          StockMovementType
   quantityDelta Int
-  reason        String?
-  checkId       String?           @db.Uuid
-  actorUserId   String            @db.Uuid
+  reason        String? @db.VarChar(500)
+  checkId       String?           @db.VarChar(36)
+  actorUserId   String            @db.VarChar(36)
   createdAt     DateTime          @default(now())
   stockItem     StockItem         @relation(fields: [stockItemId], references: [id], onDelete: Restrict)
   check         Check?            @relation(fields: [checkId], references: [id], onDelete: Restrict)

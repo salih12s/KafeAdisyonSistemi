@@ -1269,3 +1269,42 @@ değiştirilmedi, merge yapılmadı.
   248 test (API 166, web 82) ve production build.
 - Yerel `main` `origin/main` ile fast-forward güncellendi. Veritabanına
   dokunulmadı; uygulama kodu değiştirilmedi.
+
+## 2026-09-28 — Claude — Hostinger canlı demo, MySQL'e taşıma, "Demo ile gir"
+
+**Branch:** `feat/hostinger-mysql-demo`
+**Sonuç:** Kod tamamlandı, draft PR açıldı. Canlı site kuruldu; veritabanı
+kullanıcının hPanel'de oluşturmasını bekliyor.
+
+- Kullanıcı demoyu pazarlama için Hostinger'a (SS Filo ve FitnessApp'in yanına)
+  koymak ve herkesin tek tıkla dolu bir demoya girmesini istedi. Hesapta VPS yok,
+  yalnız MySQL var. Sorulan dört karar: MySQL'e taşı, `adisyon.salihsydm.com`,
+  her gece otomatik sıfırlama, Sahip + rol seçimli demo girişi.
+- Şema MySQL'e çevrildi (ADR-026). MariaDB iki engel çıkardı: `CHAR` kolonlu
+  ifadeleri (`sql_mode`'a bağlı) generated kolon/CHECK içinde ve `ON UPDATE
+  CASCADE` foreign key'li kolonları CHECK içinde reddetti. Çözüm: UUID'ler
+  `VARCHAR(36)`, ilgili üç ilişki `onUpdate: Restrict`. Windows MariaDB tablo
+  adlarını küçük harfle sakladığı için canlıya SQL dökümü taşınmıyor; şemayı
+  migration, veriyi uygulama kuruyor.
+- Seed betiği `modules/demo/demo-seed.ts`'e taşındı; CLI ve otomatik yenileme
+  aynı kodu kullanıyor. Rastgele üreteç her çalıştırmada baştan kuruluyor.
+- Demo bakımı isteklere bağlı (Hostinger boştaki süreci durdurabilir): boş
+  veritabanında şema kurulumu, 05:00 sonrası günlük yenileme (`GET_LOCK`),
+  süreçler arası 503, açık masa tazeleme. İki süreçle denendi: yalnız biri
+  yeniledi, ikisi de 503 döndü, sonra ikisi de çalıştı.
+- Testler (kullanıcının öğrenme kuralıyla, tür + neden tablosu verildi): unit
+  (zamanlama kuralları; elle yazılmış property-style döngü dahil), API (demo
+  girişi, kilit, 503; fake bakım + mock `poke`), integration (gerçek MariaDB:
+  eşzamanlı 5 masa açılışı → 1, eşzamanlı 3 kasa → 1, CHECK, tazeleme, şema
+  kurulumu). Kilit bozulunca iki testin kırmızıya döndüğü mutation kontrolüyle
+  görüldü.
+- `npm run verify` PASS: API 200, web 82; `npm run test:db` 9/9. Paket temiz
+  klasörde `npm ci --omit=dev` ile ve boş veritabanıyla denendi; duman testi
+  17/17, Chromium'da CSP ihlali yok.
+- Hostinger (API): site oluşturuldu, paket yüklendi, build tamamlandı,
+  `NODE_ENV`/`DEMO_MODE` girildi, 10 dakikalık cron kuruldu. Veritabanı
+  parolasını okuma adımı izin denetimince reddedildi; veritabanı ve
+  `DATABASE_URL` kullanıcıya bırakıldı (parola `apps/api/.env.hostinger`).
+- Yerel `CafeAdisyon` PostgreSQL veritabanına dokunulmadı. Yalnız bu oturumda
+  açılan boş `kafe_adisyon_demo` iki kez (yarım kalan migration sonrası) silinip
+  yeniden açıldı; içinde veri yoktu.

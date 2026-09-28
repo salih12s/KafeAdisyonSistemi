@@ -1,11 +1,12 @@
 import { z } from 'zod';
+import { databaseNameOf, isDemoDatabaseName } from './database-url';
 
-const POSTGRES_URL_PREFIXES = ['postgresql://', 'postgres://'];
+const MYSQL_URL_PREFIXES = ['mysql://', 'mariadb://'];
 
 /**
  * HOST bilinçli olarak zorunlu değildir.
  * Geliştirmede yalnızca bu bilgisayardan erişilir (127.0.0.1).
- * Üretimde (Railway) sunucu tüm arayüzlerden erişilebilir olmalıdır (0.0.0.0).
+ * Üretimde (Hostinger) sunucu tüm arayüzlerden erişilebilir olmalıdır (0.0.0.0).
  */
 const DEVELOPMENT_HOST = '127.0.0.1';
 const PRODUCTION_HOST = '0.0.0.0';
@@ -41,14 +42,22 @@ export const envSchema = z.object({
     .string()
     .min(1, 'DATABASE_URL tanımlı olmalıdır.')
     .refine(
-      (value) => POSTGRES_URL_PREFIXES.some((prefix) => value.startsWith(prefix)),
-      'DATABASE_URL "postgresql://" veya "postgres://" ile başlamalıdır.',
+      (value) => MYSQL_URL_PREFIXES.some((prefix) => value.startsWith(prefix)),
+      'DATABASE_URL "mysql://" ile başlamalıdır.',
     )
     .refine(
       (value) => !value.includes('CHANGE_ME'),
       'DATABASE_URL hâlâ CHANGE_ME içeriyor. apps/api/.env dosyasına gerçek parolanızı yazın.',
     ),
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
+  /**
+   * Canlı demo (ADR-026): giriş ekranında "Demo ile gir", demo hesaplarına kilit
+   * ve günlük veri yenilemesi. Yalnız adı "demo" içeren veritabanıyla açılabilir.
+   */
+  DEMO_MODE: z
+    .enum(['true', 'false'], { message: 'DEMO_MODE "true" veya "false" olmalıdır.' })
+    .default('false')
+    .transform((value) => value === 'true'),
   JSON_BODY_LIMIT: z.string().min(1).default('1mb'),
   /**
    * Arayüz API'den ayrı barındırıldığında izin verilen origin listesi.
@@ -111,6 +120,13 @@ export function parseEnv(source: NodeJS.ProcessEnv = process.env): Env {
   }
 
   const { HOST, ...rest } = result.data;
+
+  // Demo modu veriyi her gün siler; gerçek bir işletme veritabanına asla bağlanmaz.
+  if (rest.DEMO_MODE && !isDemoDatabaseName(databaseNameOf(rest.DATABASE_URL))) {
+    throw new EnvValidationError([
+      'DEMO_MODE: yalnız adı "demo" içeren bir veritabanıyla açılabilir (ör. kafe_adisyon_demo).',
+    ]);
+  }
 
   return {
     ...rest,

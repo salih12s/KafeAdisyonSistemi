@@ -16,7 +16,7 @@ const OTHER_ORIGIN = 'https://saldirgan.example.com';
 const OWNER_PASSWORD = 'OwnerTest12!';
 
 const baseSource = {
-  DATABASE_URL: 'postgresql://postgres:ornek@localhost:5432/CafeAdisyon?schema=public',
+  DATABASE_URL: 'mysql://kafe:ornek@127.0.0.1:3306/kafe_adisyon',
 } satisfies NodeJS.ProcessEnv;
 
 let ownerHash = '';

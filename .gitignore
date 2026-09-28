@@ -55,3 +55,9 @@ prisma/*.db-journal
 # Yerel yedekler
 *.bak
 *.local
+
+# Prisma 7 istemcisi (prisma generate üretir)
+apps/api/src/generated/
+
+# Hostinger paketi (npm run package:hostinger üretir)
+deploy/

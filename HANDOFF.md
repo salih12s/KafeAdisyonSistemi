@@ -8,7 +8,89 @@ sonraki geliştiriciye devredilir.
 
 ## Aktif durum
 
-**GitHub vitrini — fotoğraflı müşteri QR menüsü**
+**Canlı demo — Hostinger (adisyon.salihsydm.com), MySQL, "Demo ile gir"**
+
+| Alan                | Değer                                                       |
+| ------------------- | ----------------------------------------------------------- |
+| **Branch**          | `feat/hostinger-mysql-demo`                                 |
+| **Base branch**     | `main`                                                      |
+| **Ana geliştirici** | Claude                                                      |
+| **Durum**           | **Kod tamam, draft PR açık; canlıda veritabanı bekleniyor** |
+| **Son güncelleme**  | 2026-09-28                                                  |
+
+Kullanıcı uygulamayı pazarlamak için Hostinger hesabında canlı demo istedi;
+kararlar (kullanıcı yanıtları): **MySQL'e taşı**, adres **adisyon.salihsydm.com**,
+**her gece otomatik sıfırlama**, **Sahip + rol seçimli demo girişi**. Ayrıntı ve
+gerekçe: [ADR-026](DECISIONS.md), yayın rehberi:
+[docs/HOSTINGER_DEPLOY.md](docs/HOSTINGER_DEPLOY.md).
+
+- **PostgreSQL → MySQL/MariaDB:** Prisma 6 → 7.10 (`prisma-client` üreteci,
+  `apps/api/src/generated/prisma`, gitignore'da) + `@prisma/adapter-mariadb`.
+  Yeni baseline `20260928000000_init_mysql`; eski 8 migration
+  `prisma/migrations-postgres-archive`. UUID `VARCHAR(36)`, uzun metin
+  `VARCHAR(500)`. Kısmi unique index'ler generated kolonla (`Check.openTableKey`,
+  `CashSession.openKey`); tüm CHECK kısıtları taşındı. Ham SQL (`FOR UPDATE`,
+  `LOCK IN SHARE MODE`, ters tırnaklı `Check`) ve cari araması MySQL'e uyarlandı.
+- **Demo modu (`DEMO_MODE=true`):** `GET /api/demo`, `POST /api/auth/demo-login`
+  (rol seçerek, sunucu normal girişi demo şifresiyle yapar), demo hesap kilidi
+  (şifre/rol/durum 403), giriş ekranında "Canlı demo" paneli ve uygulamada ince
+  demo şeridi. Yalnız adı `demo` içeren veritabanıyla açılır.
+- **Bakım (`modules/demo`):** boş veritabanında şemayı kendisi kurar
+  (`demo-schema.ts`), Istanbul 05:00 sonrası ilk istekte veriyi siler ve üretir
+  (`demo-maintenance.ts`, `GET_LOCK` ile tek süreç), bu sürede 503; açık
+  masaları 10 dk'da bir 25–75 dk yaşa çeker. AGENTS.md §9'a kullanıcı onaylı
+  istisna yazıldı.
+- **Paket:** `npm run package:hostinger` → `deploy/kafe-adisyon-hostinger.zip`
+  (contracts gömülü, migration'lar dahil). Temiz klasörde ve boş veritabanıyla
+  provası yapıldı: şema 1 sn, veri 27 sn, sonra duman testi 17/17.
+- **Testler:** `npm run verify` PASS — API 200, web 82; `npm run test:db`
+  (gerçek MariaDB) 9/9. Toplam 291. Yeni: `tests/demo/*` (unit + API),
+  `tests/integration/mysql-constraints.test.ts` (eşzamanlı masa/kasa, CHECK,
+  tazeleme, şema kurulumu).
+
+### Hostinger'da yapılanlar (2026-09-28, API ile)
+
+- `adisyon.salihsydm.com` web sitesi oluşturuldu (sipariş 1006826886), DNS çözülüyor.
+- Paket yüklendi, Node.js build **tamamlandı** (NestJS preset, Node 24, `dist`,
+  `main.cjs`; FitnessApp/SS Filo ile aynı).
+- Ortam değişkenleri: `NODE_ENV=production`, `DEMO_MODE=true`. **`DATABASE_URL` yok**.
+- Cron `m7exlmezSN`: `*/10 * * * *` → `curl .../api/health` (süreci uyanık tutar,
+  05:00 yenilemesini tetikler).
+- **Bekleyen (kullanıcı):** veritabanı parolasını ajan göremediği için (izin
+  denetimi reddetti) hPanel'de `u454177254_kafedemo` veritabanı + kullanıcısı
+  oluşturulup Node.js uygulamasına `DATABASE_URL` eklenmeli. Parola ve hazır
+  adres gitignore'daki `apps/api/.env.hostinger` dosyasında. Ekledikten sonra
+  uygulama yeniden başlar, şemayı ve demoyu kendisi kurar (~1 dk).
+
+### Yerel geliştirme ortamı (MySQL)
+
+- SercanFitness'ın taşınabilir MariaDB 11.4 sunucusu (127.0.0.1:3306):
+  `kafe_adisyon_demo`, `kafe_adisyon_shadow`, `kafe_adisyon_test_demo`; kullanıcı
+  `kafe` yalnız bunlara yetkili. Deneme için açılan `kafe_boot_demo` da duruyor.
+- `apps/api/.env` artık yerel MariaDB'yi gösterir; eski PostgreSQL ayarları
+  `apps/api/.env.postgres`. Yerel `CafeAdisyon` PostgreSQL veritabanına dokunulmadı.
+
+### Bilinen eksikler ve sonraki iş
+
+- **Railway uyarısı:** `railway.json` ve `apps/api/.env.production` hâlâ Railway
+  PostgreSQL'i gösterir. Bu branch Railway'e alınırsa çalışmaz (MySQL bekler).
+  Railway kullanılmayacaksa kullanıcı projeyi kapatabilir; karar kullanıcının.
+- `scripts/set-local-env.ps1` / `set-production-env.ps1` (`npm run setup:env`)
+  PostgreSQL adresi üretir; MySQL'e çevrilmedi. Yerel kurulum
+  docs/HOSTINGER_DEPLOY.md "Yerel veritabanı" bölümündedir.
+- `docs/DEVELOPMENT.md`, `docs/ARCHITECTURE.md` ve eski Phase belgelerinde
+  PostgreSQL anlatımı duruyor (tarihsel); güncel karar ADR-026.
+- `npm audit`: `mariadb` sürücüsünde 1 yüksek + 1 orta bulgu (SSL MitM parola
+  sızıntısı, big5/gbk karakter setinde escape). Düzeltme yok; bağlantı
+  127.0.0.1 ve utf8mb4 olduğu için pratik risk düşük. SS Filo/FitnessApp'te de aynı.
+- Canlı demo herkese açıktır: ziyaretçiler ürün/masa adı gibi metinleri
+  değiştirebilir; bir sonraki sabah sıfırlanır. Daha sık sıfırlama veya
+  ziyaretçi başına izole demo ayrı iş.
+- Hostinger proxy'sinin WebSocket desteği denenmedi; Socket.IO gerekirse
+  long-polling'e düşer.
+- GitHub Actions faturalama kilidi (PR #17/#18) sürüyor olabilir.
+
+### Önceki durum — GitHub vitrini, fotoğraflı QR menü (2026-09-25)
 
 | Alan                | Değer                                        |
 | ------------------- | -------------------------------------------- |
@@ -82,7 +164,7 @@ hesap faturalama kilidi yüzünden hiç başlamadı.
   bölümleri kaldırıldı; kurulum rehberi `docs/DEVELOPMENT.md` içinde duruyor.
   CI rozeti README'den çıkarıldı (iş akışı duruyor).
 
-### Yerel geliştirme ortamı
+#### Yerel geliştirme ortamı (PostgreSQL, 2026-09-25)
 
 - Yerel PostgreSQL 15'te süper kullanıcı olmayan **`kafe_adisyon`** rolü
   oluşturuldu (LOGIN; CREATEDB/CREATEROLE yok). Yerel `CafeAdisyon`
@@ -98,7 +180,7 @@ hesap faturalama kilidi yüzünden hiç başlamadı.
   migration, şema güncel). `npm run dev` ile `/api/health` 200
   `database: connected`, arayüz 5173'te 200.
 
-### Bilinen eksikler ve sonraki iş
+#### O günkü bilinen eksikler
 
 - **Canlıya alma uyarısı:** `railway.json` predeploy adımı `prisma migrate deploy`
   çalıştırır. Bu branch Railway'e alındığında Phase 8 migration'ı canlı

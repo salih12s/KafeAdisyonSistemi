@@ -4,7 +4,7 @@ import { EnvValidationError, parseEnv } from '../../src/config/env';
 const validSource = {
   NODE_ENV: 'development',
   PORT: '3000',
-  DATABASE_URL: 'postgresql://postgres:ornek@localhost:5432/CafeAdisyon?schema=public',
+  DATABASE_URL: 'mysql://kafe:ornek@127.0.0.1:3306/kafe_adisyon',
   LOG_LEVEL: 'warn',
   JSON_BODY_LIMIT: '2mb',
 } satisfies NodeJS.ProcessEnv;
@@ -61,17 +61,17 @@ describe('Ortam değişkeni doğrulaması', () => {
     }
   });
 
-  it('PostgreSQL olmayan bağlantı adresini reddeder', () => {
-    expect(() => parseEnv({ ...validSource, DATABASE_URL: 'mysql://localhost:3306/kafe' })).toThrow(
-      EnvValidationError,
-    );
+  it('MySQL olmayan bağlantı adresini reddeder', () => {
+    expect(() =>
+      parseEnv({ ...validSource, DATABASE_URL: 'postgresql://localhost:5432/kafe' }),
+    ).toThrow(EnvValidationError);
   });
 
   it('doldurulmamış CHANGE_ME parolasını reddeder', () => {
     expect(() =>
       parseEnv({
         ...validSource,
-        DATABASE_URL: 'postgresql://postgres:CHANGE_ME@localhost:5432/CafeAdisyon?schema=public',
+        DATABASE_URL: 'mysql://kafe:CHANGE_ME@127.0.0.1:3306/kafe_adisyon',
       }),
     ).toThrow(/CHANGE_ME/);
   });
@@ -83,5 +83,28 @@ describe('Ortam değişkeni doğrulaması', () => {
 
   it('bilinmeyen NODE_ENV değerini reddeder', () => {
     expect(() => parseEnv({ ...validSource, NODE_ENV: 'staging' })).toThrow(EnvValidationError);
+  });
+
+  describe('DEMO_MODE (ADR-026)', () => {
+    const demoDatabase = 'mysql://u1_kafe:ornek@127.0.0.1:3306/u1_kafedemo';
+
+    it('varsayılan olarak kapalıdır', () => {
+      expect(parseEnv(validSource).DEMO_MODE).toBe(false);
+    });
+
+    it('adı "demo" içeren veritabanıyla açılır', () => {
+      const env = parseEnv({ ...validSource, DATABASE_URL: demoDatabase, DEMO_MODE: 'true' });
+      expect(env.DEMO_MODE).toBe(true);
+    });
+
+    it('gerçek işletme veritabanıyla açılmayı reddeder (veri her gün silinirdi)', () => {
+      expect(() => parseEnv({ ...validSource, DEMO_MODE: 'true' })).toThrow(/demo/);
+    });
+
+    it('"true"/"false" dışındaki değeri reddeder', () => {
+      expect(() =>
+        parseEnv({ ...validSource, DATABASE_URL: demoDatabase, DEMO_MODE: 'yes' }),
+      ).toThrow(EnvValidationError);
+    });
   });
 });

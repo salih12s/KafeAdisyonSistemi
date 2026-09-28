@@ -1,4 +1,5 @@
 export * from './common.js';
+export * from './demo.js';
 export * from './accounts.js';
 export * from './cash.js';
 export * from './errors.js';

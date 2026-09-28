@@ -13,6 +13,7 @@ import { createNotFoundHandler } from './middleware/not-found';
 import { createRequestLogger } from './middleware/request-logger';
 import type { AppStore } from './shared/store';
 import type { OrderEventPublisher } from './modules/orders/order-events';
+import type { DemoMaintenance } from './modules/demo/demo-maintenance';
 
 export interface CreateAppOptions {
   env: Env;
@@ -20,6 +21,7 @@ export interface CreateAppOptions {
   database: DatabaseProbe;
   store?: AppStore;
   orderEvents?: OrderEventPublisher;
+  demoMaintenance?: DemoMaintenance;
   /** Üretimde sunulacak React derleme çıktısının klasörü. */
   webDistPath?: string;
 }
@@ -34,6 +36,7 @@ export function createApp({
   database,
   store,
   orderEvents,
+  demoMaintenance,
   webDistPath,
 }: CreateAppOptions): Express {
   const app = express();
@@ -71,6 +74,7 @@ export function createApp({
       env,
       ...(store === undefined ? {} : { store }),
       ...(orderEvents === undefined ? {} : { orderEvents }),
+      ...(demoMaintenance === undefined ? {} : { demoMaintenance }),
     }),
   );
 

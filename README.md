@@ -11,9 +11,15 @@ ekranı, ödeme, kasa, stok, QR menü ve raporlar.
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript&logoColor=white)
 ![React](https://img.shields.io/badge/React-18-149eca?logo=react&logoColor=white)
 ![Node.js](https://img.shields.io/badge/Node.js-Express%205-417e38?logo=nodedotjs&logoColor=white)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Prisma-336791?logo=postgresql&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL%20%2F%20MariaDB-Prisma%207-4479a1?logo=mysql&logoColor=white)
 ![Socket.IO](https://img.shields.io/badge/Socket.IO-ger%C3%A7ek%20zamanl%C4%B1-010101?logo=socketdotio&logoColor=white)
-![Testler](https://img.shields.io/badge/testler-248%20ge%C3%A7iyor-2f7d4f)
+![Testler](https://img.shields.io/badge/testler-291%20ge%C3%A7iyor-2f7d4f)
+
+### [▶ Canlı demoyu aç — adisyon.salihsydm.com](https://adisyon.salihsydm.com)
+
+Şifre gerekmez: giriş ekranında **Demo ile gir**'e basın ya da kasiyer, garson veya
+mutfak ekranını seçin. İçeride 30 günlük satış, açık masalar, mutfak siparişleri,
+kasa ve stok vardır; demo her sabah 05:00'te (İstanbul) kendini sıfırlar.
 
 <img src="docs/screenshots/tour-01-servis.gif" alt="Giriş, özet, masa açma, sipariş, mutfak, ödeme ve rapor akışı" width="880" />
 
@@ -213,7 +219,7 @@ flowchart LR
     MOD["modules/*<br/>routes · store · calculations"]
     RT["Socket.IO<br/>sipariş olayları"]
   end
-  DB[("PostgreSQL<br/>Prisma")]
+  DB[("MySQL / MariaDB<br/>Prisma 7")]
   C["packages/contracts<br/>ortak tipler"]
   UI -->|"/api · REST · cookie oturumu"| API
   API --> MOD
@@ -234,22 +240,25 @@ flowchart LR
 Ayrıntılı kod haritası ve bir isteğin uçtan uca yolculuğu:
 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 
-| Katman     | Teknoloji                                                                |
-| ---------- | ------------------------------------------------------------------------ |
-| Arayüz     | React 18, TypeScript, Vite, React Router, TanStack Query, Tailwind CSS 4 |
-| Sunucu     | Node.js, Express 5, Socket.IO, Prisma ORM, Zod, Helmet                   |
-| Veritabanı | PostgreSQL                                                               |
-| Test       | Vitest, Supertest, React Testing Library                                 |
-| Araçlar    | npm workspaces, ESLint, Prettier, GitHub Actions                         |
+| Katman     | Teknoloji                                                                 |
+| ---------- | ------------------------------------------------------------------------- |
+| Arayüz     | React 18, TypeScript, Vite, React Router, TanStack Query, Tailwind CSS 4  |
+| Sunucu     | Node.js, Express 5, Socket.IO, Prisma ORM, Zod, Helmet                    |
+| Veritabanı | MySQL / MariaDB (Hostinger), Prisma 7 + MariaDB adapter                   |
+| Test       | Vitest, Supertest, React Testing Library                                  |
+| Araçlar    | npm workspaces, ESLint, Prettier, GitHub Actions                          |
+| Yayın      | Hostinger Node.js web uygulaması, tek paket (`npm run package:hostinger`) |
 
 ## Kalite ve geliştirme süreci
 
-- **248 otomatik test** (API 166, arayüz 82). İş kuralları gerçek veritabanı
-  gerektirmeyen bellek içi store'larla, ekranlar React Testing Library ile test
-  edilir. Strict TypeScript ve ESLint her değişiklikte zorunlu.
+- **291 otomatik test** (API 200, arayüz 82, veritabanı 9). İş kuralları gerçek
+  veritabanı gerektirmeyen bellek içi store'larla, ekranlar React Testing Library
+  ile test edilir. Eşzamanlı masa açma ve kasa gibi yarış durumları ise gerçek
+  MariaDB'ye karşı `npm run test:db` ile sınanır. Strict TypeScript ve ESLint her
+  değişiklikte zorunlu.
 - **Kod ve güvenlik incelemesi** yapıldı; bulunan her sorun (ör. kasa kapanışı
   ile ödeme arasındaki yarış durumu, CSRF) regresyon testiyle kapatıldı.
-- **24 mimari karar kaydı (ADR)** gerekçeleriyle [DECISIONS.md](DECISIONS.md)
+- **26 mimari karar kaydı (ADR)** gerekçeleriyle [DECISIONS.md](DECISIONS.md)
   içinde: neden kuruş, neden snapshot, neden türetilen bakiye, neden offline yok.
 - **Yapay zekâ destekli, kurallı süreç.** Geliştirme, yapay zekâ kodlama
   ajanlarıyla (Claude ve Codex) bağlayıcı kurallar altında yürütüldü
@@ -272,9 +281,9 @@ management with menu options, a real-time kitchen display (Socket.IO), split
 payments, customer accounts, cash-drawer shifts with automatic count variance,
 recipe-based stock deduction, daily revenue charts, a photo-rich public QR menu page and 80/58 mm
 thermal receipts. It is a TypeScript monorepo (React 18 + Vite, Express 5 +
-Prisma + PostgreSQL) built around integer money, price snapshots, ledger-derived
-balances, serializable transactions and strict typing, covered by 248 automated
-tests.
+Prisma 7 + MySQL/MariaDB) built around integer money, price snapshots, ledger-derived
+balances, serializable transactions and strict typing, covered by 291 automated
+tests. Live demo (no password, resets daily): https://adisyon.salihsydm.com
 
 ## Lisans
 

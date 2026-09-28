@@ -15,12 +15,20 @@ import { createReportRouter } from '../modules/reports/report-routes';
 import { createCashRouter } from '../modules/cash/cash-routes';
 import { createStockRouter } from '../modules/stock/stock-routes';
 import { createPublicMenuRouter } from '../modules/public-menu/public-menu-routes';
+import type { DemoMaintenance } from '../modules/demo/demo-maintenance';
+import {
+  createDemoInfoRouter,
+  createDemoMaintenanceGate,
+  createDemoRouter,
+} from '../modules/demo/demo-routes';
 
 export interface ApiRouterOptions {
   database: DatabaseProbe;
   env: Env;
   store?: AppStore;
   orderEvents?: OrderEventPublisher;
+  /** Yalnız DEMO_MODE açıkken verilir (ADR-026). */
+  demoMaintenance?: DemoMaintenance;
 }
 
 /**
@@ -30,14 +38,22 @@ export interface ApiRouterOptions {
 export function createApiRouter(options: ApiRouterOptions): Router {
   const router = Router();
 
-  router.use(createHealthRouter(options));
+  const { store, env, orderEvents, demoMaintenance } = options;
 
-  const { store, env, orderEvents } = options;
+  // Sağlık isteği de bakımı dürter: zamanlanmış bir ping uyuyan süreci uyandırır.
+  if (env.DEMO_MODE && demoMaintenance !== undefined) {
+    router.use(createDemoMaintenanceGate(demoMaintenance));
+  }
+  router.use(createHealthRouter(options));
+  router.use(createDemoInfoRouter(env, demoMaintenance));
+
   if (store === undefined) return router;
 
   const identity = new IdentityService(store);
   const authenticate = requireAuthentication(identity, SESSION_COOKIE_NAME);
 
+  // Demo girişi ve demo hesap kilidi, kimlik uçlarından önce çalışmalıdır.
+  if (env.DEMO_MODE) router.use(createDemoRouter(store, env, identity, authenticate));
   router.use(createIdentityRouter(store, env, identity, authenticate));
   router.use(createFloorRouter(store, authenticate));
   router.use('/menu', createMenuRouter(store, authenticate));
