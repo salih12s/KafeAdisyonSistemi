@@ -37,12 +37,12 @@ async function main(): Promise<number> {
     const connected = await database.probe.ping();
 
     if (connected) {
-      process.stdout.write('PostgreSQL bağlantısı başarılı (SELECT 1).\n');
+      process.stdout.write('Veritabanı bağlantısı başarılı (SELECT 1).\n');
       return 0;
     }
 
     process.stderr.write(
-      'PostgreSQL bağlantısı kurulamadı. Servisin çalıştığını ve DATABASE_URL değerini kontrol edin.\n',
+      'Veritabanı bağlantısı kurulamadı. Servisin çalıştığını ve DATABASE_URL değerini kontrol edin.\n',
     );
     return 1;
   } finally {

@@ -17,17 +17,19 @@
     "db:migrate:deploy": "prisma migrate deploy --schema prisma/schema.prisma",
     "setup:owner": "tsx src/scripts/setup-owner.ts",
     "demo:seed": "tsx src/scripts/seed-demo.ts",
-    "prisma": "prisma"
+    "prisma": "prisma",
+    "test:db": "vitest run -c vitest.integration.config.ts"
   },
   "dependencies": {
     "@kafe/contracts": "*",
-    "@prisma/client": "^6.2.1",
+    "@prisma/adapter-mariadb": "7.10.0",
+    "@prisma/client": "7.10.0",
     "bcryptjs": "^3.0.3",
     "dotenv": "^16.4.7",
     "express": "^5.0.1",
     "express-rate-limit": "^8.6.2",
     "helmet": "^8.0.0",
-    "prisma": "^6.2.1",
+    "mariadb": "3.4.5",
     "prompts": "^2.4.2",
     "socket.io": "^4.8.3",
     "zod": "^3.24.1"
@@ -37,6 +39,7 @@
     "@types/node": "^22.10.2",
     "@types/prompts": "^2.4.9",
     "@types/supertest": "^6.0.2",
+    "prisma": "7.10.0",
     "socket.io-client": "^4.8.3",
     "supertest": "^7.0.0",
     "tsx": "^4.19.2",

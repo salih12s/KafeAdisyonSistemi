@@ -3,6 +3,7 @@ import { MobileNav } from './mobile-nav';
 import { Sidebar } from './sidebar';
 import { TopBar } from './top-bar';
 import { useOrderRealtime } from '../../features/orders/hooks/use-order-realtime';
+import { DemoBanner } from '../../features/demo/components/demo-banner';
 
 /**
  * Masaüstünde sabit kenar çubuğu, telefonda alt gezinme kullanan uygulama kabuğu.
@@ -17,6 +18,7 @@ export function AppLayout(): JSX.Element {
       <Sidebar />
 
       <div className="flex min-w-0 flex-1 flex-col">
+        <DemoBanner />
         <TopBar />
 
         <main className="min-w-0 flex-1 px-3 pb-24 pt-4 sm:px-4 sm:pt-5 lg:px-6 lg:pb-8 xl:px-8">

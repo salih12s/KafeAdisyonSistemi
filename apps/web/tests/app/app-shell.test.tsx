@@ -68,7 +68,7 @@ describe('Uygulama kabuğu', () => {
     });
 
     expect(
-      screen.getByText(/Sunucu açık ancak PostgreSQL bağlantısı kurulamıyor/),
+      screen.getByText(/Sunucu açık ancak veritabanı bağlantısı kurulamıyor/),
     ).toBeInTheDocument();
   });
 

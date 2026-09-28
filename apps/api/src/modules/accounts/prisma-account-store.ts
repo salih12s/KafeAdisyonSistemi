@@ -1,4 +1,4 @@
-import { Prisma, type PrismaClient } from '@prisma/client';
+import { Prisma, type PrismaClient } from '../../generated/prisma/client';
 import type {
   AccountEntryResponse,
   CustomerResponse,
@@ -84,7 +84,8 @@ export function createPrismaAccountStore(client: PrismaClient): AccountStore {
             ? {}
             : {
                 OR: [
-                  { name: { contains: search, mode: 'insensitive' } },
+                  // utf8mb4_unicode_ci karşılaştırması büyük/küçük harf ve aksan duyarsızdır.
+                  { name: { contains: search } },
                   { phone: { contains: search } },
                 ],
               },
@@ -191,7 +192,7 @@ export function createPrismaAccountStore(client: PrismaClient): AccountStore {
     async transferCheckToAccount(input) {
       try {
         await client.$transaction(async (tx) => {
-          await tx.$queryRaw`SELECT "id" FROM "Check" WHERE "id" = ${input.checkId}::uuid FOR UPDATE`;
+          await tx.$queryRaw`SELECT id FROM \`Check\` WHERE id = ${input.checkId} FOR UPDATE`;
           const [check, customerRow] = await Promise.all([
             tx.check.findUnique({ where: { id: input.checkId }, include: { payments: true } }),
             tx.customer.findUnique({ where: { id: input.customerId } }),

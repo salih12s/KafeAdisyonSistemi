@@ -1,4 +1,4 @@
-import { Prisma, type PrismaClient } from '@prisma/client';
+import { Prisma, type PrismaClient } from '../../generated/prisma/client';
 import type { CashSessionResponse } from '@kafe/contracts';
 import { buildCashSession } from './cash-calculations';
 import type { CashStore } from './cash-store';
@@ -154,7 +154,7 @@ export function createPrismaCashStore(client: PrismaClient): CashStore {
           // paylaşımlı kilitlediği için kapanış, yarım kalmış ödemelerin bitmesini
           // bekler; yeni nakit ödemeler de kapanış bitene kadar bekler. Read Committed
           // sayesinde bekleme sonrasındaki sorgular commit edilmiş ödemeleri görür.
-          await transaction.$queryRaw`SELECT "id" FROM "CashSession" WHERE "status" = 'OPEN' FOR UPDATE`;
+          await transaction.$queryRaw`SELECT id FROM CashSession WHERE status = 'OPEN' FOR UPDATE`;
           const session = await requireOpenSession(transaction);
           const closedAt = new Date();
           // Beklenen tutar kapanış anında sabitlenir; sonraki ödemeler bu kasaya yazılmaz.

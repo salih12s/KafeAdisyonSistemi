@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '../generated/prisma/client';
 import type { AppStore } from './store';
 import { createPrismaIdentityStore } from '../modules/identity/prisma-identity-store';
 import { createPrismaFloorStore } from '../modules/floor/prisma-floor-store';

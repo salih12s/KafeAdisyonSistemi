@@ -1,4 +1,4 @@
-import { Prisma, type PrismaClient, type User } from '@prisma/client';
+import { Prisma, type PrismaClient, type User } from '../../generated/prisma/client';
 import type { BusinessSettingsResponse, CurrentUser, StaffMember } from '@kafe/contracts';
 import { StoreError } from '../../shared/store';
 import {

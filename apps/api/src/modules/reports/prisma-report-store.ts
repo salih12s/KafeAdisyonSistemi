@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '../../generated/prisma/client';
 import type { AuditFilterInput, DateRangeInput, ReportStore } from './report-store';
 import { buildDayEnd, buildSalesReport, sanitizeAuditMetadata } from './report-calculations';
 import { CHECK_INCLUDE, toCheck } from '../orders/prisma-order-store';

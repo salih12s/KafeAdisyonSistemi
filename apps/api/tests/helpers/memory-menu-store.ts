@@ -52,7 +52,7 @@ function bySortThenName(
 
 /**
  * Menü store'unun bellek içi karşılığı.
- * `MemoryStore` bu sınıfı genişletir; testler gerçek PostgreSQL'e dokunmaz.
+ * `MemoryStore` bu sınıfı genişletir; testler gerçek veritabanına dokunmaz.
  */
 export class MemoryMenuStore implements MenuStore {
   public readonly audits: MemoryAuditEntry[] = [];

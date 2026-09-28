@@ -33,7 +33,7 @@ worker, Docker ve Railway yapılandırması bu aşamada geliştirilmez.
 ## ADR-002 — Production ortamında Railway kullanılacak
 
 - **Tarih:** 2026-08-12
-- **Durum:** Kabul edildi (uygulama ileriki bir Phase'te)
+- **Durum:** Yerini ADR-026 aldı (2026-09-28): canlı demo Hostinger'da, MySQL ile
 
 **Karar.** Hedef production mimarisi:
 
@@ -92,7 +92,7 @@ adresine iletir. Ortam farkı yalnızca proxy yapılandırmasındadır.
 ## ADR-005 — PostgreSQL: local geliştirmede bilgisayarda, production'da Railway'de
 
 - **Tarih:** 2026-08-12
-- **Durum:** Kabul edildi
+- **Durum:** Yerini ADR-026 aldı (2026-09-28): veritabanı MySQL/MariaDB
 
 **Karar.** Veri deposu PostgreSQL, erişim katmanı Prisma ORM'dir. Geliştirmede
 bilgisayardaki `CafeAdisyon` veritabanı, production'da Railway PostgreSQL
@@ -577,3 +577,58 @@ notunu gösterir.
 **Sonuç.** Gerçek işletme kendi fotoğraflarını kullanmak isterse kalıcı çözüm
 `Product` tablosuna additive `description` ve görsel alanları ile menü
 yönetiminde yükleme ekranıdır; bu, kullanıcı onayıyla ayrı bir iş olarak yapılır.
+
+---
+
+## ADR-026 — Canlı demo Hostinger'da: MySQL/MariaDB, "Demo ile gir" ve günlük yenileme
+
+- **Tarih:** 2026-09-28
+- **Durum:** Kabul edildi (kullanıcı kararı)
+- **İlgili:** ADR-002 ve ADR-005'in yerine geçer; ADR-024 (demo verisi), AGENTS.md §9
+
+**Karar.** Uygulama pazarlama amaçlı canlı demo olarak kullanıcının Hostinger web
+hosting hesabında `https://adisyon.salihsydm.com` adresinde yayınlanır. Hesapta VPS
+yoktur; web hosting yalnız MySQL/MariaDB sunar. Bu yüzden:
+
+1. **Veritabanı MySQL/MariaDB'ye taşındı.** Prisma 7 (`prisma-client` üreteci, CJS,
+   `src/generated/prisma`) ve `@prisma/adapter-mariadb` kullanılır; native motor
+   yoktur. PostgreSQL migration geçmişi `prisma/migrations-postgres-archive` altında
+   yalnız kayıt için durur; geçerli geçmiş `20260928000000_init_mysql` ile başlar.
+   UUID kolonları `VARCHAR(36)`, 500 karaktere kadar serbest metinler `VARCHAR(500)`.
+2. **Kısmi unique index yerine generated kolon.** MySQL'de `WHERE` koşullu index
+   yoktur. "Masa başına tek açık adisyon" `Check.openTableKey`, "tek açık kasa"
+   `CashSession.openKey` ile korunur: status `OPEN` iken dolu, değilse `NULL`
+   (STORED generated kolon + unique index; unique index birden çok NULL'a izin verir).
+   Uygulama bu kolonlara yazmaz. MariaDB, sonucu `sql_mode`'a bağlı ifadeleri
+   (ör. `CHAR` kolon) ve `ON UPDATE CASCADE` foreign key'li kolonları generated
+   kolon/CHECK içinde reddettiği için ilgili ilişkiler `onUpdate: Restrict`'tir
+   (ID'ler zaten değişmez). PostgreSQL'deki tüm CHECK kısıtları taşındı.
+3. **Ham SQL taşındı.** `::uuid` kalktı, `Check` ayrılmış kelime olduğu için ters
+   tırnakla yazılır, `FOR SHARE` yerine iki motorda da çalışan `LOCK IN SHARE MODE`.
+   Cari araması `mode: 'insensitive'` yerine `utf8mb4_unicode_ci` karşılaştırmasına
+   dayanır (büyük/küçük harf ve aksan duyarsız).
+4. **Demo modu (`DEMO_MODE=true`).** Yalnız adı `demo` içeren veritabanıyla açılır
+   (env doğrulaması). Giriş ekranı her rol için şifresiz "Demo ile gir" sunar
+   (`POST /api/auth/demo-login`); sunucu yeni bir kimlik yolu açmaz, normal girişi
+   bilinen demo şifresiyle yapar. Demo hesaplarının şifresi, rolü ve durumu
+   değiştirilemez (403); ziyaretçinin eklediği personel serbesttir.
+5. **Günlük yenileme ve tazeleme.** Istanbul'da yeni gün başlayıp saat 05:00'i
+   geçince ilk API isteği veriyi siler ve `seedDemoData` ile yeniden üretir
+   (yerelde ~50 sn; bu sürede iş uçları 503 döner). Hostinger boştaki süreci
+   durdurabildiği için zamanlayıcıya değil isteklere bağlıdır; sabah bir cron
+   isteği süreci uyandırır. Aynı veritabanını paylaşan süreçler MySQL `GET_LOCK` ile
+   tek yenileme yapar. Açık masalar ve mutfak kalemleri 10 dakikada bir 25–75 dakika
+   yaşa çekilir; demo akşam da "canlı" görünür.
+
+**Gerekçe.** Kullanıcının ürünü satmak için herkesin tek tıkla girebileceği, dolu ve
+bozulamayan bir demoya ihtiyacı var. SS Filo ve FitnessApp aynı hosting'de aynı
+yöntemle (Prisma 7 + MariaDB adapter, tek Node.js paketi) çalışıyor. Dışarıda bir
+PostgreSQL servisi (ör. Neon) kod değişikliğini azaltırdı ama ikinci bir sağlayıcı,
+ağ gecikmesi ve paylaşımlı hosting'den dış porta erişim belirsizliği getirirdi.
+
+**Sonuç.** Yerel geliştirme MariaDB ister (bkz. docs/HOSTINGER_DEPLOY.md). Tüm
+kayıtları silen tek kod `wipeDemoData`'dır; AGENTS.md §9'un kullanıcı onaylı tek
+istisnasıdır ve yalnız `DEMO_MODE` + adı `demo` içeren veritabanında çalışır.
+Gerçek bir işletme kurulumu `DEMO_MODE` olmadan çalışır ve hiçbir şey silmez.
+Canlıda `prisma migrate deploy` çalışmaz (Prisma CLI pakette yok); yeni migration'lar
+yerelden uzak bağlantıyla ya da phpMyAdmin'den uygulanır.

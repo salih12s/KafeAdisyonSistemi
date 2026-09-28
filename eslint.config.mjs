@@ -13,6 +13,9 @@ export default tseslint.config(
       '**/coverage/**',
       '**/node_modules/**',
       '**/.vite/**',
+      // prisma generate çıktısı ve Hostinger paketi.
+      'apps/api/src/generated/**',
+      'deploy/**',
       '**/*.d.ts',
     ],
   },
@@ -48,7 +51,7 @@ export default tseslint.config(
     ...tseslint.configs.disableTypeChecked,
   },
   {
-    files: ['apps/api/**/*.ts', 'packages/contracts/**/*.ts', '*.mjs', '*.cjs'],
+    files: ['apps/api/**/*.ts', 'packages/contracts/**/*.ts', '*.mjs', '*.cjs', 'scripts/*.mjs'],
     languageOptions: {
       globals: { ...globals.node },
     },

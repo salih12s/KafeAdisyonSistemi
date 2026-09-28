@@ -52,7 +52,7 @@ function baseCookieOptions(env: Env) {
   };
 }
 
-function authCookieOptions(env: Env) {
+export function authCookieOptions(env: Env) {
   return { ...baseCookieOptions(env), maxAge: SESSION_DURATION_MS };
 }
 

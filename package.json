@@ -2,14 +2,14 @@
   "name": "kafe-adisyon-sistemi",
   "version": "0.1.0",
   "private": true,
-  "description": "React, Express ve PostgreSQL ile geliştirilen web tabanlı kafe adisyon sistemi",
+  "description": "React, Express ve MySQL/MariaDB ile geliştirilen web tabanlı kafe adisyon sistemi",
   "license": "UNLICENSED",
   "workspaces": [
     "packages/*",
     "apps/*"
   ],
   "engines": {
-    "node": ">=20.10.0"
+    "node": ">=20.19.0"
   },
   "scripts": {
     "dev": "concurrently -n api,web -c yellow,cyan \"npm run dev -w @kafe/api\" \"npm run dev -w @kafe/web\"",
@@ -25,12 +25,13 @@
     "db:check": "npm run db:check -w @kafe/api",
     "db:migrate:status": "npm run db:migrate:status -w @kafe/api",
     "db:migrate:deploy": "npm run db:migrate:deploy -w @kafe/api",
-    "railway:predeploy": "npm run db:migrate:deploy",
     "setup:owner": "npm run setup:owner -w @kafe/api",
     "demo:seed": "npm run demo:seed -w @kafe/api",
     "postinstall": "npm run db:generate --silent",
     "setup:env": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/set-local-env.ps1",
-    "setup:env:production": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/set-production-env.ps1"
+    "setup:env:production": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/set-production-env.ps1",
+    "package:hostinger": "node scripts/package-hostinger.mjs",
+    "test:db": "npm run test:db -w @kafe/api"
   },
   "dependencies": {
     "cross-env": "^7.0.3"

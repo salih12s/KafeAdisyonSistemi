@@ -1,4 +1,4 @@
-import { Prisma, type PrismaClient } from '@prisma/client';
+import { Prisma, type PrismaClient } from '../../generated/prisma/client';
 import type {
   CheckResponse,
   KitchenOrderResponse,
@@ -27,7 +27,7 @@ import { calculatePaymentSplit } from './payment-calculations';
 import { writeSaleStockMovements } from '../stock/prisma-stock-store';
 import { isUniqueConstraint, isSerializationConflict } from '../../shared/prisma-errors';
 
-const MAX_POSTGRES_INT = 2_147_483_647;
+const MAX_SQL_INT = 2_147_483_647;
 
 function statusAuditAction(status: OrderItemStatus): string {
   switch (status) {
@@ -188,7 +188,8 @@ async function updateTotal(transaction: Prisma.TransactionClient, checkId: strin
 }
 
 async function lockCheck(transaction: Prisma.TransactionClient, id: string): Promise<void> {
-  await transaction.$queryRaw`SELECT "id" FROM "Check" WHERE "id" = ${id}::uuid FOR UPDATE`;
+  // `Check` MySQL'de ayrılmış kelime (CHECK) olduğu için ters tırnakla yazılır.
+  await transaction.$queryRaw`SELECT id FROM \`Check\` WHERE id = ${id} FOR UPDATE`;
 }
 
 async function readCheck(
@@ -374,7 +375,7 @@ export function createPrismaOrderStore(client: PrismaClient): OrderStore {
           );
           const unitTotal = product.priceKurus + optionTotal;
           const lineTotal = unitTotal * input.quantity;
-          if (!Number.isSafeInteger(lineTotal) || unitTotal < 0 || lineTotal > MAX_POSTGRES_INT) {
+          if (!Number.isSafeInteger(lineTotal) || unitTotal < 0 || lineTotal > MAX_SQL_INT) {
             throw new StoreError('VALIDATION', 'Sipariş kalemi tutarı geçerli sınırların dışında.');
           }
 
@@ -444,7 +445,7 @@ export function createPrismaOrderStore(client: PrismaClient): OrderStore {
             0,
           );
           const lineTotal = (item.unitPriceKurusSnapshot + optionTotal) * input.quantity;
-          if (!Number.isSafeInteger(lineTotal) || lineTotal < 0 || lineTotal > MAX_POSTGRES_INT) {
+          if (!Number.isSafeInteger(lineTotal) || lineTotal < 0 || lineTotal > MAX_SQL_INT) {
             throw new StoreError('VALIDATION', 'Sipariş kalemi tutarı geçerli sınırların dışında.');
           }
           await transaction.orderItem.update({
@@ -599,7 +600,7 @@ export function createPrismaOrderStore(client: PrismaClient): OrderStore {
           if (input.method === 'CASH') {
             // Açık kasa paylaşımlı kilitlenir: kasa kapanışı bu ödeme bitene kadar
             // bekler ve ödemeyi beklenen nakde katar (bkz. ADR-021).
-            await transaction.$queryRaw`SELECT "id" FROM "CashSession" WHERE "status" = 'OPEN' FOR SHARE`;
+            await transaction.$queryRaw`SELECT id FROM CashSession WHERE status = 'OPEN' LOCK IN SHARE MODE`;
           }
           await lockCheck(transaction, input.checkId);
           const check = await requireOpenCheck(transaction, input.checkId);

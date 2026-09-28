@@ -32,7 +32,7 @@ function toPresentation(state: ReturnType<typeof useHealth>): Presentation {
     return {
       tone: 'danger',
       label: 'Veritabanı yok',
-      detail: 'Sunucu çalışıyor ancak PostgreSQL bağlantısı kurulamadı.',
+      detail: 'Sunucu çalışıyor ancak veritabanı bağlantısı kurulamadı.',
     };
   }
 

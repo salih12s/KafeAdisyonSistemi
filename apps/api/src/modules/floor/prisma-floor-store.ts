@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '../../generated/prisma/client';
 import type { CafeTableResponse, DiningAreaResponse, FloorPlanResponse } from '@kafe/contracts';
 import { StoreError } from '../../shared/store';
 import { isUniqueConstraint, isMissingRecord } from '../../shared/prisma-errors';

@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client';
+import { Prisma } from '../generated/prisma/client';
 
 /** Prisma'nın bilinen hata kodlarını store katmanında anlamlı sorulara çevirir. */
 

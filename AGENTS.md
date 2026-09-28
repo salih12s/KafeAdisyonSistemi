@@ -114,6 +114,12 @@ Kurallar:
 - Migration üretilecekse önce kullanıcıya ne yapacağı anlatılır ve onay alınır.
 - Domain kayıtları fiziksel olarak silinmez; iptal/pasif alanları kullanılır.
 
+**Tek istisna (kullanıcı onayı, 2026-09-28, ADR-026):** canlı demonun günlük
+yenilemesi (`wipeDemoData`) demo veritabanındaki tüm kayıtları siler ve yeniden
+üretir. Yalnız `DEMO_MODE=true` iken ve veritabanı adı `demo` içerdiğinde çalışır;
+tabloları silmez, yalnız kayıtları. Bu korumalar gevşetilmez, başka bir yere
+kopyalanmaz.
+
 ---
 
 ## 10. Git kuralları

@@ -1,4 +1,4 @@
-import { Prisma, type PrismaClient } from '@prisma/client';
+import { Prisma, type PrismaClient } from '../../generated/prisma/client';
 import type { ProductRecipeResponse, StockItemDetailResponse } from '@kafe/contracts';
 import { manualMovementDelta, saleConsumption, toStockItem } from './stock-calculations';
 import type { StockStore } from './stock-store';
@@ -11,7 +11,7 @@ import {
 
 type Reader = PrismaClient | Prisma.TransactionClient;
 
-/** PostgreSQL INTEGER üst sınırı; satış düşümü asla taşma hatasıyla kapanışı durdurmaz. */
+/** MySQL INT üst sınırı; satış düşümü asla taşma hatasıyla kapanışı durdurmaz. */
 const MAX_INT = 2_147_483_647;
 
 const transactionOptions = {
